@@ -760,4 +760,9 @@ for(int i = 0; i < freq.length; i++) {
         finalResult = sphList;
     }
 
+    public static int getNUMFINALRESULT()
+    {
+        return NUMFINALRESULT;
+    }
+
 }

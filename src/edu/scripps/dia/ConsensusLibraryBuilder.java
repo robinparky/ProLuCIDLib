@@ -18,21 +18,13 @@ import java.sql.Statement;
 /**
  * Created by yateslab on 7/19/17.
  */
-public class ConsensusLibraryBuilder {
+public class ConsensusLibraryBuilder  extends LibraryBuilder{
 
-    private List<ProcessedPeptide> peptideList = new ArrayList<>();
 
-    private Map<String,IndexedMSFile> ms2FileMap = new HashMap<>();
 
     private int [] spectra = new int[6_000_000];
 
-    public   enum StorageType {SQLITE,PRINT}
 
-    private StorageType storageType;
-
-    private String searchXML;
-    private SearchParams sparams;
-    private String terminalString;
 
     public static void main(String [] args) throws IOException, SQLException, JDOMException {
 
