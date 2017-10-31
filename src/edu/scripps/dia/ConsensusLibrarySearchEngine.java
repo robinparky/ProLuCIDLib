@@ -64,7 +64,6 @@ public class ConsensusLibrarySearchEngine {
         bw.close();
     }
 
-    public class
 
     public ConsensusLibrarySearchEngine(String ms2Path, String searchParamsPath) throws IOException, JDOMException, SQLException {
         params = new SearchParams(searchParamsPath);

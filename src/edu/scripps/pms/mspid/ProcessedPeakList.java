@@ -145,7 +145,7 @@ ProcessedPeakList {
    //     massSum = new double[massCorr.length];
 
         this.peaks = new ArrayList<Peak>(peakList.numPeaks());
-        boolMasses = new boolean[(int) (prcMass+params.getMaxMassShift()+20.5)*PRECISIONFACTOR]; // = new boolean[MAXNUMPEAKS]; // boolean representation of masses
+        //boolMasses = new boolean[(int) (prcMass+params.getMaxMassShift()+20.5)*PRECISIONFACTOR]; // = new boolean[MAXNUMPEAKS]; // boolean representation of masses
 //        intensityVal = new double [(int)(prcMass+params.getMaxMassShift()+20.5)*PRECISIONFACTOR + 100]; // = new double[MAXNUMPEAKS];
 
         fragTolerance = params.getFragmentTolerance()/1000.0f; // change from ppm to .4 etc.
@@ -379,14 +379,17 @@ for(Peak p : theorPeaks) {
         int numPeaksMatched =0;
         int i=0;
         boolean [] boolMass = peakList.getBoolMasses();
+        boolean [] mybools = this.getBoolMasses();
         for(int j=firstTrue; j<lastTrue; j++)
         {
             if(boolMass[j] )
             {
                 numTheroticPeaks++;
-              if(this.boolMasses[j]) numPeaksMatched++;
+              if(mybools[i]) numPeaksMatched++;
             }
         }
+        peakList.dumpBoolMass();
+        this.dumpBoolMass();
         double probability = DistributionCalculator.getBinomialSum(this.getPTrue(), numTheroticPeaks, numPeaksMatched);
         ScoredPeptideHit sph = new ScoredPeptideHit(probability);
         return sph;
@@ -638,6 +641,7 @@ for(Peak p : theorPeaks) {
         //Iterator <Peak> peakIt = peaks.getPeaks();
         //Iterator <Peak> peakIt = getIntensPeaks(params.getPeakRankThreshold()).iterator();
         //int counter = 0;
+        if(boolMasses == null) boolMasses = new boolean[(int) (prcMass+params.getMaxMassShift()+20.5)*PRECISIONFACTOR];
         int myNumPeaks = 0;
         //while (peakIt.hasNext()) {
         List<Peak> peaks = getIntensPeaks(params.getPeakRankThreshold());
@@ -781,6 +785,7 @@ for(Peak p : theorPeaks) {
         return lastTrue;
     }
     public boolean [] getBoolMasses() {
+        if(boolMasses==null) xcorrPreprocess();
         return boolMasses;
     }
     public int getNumTrues() {
@@ -872,6 +877,10 @@ for(Peak p : theorPeaks) {
             result[i] = (float) massSum[i];
         }
         return result;
+    }
+    public void dumpBoolMass()
+    {
+        boolMasses = null;
     }
 }
 

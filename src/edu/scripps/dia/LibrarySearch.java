@@ -31,28 +31,73 @@ public class LibrarySearch {
         clse.calcRange();
         //clse.readMS2TargetFile(libraryPath);
         clse.readMs2TargetDirectory(libraryPath);
-        List<SearchResult> results = new ArrayList<>();
+      //  List<SearchResult> results = new ArrayList<>();
         List<PeakList> peakLists = clse.getPeakLists();
+        BufferedWriter bw = new BufferedWriter(new FileWriter(output));
+
         for(PeakList peakList: peakLists)
         {
             for (Iterator<Zline> it = peakList.getZlines(); it.hasNext(); ) {
                 Zline zline = it.next();
-                results.add(clse.search(peakList,zline));
+                SearchResult r = clse.search(peakList,zline);
+                bw.write(r.outputResults());
+                bw.newLine();
             }
-        }
-
-        BufferedWriter bw = new BufferedWriter(new FileWriter(output));
-
-        for(SearchResult r: results)
-        {
-            bw.write(r.outputResults());
         }
         bw.close();
     }
 
+    public static void rangedSearched(String [] args) throws Exception {
+        String ms2Path = args[0];
+        String paramsPath = args[1];
+        String libraryPath = args[2];
+       // String output = args[3];
+        File libDirectory= new File(libraryPath);
+        File ms2Directory = new File(ms2Path);
+
+
+        String[] libArray = libDirectory.list();
+        String[] ms2Array = ms2Directory.list();
+        for(String ms2Files: ms2Array)
+        {
+            if(ms2Files.endsWith("ms2"))
+            {
+                String msPath = ms2Directory+File.separator+ms2Files;
+                LibrarySearchEngine clse = new LibrarySearchEngine(msPath, paramsPath);
+                clse.calcRange();
+
+                for(String libFiles: libArray)
+                {
+                    String output = ms2Path+"_"+libFiles+".sqt";
+                    String libPath = libraryPath+File.separator+libFiles;
+                    clse.readMS2TargetFile(libPath);
+                    if(libFiles.endsWith("ms2"))
+                    {
+                        List<PeakList> peakLists = clse.getPeakLists();
+                        BufferedWriter bw = new BufferedWriter(new FileWriter(output));
+
+                        for(PeakList peakList: peakLists)
+                        {
+                            for (Iterator<Zline> it = peakList.getZlines(); it.hasNext(); ) {
+                                Zline zline = it.next();
+                                SearchResult r = clse.search(peakList,zline);
+                                bw.write(r.outputResults());
+                                bw.newLine();
+                            }
+                        }
+                        bw.close();
+                    }
+                    clse.clear();
+                }
+            }
+
+        }
+    }
+
 
     public static void main(String[] args) throws Exception {
-        simpleSearch(args);
+        rangedSearched(args);
+        // simpleSearch(args);
         //inverseSearch(args);
     }
 
