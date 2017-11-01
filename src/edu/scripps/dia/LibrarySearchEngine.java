@@ -102,7 +102,9 @@ public class LibrarySearchEngine {
         TIntHashSet set = new TIntHashSet();
         double worseScore = Double.MAX_VALUE;
         int z= zline.getChargeState();
-        SearchResult searchResult = null;
+        ProcessedPeakList ppl = new ProcessedPeakList(peakList, zline, params, mc, true);
+
+        SearchResult searchResult = new SearchResult(ppl);
        // System.out.println(peakList.getLoscan());
         if (numPeaks > params.getMinNumSpectra() && numPeaks < params.getMaxNumSpectra()) {
             float prcMass = (float) zline.getM2z();
@@ -111,7 +113,6 @@ public class LibrarySearchEngine {
                 TIntArrayList highLimits = new TIntArrayList();
                 TIntArrayList lowLimits = new TIntArrayList();
                 MassRangeFinder.findRange(prcMass, params, lowLimits, highLimits);
-                ProcessedPeakList ppl = new ProcessedPeakList(peakList, zline, params, mc, true);
                 ppl.preprocess(params.getPreprocess());
                 searchResult = new SearchResult(ppl);
                 if(massIndex[z]==null) return  searchResult;
@@ -148,13 +149,14 @@ public class LibrarySearchEngine {
                     }
 
                 }
+                List<ScoredPeptideHit> sphList = new ArrayList<>(sphQueue);
+                int size = sphList.size()<NUMFINALRESULT?sphList.size():NUMFINALRESULT;
+                searchResult.setPrelimScoreHits(sphList.subList(0,size));
             }
         }
        // System.out.println();
         //searchResult.setFinalResultsForPrelimScores();
-        List<ScoredPeptideHit> sphList = new ArrayList<>(sphQueue);
-        int size = sphList.size()<NUMFINALRESULT?sphList.size():NUMFINALRESULT;
-        searchResult.setPrelimScoreHits(sphList.subList(0,size));
+
         return searchResult;
     }
 
@@ -246,7 +248,7 @@ public class LibrarySearchEngine {
            double mass = peakList.getZlines().next().getM2z();
            int massloc = (int)(mass*1000);
            int massLocation = massloc -startRange;
-           if(massloc>endRange) continue;
+           if(massloc>=endRange || massloc < startRange) continue;
            if(libraryPeakListTable[z]==null)
            {
                System.out.println(">>> cs "+z);
@@ -255,7 +257,7 @@ public class LibrarySearchEngine {
            }
            ProcessedPeakList ppl = new ProcessedPeakList(peakList,peakList.getZlines().next(),params,mc,true);
            libraryPeakListTable[z].add(ppl);
-        //   System.out.println(">>> "+z+"\t"+massLocation+"\t"+mass);
+           System.out.println(">>> "+z+"\t"+massLocation+"\t"+mass);
            massIndex[z][massLocation]++;
         }
         fillIndex();
@@ -320,7 +322,7 @@ public class LibrarySearchEngine {
         for(int j=0; j<tempMaxCS; j++)
         {
             massIndex[j]=null;
-            libraryPeakListTable[j] = new ArrayList<>();
+            libraryPeakListTable[j] =null;
         }
 
     }

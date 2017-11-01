@@ -385,11 +385,11 @@ for(Peak p : theorPeaks) {
             if(boolMass[j] )
             {
                 numTheroticPeaks++;
-              if(mybools[i]) numPeaksMatched++;
+              if(mybools[j]) numPeaksMatched++;
             }
         }
-        peakList.dumpBoolMass();
-        this.dumpBoolMass();
+       // peakList.dumpBoolMass();
+        //this.dumpBoolMass();
         double probability = DistributionCalculator.getBinomialSum(this.getPTrue(), numTheroticPeaks, numPeaksMatched);
         ScoredPeptideHit sph = new ScoredPeptideHit(probability);
         return sph;
@@ -674,6 +674,7 @@ for(Peak p : theorPeaks) {
         finalNumPeaks = myNumPeaks;
         //int firstTrue = 0;
         //int lastTrue = 0;
+        numTrues =0;
         for(int i = 0; i < boolMasses.length; i++) {
             if (boolMasses[i]) {
                 //System.out.println(i);

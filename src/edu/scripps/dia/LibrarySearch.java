@@ -20,7 +20,7 @@ import java.util.*;
  * Created by yateslab on 10/12/17.
  */
 public class LibrarySearch {
-
+    public static final double decoyDiff = 50.0;
 
     public static void simpleSearch(String [] args) throws Exception {
         String ms2Path = args[0];
@@ -63,16 +63,20 @@ public class LibrarySearch {
             if(ms2Files.endsWith("ms2"))
             {
                 String msPath = ms2Directory+File.separator+ms2Files;
+                String msName = ms2Files.substring(0,ms2Files.lastIndexOf('.'));
                 LibrarySearchEngine clse = new LibrarySearchEngine(msPath, paramsPath);
                 clse.calcRange();
 
                 for(String libFiles: libArray)
                 {
-                    String output = ms2Path+"_"+libFiles+".sqt";
+                    int index = libFiles.lastIndexOf(".");
+                    String output = ms2Path+File.separator+msName+"_"+libFiles.substring(0,index)+".sqt";
                     String libPath = libraryPath+File.separator+libFiles;
-                    clse.readMS2TargetFile(libPath);
+
                     if(libFiles.endsWith("ms2"))
                     {
+                        clse.readMS2TargetFile(libPath);
+                        System.out.println("searching: "+libFiles);
                         List<PeakList> peakLists = clse.getPeakLists();
                         BufferedWriter bw = new BufferedWriter(new FileWriter(output));
 
@@ -82,12 +86,12 @@ public class LibrarySearch {
                                 Zline zline = it.next();
                                 SearchResult r = clse.search(peakList,zline);
                                 bw.write(r.outputResults());
-                                bw.newLine();
+                                //bw.newLine();
                             }
                         }
                         bw.close();
+                        clse.clear();
                     }
-                    clse.clear();
                 }
             }
 
