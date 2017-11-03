@@ -12,8 +12,7 @@ import edu.scripps.pms.util.spectrum.*;
 import java.io.*;
 import java.util.*;
 
-public class
-ProcessedPeakList {
+public class ProcessedPeakList {
     //int numGreater = 0;
     public static final double PLUS3NH3IONADJUSTMENT =  8.5* MassSpecConstants.DBINWIDTH - 0.25;
     public static final int DEFAULTPREPROCESS = 0;
