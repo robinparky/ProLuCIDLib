@@ -24,6 +24,7 @@ public class ScoredPeptideHit implements Comparable<ScoredPeptideHit> {
     private LinkedList<PeptideHit> hits = new LinkedList<PeptideHit>();
     private String sequence;
 
+    private boolean isDecoy = false;
     private int scanHi;
     private int scanLow;
     private String ms2Filename;
@@ -214,5 +215,13 @@ public class ScoredPeptideHit implements Comparable<ScoredPeptideHit> {
 
     public String getMs2Filename() {
         return ms2Filename;
+    }
+
+    public void setIsDecoy(boolean isDecoy) {
+        this.isDecoy = isDecoy;
+    }
+    public boolean isDecoy()
+    {
+        return  isDecoy;
     }
 }

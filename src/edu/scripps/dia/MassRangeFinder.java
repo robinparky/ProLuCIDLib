@@ -53,7 +53,7 @@ public class MassRangeFinder {
         return false;
     }
 
-    public static void findRange(float prcMass, SearchParams params, TIntArrayList lowLimits, TIntArrayList highlimits)
+    public static void findRange(double prcMass, SearchParams params, TIntArrayList lowLimits, TIntArrayList highlimits)
     {
         helper(prcMass,params,lowLimits,highlimits);
         for(Iterator<Modifications> it = params.getAllModifications(); it.hasNext();) {
@@ -64,7 +64,7 @@ public class MassRangeFinder {
         }
     }
 
-    private static void helper(float mass, SearchParams params, TIntArrayList lowLimits, TIntArrayList highLimits)
+    private static void helper(double mass, SearchParams params, TIntArrayList lowLimits, TIntArrayList highLimits)
     {
 
         double acc = params.getPrecursorTolerance()/1000000.0f;
