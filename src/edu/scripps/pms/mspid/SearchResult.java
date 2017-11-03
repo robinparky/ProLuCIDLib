@@ -39,6 +39,7 @@ public class SearchResult {
     private final int minNumPeaksMatched;
     private final int minPeptideLength;
     private int chargeState;
+    private String ms2Name;
     //private final int effectChargeState; // chargeState of ppl
     private ProcessedPeakList ppl;
     private SearchParams params;
@@ -225,7 +226,8 @@ for(int i = 0; i < freq.length; i++) {
         result.append(DELIMITER);
         result.append(sph.getScanLow());
         result.append(DELIMITER);
-        result.append(sph.getMs2Filename());
+        String name = sph.isDecoy()? ("Decoy "+sph.getMs2Filename()) : sph.getMs2Filename();
+        result.append(name);
         result.append("\n"); // Validation state
 
 
@@ -305,7 +307,8 @@ for(int i = 0; i < freq.length; i++) {
         result.append(fourDigits.format(ppl.getPTrue())); // for ptrue 
         result.append(DELIMITER);
         result.append(numPeptidesMatched);
-
+        result.append(DELIMITER);
+        result.append(ms2Name);
 
 
 
@@ -765,4 +768,11 @@ for(int i = 0; i < freq.length; i++) {
         return NUMFINALRESULT;
     }
 
+    public String getMs2Name() {
+        return ms2Name;
+    }
+
+    public void setMs2Name(String ms2Name) {
+        this.ms2Name = ms2Name;
+    }
 }

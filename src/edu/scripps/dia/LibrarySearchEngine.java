@@ -149,6 +149,44 @@ public class LibrarySearchEngine {
                     }
 
                 }
+                 highLimits = new TIntArrayList();
+                 lowLimits = new TIntArrayList();
+                MassRangeFinder.findRange(prcMass+LibrarySearch.DECOY_DIFF, params, lowLimits, highLimits);
+                for (int i = 0; i < highLimits.size(); i++) {
+                    int high = highLimits.get(i);
+                    int low = lowLimits.get(i);
+                    if(low<startRange || high>endRange ) continue;
+                    int massLow = massIndex[zline.getChargeState()][low-startRange];
+                    int massHigh = massIndex[zline.getChargeState()][high-startRange];
+                    // System.out.println("low "+massLow+" high "+massHigh);
+
+                    for(int j=massLow; j<massHigh; j++)
+                    {
+                        if(set.contains(j)){
+                            continue;
+                        }
+                        set.add(j);
+                        ProcessedPeakList ppl2 =libraryPeakListTable[zline.getChargeState()].get(j);
+                        //ProcessedPeakList ppl2 = new ProcessedPeakList(pl,pl.getZlines().next(),params,mc,true);
+                        PeakList pl = ppl2.getPeakList();
+                        sph= ppl.prelimScoreCorrelation(ppl2);
+                        sph.setIsDecoy(true);
+                        // sph = ppl.prelimScoreCorrelation(pl);
+                        //  System.out.println(pl.getLoscan()+"\t"+sph.getPScore());
+                        sph.setMs2CompareValues(pl.getHiscan(),pl.getLoscan(), pl.getFilename());
+                        if(sph.getPScore()<worseScore || sphQueue.size()<params.getCandidatePeptideThreshold())
+                        {
+                            sphQueue.add(sph);
+                            if(sphQueue.size()>params.getCandidatePeptideThreshold())
+                            {
+                                sphQueue.poll();
+                            }
+                            worseScore = sphQueue.peek().getPrimaryScore();
+                        }
+                    }
+
+                }
+
                 List<ScoredPeptideHit> sphList = new ArrayList<>(sphQueue);
                 int size = sphList.size()<NUMFINALRESULT?sphList.size():NUMFINALRESULT;
                 searchResult.setPrelimScoreHits(sphList.subList(0,size));
@@ -251,13 +289,13 @@ public class LibrarySearchEngine {
            if(massloc>=endRange || massloc < startRange) continue;
            if(libraryPeakListTable[z]==null)
            {
-               System.out.println(">>> cs "+z);
+            //   System.out.println(">>> cs "+z);
                libraryPeakListTable[z] = new ArrayList<>();
                massIndex[z] = new int[endRange - startRange];
            }
            ProcessedPeakList ppl = new ProcessedPeakList(peakList,peakList.getZlines().next(),params,mc,true);
            libraryPeakListTable[z].add(ppl);
-           System.out.println(">>> "+z+"\t"+massLocation+"\t"+mass);
+       //    System.out.println(">>> "+z+"\t"+massLocation+"\t"+mass);
            massIndex[z][massLocation]++;
         }
         fillIndex();

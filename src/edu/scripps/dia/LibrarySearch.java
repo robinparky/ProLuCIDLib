@@ -20,7 +20,7 @@ import java.util.*;
  * Created by yateslab on 10/12/17.
  */
 public class LibrarySearch {
-    public static final double decoyDiff = 50.0;
+    public static final double DECOY_DIFF = 50.0;
 
     public static void simpleSearch(String [] args) throws Exception {
         String ms2Path = args[0];
@@ -85,11 +85,13 @@ public class LibrarySearch {
                             for (Iterator<Zline> it = peakList.getZlines(); it.hasNext(); ) {
                                 Zline zline = it.next();
                                 SearchResult r = clse.search(peakList,zline);
+                                r.setMs2Name(msName);
                                 bw.write(r.outputResults());
                                 //bw.newLine();
                             }
                         }
                         bw.close();
+                        System.out.println("written to: "+output);
                         clse.clear();
                     }
                 }
