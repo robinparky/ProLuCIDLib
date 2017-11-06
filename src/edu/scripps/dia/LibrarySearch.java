@@ -54,7 +54,7 @@ public class LibrarySearch {
        // String output = args[3];
         File libDirectory= new File(libraryPath);
         File ms2Directory = new File(ms2Path);
-
+        List<SearchResult> srList = new ArrayList<>();
 
         String[] libArray = libDirectory.list();
         String[] ms2Array = ms2Directory.list();
@@ -86,7 +86,15 @@ public class LibrarySearch {
                                 Zline zline = it.next();
                                 SearchResult r = clse.search(peakList,zline);
                                 r.setMs2Name(msName);
-                                bw.write(r.outputResults());
+                                srList.add(r);
+                                if(srList.size()%100==0)
+                                {
+                                    for(SearchResult sr: srList)
+                                    {
+                                        bw.write(sr.outputResults());
+                                    }
+                                    srList = new ArrayList<>();
+                                }
                                 //bw.newLine();
                             }
                         }

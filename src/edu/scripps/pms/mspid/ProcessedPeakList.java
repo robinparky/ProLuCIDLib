@@ -388,7 +388,7 @@ for(Peak p : theorPeaks) {
               if(mybools[j]) numPeaksMatched++;
             }
         }
-        peakList.dumpBoolMass();
+        //peakList.dumpBoolMass();
         //this.dumpBoolMass();
         double probability = DistributionCalculator.getBinomialSum(this.getPTrue(), numTheroticPeaks, numPeaksMatched);
         ScoredPeptideHit sph = new ScoredPeptideHit(probability);

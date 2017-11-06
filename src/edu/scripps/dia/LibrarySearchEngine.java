@@ -122,7 +122,7 @@ public class LibrarySearchEngine {
                     int low = lowLimits.get(i);
                     int massLow = massIndex[zline.getChargeState()][low-startRange];
                     int massHigh = massIndex[zline.getChargeState()][high-startRange];
-                   // System.out.println("low "+massLow+" high "+massHigh);
+                  //  System.out.println("low "+massLow+" high "+massHigh);
 
                     for(int j=massLow; j<massHigh; j++)
                     {
@@ -186,6 +186,8 @@ public class LibrarySearchEngine {
                     }
 
                 }
+
+                ppl.dumpBoolMass();
 
                 List<ScoredPeptideHit> sphList = new ArrayList<>(sphQueue);
                 int size = sphList.size()<NUMFINALRESULT?sphList.size():NUMFINALRESULT;
@@ -277,10 +279,11 @@ public class LibrarySearchEngine {
 
     public void readMS2TargetFile(String ms2FilePath) throws IOException {
         SpectrumReader reader = new SpectrumReader(ms2FilePath,"ms2");
-        List<PeakList> plList = reader.getSpectraList();
-        reader.closeDataFile();
-        for(PeakList peakList:plList )
+       // List<PeakList> plList = reader.getSpectraList();
+        for(Iterator<PeakList> pItr = reader.getSpectra(); pItr.hasNext(); )
         {
+            PeakList peakList = pItr.next();
+
            int z=  peakList.getFirstChargeState();
            peakList.setFilename(ms2FilePath);
            double mass = peakList.getZlines().next().getM2z();
@@ -298,6 +301,8 @@ public class LibrarySearchEngine {
        //    System.out.println(">>> "+z+"\t"+massLocation+"\t"+mass);
            massIndex[z][massLocation]++;
         }
+        reader.closeDataFile();
+
         fillIndex();
         sortTargetSpectra();
 
