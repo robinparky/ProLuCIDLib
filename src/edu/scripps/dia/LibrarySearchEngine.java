@@ -296,7 +296,7 @@ public class LibrarySearchEngine {
                libraryPeakListTable[z] = new ArrayList<>();
                massIndex[z] = new int[endRange - startRange];
            }
-           ProcessedPeakList ppl = new ProcessedPeakList(peakList,peakList.getZlines().next(),params,mc,true);
+           ProcessedPeakList ppl = new ProcessedPeakList(peakList,peakList.getZlines().next(),params,mc,false);
            libraryPeakListTable[z].add(ppl);
        //    System.out.println(">>> "+z+"\t"+massLocation+"\t"+mass);
            massIndex[z][massLocation]++;
@@ -460,6 +460,10 @@ public class LibrarySearchEngine {
         this.startRange = startrange;
         this.endRange = endrange;
         br.close();
+    }
+    public edu.scripps.pms.mspid.SearchParams getSearchParams()
+    {
+        return params;
     }
 
 }

@@ -25,10 +25,13 @@ public class LibrarySearch {
     public static void simpleSearch(String [] args) throws Exception {
         String ms2Path = args[0];
         String paramsPath = args[1];
-        String libraryPath = args[2];
-        String output = args[3];
+
         LibrarySearchEngine clse = new LibrarySearchEngine(ms2Path, paramsPath);
         clse.calcRange();
+        SearchParams params = clse.getSearchParams();
+        String libraryPath = params.getDatabaseName();
+        String path = ms2Path.substring(0,ms2Path.lastIndexOf("."));
+        String output = path+"_"+libraryPath.substring(0,libraryPath.lastIndexOf("."))+".sqt";
         //clse.readMS2TargetFile(libraryPath);
         clse.readMs2TargetDirectory(libraryPath);
       //  List<SearchResult> results = new ArrayList<>();
@@ -50,47 +53,53 @@ public class LibrarySearch {
     public static void rangedSearched(String [] args) throws Exception {
         String ms2Path = args[0];
         String paramsPath = args[1];
-        String libraryPath = args[2];
+        SearchParams sp = new SearchParams(paramsPath);
+        String libraryPath = sp.getDatabaseName();
        // String output = args[3];
         File libDirectory= new File(libraryPath);
         File ms2Directory = new File(ms2Path);
+        String[] ms2Array = ms2Directory.list();
+        String ms2DirectoryStr = ms2Path;
+
+        if(ms2Directory.isFile())
+        {
+            ms2DirectoryStr = ms2Directory.getAbsoluteFile().getParent();
+            ms2Array = new String[]{ms2Directory.getName()};
+        }
         List<SearchResult> srList = new ArrayList<>();
 
         String[] libArray = libDirectory.list();
-        String[] ms2Array = ms2Directory.list();
         for(String ms2Files: ms2Array)
         {
             if(ms2Files.endsWith("ms2"))
             {
-                String msPath = ms2Directory+File.separator+ms2Files;
+                String msPath = ms2DirectoryStr+File.separator+ms2Files;
                 String msName = ms2Files.substring(0,ms2Files.lastIndexOf('.'));
                 LibrarySearchEngine clse = new LibrarySearchEngine(msPath, paramsPath);
                 clse.calcRange();
 
                 for(String libFiles: libArray)
                 {
-                    int index = libFiles.lastIndexOf(".");
-                    String output = ms2Path+File.separator+msName+"_"+libFiles.substring(0,index)+".sqt";
-                    String libPath = libraryPath+File.separator+libFiles;
 
                     if(libFiles.endsWith("ms2"))
                     {
+                        int index = libFiles.lastIndexOf(".");
+                        String output = ms2DirectoryStr+File.separator+msName+"_"+libFiles.substring(0,index)+".sqt";
+                        System.out.println(output);
+                        String libPath = libraryPath+File.separator+libFiles;
                         clse.readMS2TargetFile(libPath);
                         System.out.println("searching: "+libFiles);
                         List<PeakList> peakLists = clse.getPeakLists();
                         BufferedWriter bw = new BufferedWriter(new FileWriter(output));
 
-                        for(PeakList peakList: peakLists)
-                        {
+                        for(PeakList peakList: peakLists) {
                             for (Iterator<Zline> it = peakList.getZlines(); it.hasNext(); ) {
                                 Zline zline = it.next();
-                                SearchResult r = clse.search(peakList,zline);
+                                SearchResult r = clse.search(peakList, zline);
                                 r.setMs2Name(msName);
                                 srList.add(r);
-                                if(srList.size()%100==0)
-                                {
-                                    for(SearchResult sr: srList)
-                                    {
+                                if (srList.size() % 100 == 0) {
+                                    for (SearchResult sr : srList) {
                                         bw.write(sr.outputResults());
                                     }
                                     srList = new ArrayList<>();
@@ -111,7 +120,7 @@ public class LibrarySearch {
 
     public static void main(String[] args) throws Exception {
         rangedSearched(args);
-        // simpleSearch(args);
+         //simpleSearch(args);
         //inverseSearch(args);
     }
 
