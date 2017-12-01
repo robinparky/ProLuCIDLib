@@ -69,12 +69,13 @@ public class LibrarySearch {
 
                 for(String libFiles: libArray)
                 {
-                    int index = libFiles.lastIndexOf(".");
-                    String output = ms2Path+File.separator+msName+"_"+libFiles.substring(0,index)+".sqt";
-                    String libPath = libraryPath+File.separator+libFiles;
+
 
                     if(libFiles.endsWith("ms2"))
                     {
+                        int index = libFiles.lastIndexOf(".");
+                        String output = ms2Path+File.separator+msName+"_"+libFiles.substring(0,index)+".sqt";
+                        String libPath = libraryPath+File.separator+libFiles;
                         clse.readMS2TargetFile(libPath);
                         System.out.println("searching: "+libFiles);
                         List<PeakList> peakLists = clse.getPeakLists();
