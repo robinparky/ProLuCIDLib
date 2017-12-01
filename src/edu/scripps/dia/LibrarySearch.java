@@ -81,9 +81,11 @@ public class LibrarySearch {
                 for(String libFiles: libArray)
                 {
 
+
                     if(libFiles.endsWith("ms2"))
                     {
                         int index = libFiles.lastIndexOf(".");
+
                         String output = ms2DirectoryStr+File.separator+msName+"_"+libFiles.substring(0,index)+".sqt";
                         System.out.println(output);
                         String libPath = libraryPath+File.separator+libFiles;
