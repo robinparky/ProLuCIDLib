@@ -461,5 +461,9 @@ public class LibrarySearchEngine {
         this.endRange = endrange;
         br.close();
     }
+    public edu.scripps.pms.mspid.SearchParams getSearchParams()
+    {
+        return params;
+    }
 
 }
