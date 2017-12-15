@@ -34,6 +34,9 @@ public class LibrarySearchEngine {
     private int endRange;
     private boolean useSQLite = false;
     private static DistributionCalculator dc;
+    private int searchCount =0;
+    private Set<ProcessedPeakList> cache = new HashSet<>();
+    private PeakCache pplCache = new PeakCache();
 
     public static void main(String[] args) throws Exception {
         String ms2Path = args[0];
@@ -98,11 +101,12 @@ public class LibrarySearchEngine {
 
     public SearchResult search(PeakList peakList, Zline zline) throws SQLException {
         int numPeaks = peakList.numPeaks();
+        searchCount ++;
         PriorityQueue<ScoredPeptideHit> sphQueue = new PriorityQueue<>(new ScoredPeptideHitComparator());
         TIntHashSet set = new TIntHashSet();
         double worseScore = Double.MAX_VALUE;
         int z= zline.getChargeState();
-        ProcessedPeakList ppl = new ProcessedPeakList(peakList, zline, params, mc, true);
+        ProcessedPeakList ppl = new ProcessedPeakList(peakList, zline, params, mc);
 
         SearchResult searchResult = new SearchResult(ppl);
        // System.out.println(peakList.getLoscan());
@@ -134,6 +138,9 @@ public class LibrarySearchEngine {
                         //ProcessedPeakList ppl2 = new ProcessedPeakList(pl,pl.getZlines().next(),params,mc,true);
                         PeakList pl = ppl2.getPeakList();
                         sph= ppl.prelimScoreCorrelation(ppl2);
+                        //cache.add(ppl2);
+                        pplCache.put(ppl.getID(),ppl);
+                      //  System.out.println("<<<size " +ppl2.getMassSet().size());
                         // sph = ppl.prelimScoreCorrelation(pl);
                       //  System.out.println(pl.getLoscan()+"\t"+sph.getPScore());
                          sph.setMs2CompareValues(pl.getHiscan(),pl.getLoscan(), pl.getFilename());
@@ -183,11 +190,15 @@ public class LibrarySearchEngine {
                             }
                             worseScore = sphQueue.peek().getPrimaryScore();
                         }
+                        //cache.add(ppl2);
+                        pplCache.put(ppl.getID(),ppl);
+
                     }
 
                 }
 
                 ppl.dumpBoolMass();
+
 
                 List<ScoredPeptideHit> sphList = new ArrayList<>(sphQueue);
                 int size = sphList.size()<NUMFINALRESULT?sphList.size():NUMFINALRESULT;
@@ -196,7 +207,20 @@ public class LibrarySearchEngine {
         }
        // System.out.println();
         //searchResult.setFinalResultsForPrelimScores();
+        //System.out.println(">>>>cache size is "+cache.size());
+        if(cache.size() >5_000)
+        {
+          //  System.out.println("Dumping");
+            for(ProcessedPeakList pl:cache)
+            {
+                pl.dumpBoolMass();
+            }
 
+
+
+            cache = new HashSet<>();
+            searchCount =0;
+        }
         return searchResult;
     }
 
@@ -296,7 +320,7 @@ public class LibrarySearchEngine {
                libraryPeakListTable[z] = new ArrayList<>();
                massIndex[z] = new int[endRange - startRange];
            }
-           ProcessedPeakList ppl = new ProcessedPeakList(peakList,peakList.getZlines().next(),params,mc,false);
+           ProcessedPeakList ppl = new ProcessedPeakList(peakList,peakList.getZlines().next(),params,mc);
            libraryPeakListTable[z].add(ppl);
        //    System.out.println(">>> "+z+"\t"+massLocation+"\t"+mass);
            massIndex[z][massLocation]++;

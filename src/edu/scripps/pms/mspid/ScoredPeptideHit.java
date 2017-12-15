@@ -23,6 +23,9 @@ public class ScoredPeptideHit implements Comparable<ScoredPeptideHit> {
     private int pScoreRank;
     private LinkedList<PeptideHit> hits = new LinkedList<PeptideHit>();
     private String sequence;
+    private double prcMass;
+    private double rSqaured;
+    private double retTime;
 
     private boolean isDecoy = false;
     private int scanHi;
@@ -223,5 +226,31 @@ public class ScoredPeptideHit implements Comparable<ScoredPeptideHit> {
     public boolean isDecoy()
     {
         return  isDecoy;
+    }
+
+    public double getPrcMass()
+    {
+        return prcMass;
+    }
+
+    public void setPrcMass(double prcMass)
+    {
+        this.prcMass = prcMass;
+    }
+
+    public double getrSqaured() {
+        return rSqaured;
+    }
+
+    public void setrSqaured(double rSqaured) {
+        this.rSqaured = rSqaured;
+    }
+
+    public double getRetTime() {
+        return retTime;
+    }
+
+    public void setRetTime(double retTime) {
+        this.retTime = retTime;
     }
 }

@@ -27,6 +27,7 @@ public class SearchResult {
     public static int NUMSCORED;
     private static int NUMFINALRESULT = 5;
     private static final char DELIMITER = '\t';
+    private double retTime;
     //private LinkedList<PeptideHit> hits = new LinkedList<PeptideHit>(); 
     private ArrayList<PeptideHit> hits;
     private List<ScoredPeptideHit> scoredHits;
@@ -226,7 +227,13 @@ for(int i = 0; i < freq.length; i++) {
         result.append(DELIMITER);
         result.append(sph.getScanLow());
         result.append(DELIMITER);
-        String name = sph.isDecoy()? ("Decoy "+sph.getMs2Filename()) : sph.getMs2Filename();
+        result.append(sph.getPrcMass());
+        result.append(DELIMITER);
+        result.append(sph.getrSqaured());
+        result.append(DELIMITER);
+        result.append(sph.getRetTime());
+        result.append(DELIMITER);
+        String name = sph.isDecoy()? ("Decoy\t"+sph.getMs2Filename()) :("\t"+sph.getMs2Filename());
         result.append(name);
         result.append("\n"); // Validation state
 
@@ -239,48 +246,11 @@ for(int i = 0; i < freq.length; i++) {
         // Format of M line:
         // "M\tRankByXcorr\tRankBySp\tCalculatedMass\tDeltaCN\tXcorr\t
         // Sp\tNumMatchedIons\tNumExpectedIons\tPeptideSequence\tValidateState\n"
-        if(!sph.hasPeptide())
-        {
+
             appendMLineSpectraComparison(result,sph);
             return;
-        }
-        if (sph == null) return; 
-        result.append("M");
-        result.append(DELIMITER);
-        result.append(sph.getPrimaryRank());
-        result.append(DELIMITER);
-        result.append(sph.getSecondaryRank());
-        result.append(DELIMITER);
-        result.append(fiveDigits.format(sph.getTheorMass()));
-        result.append(DELIMITER);
-        result.append(fourDigits.format(getDeltaCn(sph))); //deltaCn 
-        result.append(DELIMITER);
-        result.append(fourDigits.format(sph.getPrimaryScore())); // XCorr
-        result.append(DELIMITER);
-        //result.append(threeDigits.format(sph.getSecondaryScore())); // XCorr
-        result.append(sph.getSecondaryScore()); // for probablity scores, cannot use format 
-        result.append(DELIMITER);
-        result.append(sph.getNumPeaksMatched()); //numPeaksMatched 
-        result.append(DELIMITER);
-        result.append(sph.getNumPeaks()); //numPeaks
-        result.append(DELIMITER);
-        result.append(sph.getExtendedSequence()); // Peptide sequence
-        result.append(DELIMITER);
 
-        result.append("U\n"); // Validation state
 
-        int locusType = params.getLocusType(); 
-        //append Llines 
-        for(PeptideHit p : sph.getPeptideHits()) {
-            List<String> defList = p.getDefList();
-            for(Iterator<String> itr = defList.iterator(); itr.hasNext(); ) {
-                String eachDef = itr.next();
-
-                result.append("L\t").append(eachDef).append("\t")
-                        .append(p.getStart()).append("\t")
-                        .append(p.getExtraExtendedSequence()).append("\n");
-            }
-        }
 
     }
     private void appendSline(StringBuffer result) {
@@ -307,6 +277,8 @@ for(int i = 0; i < freq.length; i++) {
         result.append(fourDigits.format(ppl.getPTrue())); // for ptrue 
         result.append(DELIMITER);
         result.append(numPeptidesMatched);
+        result.append(DELIMITER);
+        result.append(ppl.getPeakList().getRetentionTime());
         result.append(DELIMITER);
         result.append(ms2Name);
 
@@ -774,5 +746,13 @@ for(int i = 0; i < freq.length; i++) {
 
     public void setMs2Name(String ms2Name) {
         this.ms2Name = ms2Name;
+    }
+
+    public double getRetTime() {
+        return retTime;
+    }
+
+    public void setRetTime(double retTime) {
+        this.retTime = retTime;
     }
 }

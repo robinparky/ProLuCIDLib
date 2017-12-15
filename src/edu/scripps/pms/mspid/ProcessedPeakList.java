@@ -8,6 +8,8 @@ package edu.scripps.pms.mspid;
 
 import edu.scripps.pms.util.TimeUtils;
 import edu.scripps.pms.util.spectrum.*;
+import gnu.trove.*;
+import org.apache.commons.math3.stat.regression.SimpleRegression;
 
 import java.io.*;
 import java.util.*;
@@ -22,6 +24,8 @@ public class ProcessedPeakList {
     //public static final int MAXNUMPEAKS = 80000;
     public static final int PRECISIONFACTOR = 1000; // for sp process
     public static final int ACCURACYFACTOR = 1;  // for XCorr
+    private static int ID_SEED=0;
+    private int id ;
     
     protected PeakList peakList;
     protected ArrayList<Peak> peaks;
@@ -33,6 +37,9 @@ public class ProcessedPeakList {
     // as exp_intensity in pep_prob
     //protected boolean [] boolMasses = new boolean[MAXNUMPEAKS]; // boolean representation of masses
     protected boolean [] boolMasses; // = new boolean[MAXNUMPEAKS]; // boolean representation of masses
+    protected TIntHashSet massSet;
+    protected TIntIntHashMap massPeakIdMap;
+
 //    protected int numPeaks; 
     protected double cutoff = 0.06;
     //protected int lowestM2z; 
@@ -77,6 +84,7 @@ public class ProcessedPeakList {
     protected double nTermDbinwidthStart;
 
     protected boolean isEtd;
+    private List<Peak> topPeaks ;
 //    protected List<SearchResult> searchResults = new ArrayList();
 
 //    public abstract int calcNumPeaksMatched (PeptideHit p);
@@ -110,12 +118,13 @@ public class ProcessedPeakList {
     }
 
 
-    public ProcessedPeakList(PeakList peaklist, Zline z, SearchParams sp, MassCalculator mc, boolean preprocess) {
-        init(peaklist,z,sp,mc,preprocess);
+    public ProcessedPeakList(PeakList peaklist, Zline z, SearchParams sp, MassCalculator mc) {
+        init(peaklist,z,sp,mc);
     }
 
-    private void init(PeakList peaklist, Zline z, SearchParams sp, MassCalculator mc, boolean preprocess)
+    private void init(PeakList peaklist, Zline z, SearchParams sp, MassCalculator mc)
     {
+        id = ID_SEED++;
         this.peakList = peaklist;
         this.mc = mc;
         zline = z;
@@ -174,10 +183,7 @@ public class ProcessedPeakList {
         }
         globMax = maxTransformedInten * cutoff;
         globMax = globMax > 2? globMax : 2;  // this does not work well with orbtrap data
-        if(preprocess){
-            preprocess(sp.getPreprocess());
-    //        buildExpMass();
-        }
+
     }
 
     public double getPrecursorMass() {
@@ -275,101 +281,10 @@ public class ProcessedPeakList {
         moreSumProduct *= 2;
         return sumProduct - (moreSumProduct)/151.f;
     }
-    
-    //public abstract void correlation(ScoredPeptideHit s);
-    public void correlation(ScoredPeptideHit s) {
-        int theorMass[] = s.getTheorMasses();
-       // System.out.println(s.getSequence() + " cs "+this.getChargeState());
 
-      /*  if(s.isModified())
-        {
-            DiffMod [] diffs = s.getDiffMods();
-            Modifications mods = s.getModifications();
-            double cterm = mods.getDiffCTermMod();
-            double nterm = mods.getDiffNTermMod();
-            System.out.println("CTerm is "+cterm);
-            System.out.println("Nterm is "+nterm);
-            if(diffs!=null)
-            {
-                System.out.println("DbinwidthMassShift");
-
-                for(DiffMod diff: diffs)
-                {
-                    if(diff==null ) System.out.print(" 0 ");
-                    else System.out.print(" " +diff.getDbinwidthMassShift() +" ");
-
-                }
-                System.out.println();
-                System.out.println("DbinwidthNeutralLoss");
-                for(DiffMod diff: diffs)
-                {
-
-                    if(diff==null ) System.out.print(" 0 ");
-                    else System.out.print(" "+diff.getDbinwidthNeutralLoss()+" ");
-                }
-                System.out.println();
-            }
-        }*/
-       /* TheoreticalPeaks tp = new TheoreticalPeaks(getSearchParams(),getMassCalculator());
-        int theorMass2[] = tp.calcTheoreticalPeaks(this,s.getSequence().getBytes(),s.getPeptideHits().get(0).isModified());
-        System.out.println(Arrays.toString(theorMass));
-        System.out.println(Arrays.toString(theorMass2));
-        for(int i=0; i<theorMass.length;i++)
-        {
-            if(theorMass[i]!=theorMass2[i])
-            {
-                System.out.println("not same");
-                break;
-            }
-        }*/
-        ArrayList<Peak> theorPeaks = new ArrayList<Peak>(200);
-
-        int maxIndex = massCorr.length - 75;
-        for(int i = 0; i < theorMass.length; i++) {
-            if(theorMass[i] > 0 && i > 75 && i < maxIndex) {
-                theorPeaks.add(new Peak(i, theorMass[i]));
-            }
-        }
-
-
-
-/*
-System.out.println("massCorr");
-for(int i = 0; i < massCorr.length; i++) {
-    if(massCorr[i] > 0) {
-        System.out.println(i + "\t" + massCorr[i]);
-    }
-}
-System.out.println("thereomasses");
-for(Peak p : theorPeaks) { 
-    int mass = (int)p.getM2z()*ACCURACYFACTOR;
-    double intensity = p.getIntensity();
-
-    System.out.println(mass + "\t" + intensity);
-}
-*/
-        double sumProduct = 0;
-        double moreSumProduct = 0; 
-        double newMoreSumProduct = 0; 
-        for(Peak p : theorPeaks) {
-            int mass = (int)p.getM2z()*ACCURACYFACTOR;
-            double intensity = p.getIntensity();
-            sumProduct += massCorr[mass]*intensity;
-            newMoreSumProduct += massSum[mass]*intensity;
-//            for(int i = 1; i <= 75; i++) {
-//                moreSumProduct += intensity*massCorr[mass+i]; 
-//                moreSumProduct += intensity*massCorr[mass-i]; 
-//            }
-           
-        }
-
-        //double xcorr = (0.993377483f*sumProduct - moreSumProduct/151)/10000;
-        double xcorr = (0.993377483f*sumProduct - newMoreSumProduct/151)/10000;
-        xcorr = xcorr < 0.00001? 0.00001f : xcorr;
-
- 
-        s.setXCorr(xcorr);
-        //s.setScore(xcorr);
+    public TIntIntHashMap getMassPeakIdMap() {
+        if(massPeakIdMap ==null) xcorrPreprocess();
+        return massPeakIdMap;
     }
 
     public ScoredPeptideHit prelimScoreCorrelation(ProcessedPeakList peakList)
@@ -377,20 +292,69 @@ for(Peak p : theorPeaks) {
         int numTheroticPeaks =0;
         int numPeaksMatched =0;
         int i=0;
-        boolean [] boolMass = peakList.getBoolMasses();
-        boolean [] mybools = this.getBoolMasses();
-        for(int j=firstTrue; j<lastTrue; j++)
+        SimpleRegression sr = new SimpleRegression();
+       // boolean [] boolMass = peakList.getBoolMasses();
+       // boolean [] mybools = this.getBoolMasses();
+
+        //TIntHashSet altSet = peakList.getMassSet();
+        //TIntHashSet mySet = this.getMassSet();
+
+        List<Peak> peaks = getIntensPeaks(params.getPeakRankThreshold());
+        TIntIntHashMap altMap = peakList.getMassPeakIdMap();
+        TIntIntHashMap myMap = getMassPeakIdMap();
+        TIntHashSet idSet = new TIntHashSet();
+
+        numTheroticPeaks = altMap.size();
+        for(TIntIntIterator titr = myMap.iterator(); titr.hasNext(); )
+        {
+            titr.advance();
+            int mass = titr.key();
+            int id = titr.value();
+            if(altMap.containsKey(mass))
+            {
+                numPeaksMatched++;
+                if(!idSet.contains(id))
+                {
+                    double myIntensity = getIntensityFromTopPeak(id);
+                    int altID = altMap.get(mass);
+                    double altIntenisty = peakList.getIntensityFromTopPeak(altID);
+                    sr.addData(myIntensity,altIntenisty);
+                    idSet.add(id);
+                }
+            }
+
+        }
+
+
+     /*   numTheroticPeaks = peakList.getTopPeaksSize();
+        for(Peak p: peaks)
+        {
+            int mass  = (int)(p.getM2z() *PRECISIONFACTOR+ 0.5f);
+            if(altMap.containsKey(mass))
+            {
+                int altPeakID = altMap.get(mass);
+              //  System.out.println("+++"+altPeakID);
+                double intensity =peakList.getIntensityFromTopPeak(altPeakID);
+                sr.addData(p.getIntensity(),intensity);
+                numPeaksMatched++;
+            }
+        }*/
+
+        /*for(int j=firstTrue; j<lastTrue; j++)
         {
             if(boolMass[j] )
             {
                 numTheroticPeaks++;
               if(mybools[j]) numPeaksMatched++;
             }
-        }
+        }*/
         //peakList.dumpBoolMass();
         //this.dumpBoolMass();
-        double probability = DistributionCalculator.getBinomialSum(this.getPTrue(), numTheroticPeaks, numPeaksMatched);
+        double probability = DistributionCalculator.getBinomialSum(peakList.getPTrue(), numTheroticPeaks, numPeaksMatched);
         ScoredPeptideHit sph = new ScoredPeptideHit(probability);
+        sph.setPrcMass(peakList.prcMass);
+        sph.setrSqaured(sr.getRSquare());
+        sph.setRetTime(peakList.getPeakList().getRetentionTime());
         return sph;
     }
 
@@ -477,135 +441,72 @@ for(Peak p : theorPeaks) {
         return sum/(double) Math.log(2.0f);
 
     }
-    public double [] getMassCorr() {
-        return massCorr;
-    }
-    protected boolean isInPrecursorRange(ArrayList<Range> ranges, double mz) {
-        for(Iterator<Range> it = ranges.iterator(); it.hasNext();) {
-            Range r = it.next();
-            if(r.isInRange(mz)) {
-                return true;
-            }
-        }
-        return false;
-    }
-    public void buildExpMass() {
-        //double prcMass = peaks.getPrecursorMass(); // precursor massa
-        double maxMass = prcMass*ACCURACYFACTOR; // zline.getM2z(); //peaks.getPrecursorMass();//getMaxM2z() + 50; // ftemp in BUILD_EXP in pepprobe
-        int highestIndex = 0;
-        double maxIntensity = 0f;
-        ArrayList<Range> precursorRanges = peakList.getPrecursorRanges(zline);
-//for(Range r : precursorRanges) {
-//System.out.println("Low: " + r.getLowBound() + "\thigh " + r.getHighBound());
-//}
-        for(Peak p : peaks) {
-            if(isInPrecursorRange(precursorRanges, p.getM2z())) {
-//System.out.println(p.getM2z() + "\t intensity: " + p.getIntensity());
-                continue;
-            }
-            double m2zF = p.getM2z()*ACCURACYFACTOR;
-            if(m2zF < prcMass*ACCURACYFACTOR) {
-                int m2z = (int)(m2zF* MassSpecConstants.DBINWIDTH + 0.5f);
-                double intensity = (double) Math.sqrt((int)p.getIntensity());
-                if(massCorr[m2z] < intensity) {
-                    massCorr[m2z] = intensity;
-                    if(intensity > maxIntensity) {
-                        maxIntensity = intensity;
-                    }
-                }
-            }
-            
-        }
-        double overAll = 0f;
-        double tempIntens[] = new double[massCorr.length]; // mass_temp
-        
-        for(int i = 0; i < massCorr.length; i++) {
-            if(massCorr[i] != 0) {
-                tempIntens[i] = massCorr[i]*100.f/maxIntensity; // adjust all intensity to [0, 100]
-                if(tempIntens[i] > overAll) {
-                    overAll = tempIntens[i]; // junck code? overAll == 100??
-                }
-                massCorr[i] = 0;
-            }
-        }
-        
-        int win = 10;
-        //int winSize = (int)(peaks.getMaxM2z()*MassSpecConstants.DBINWIDTH + 0.5)/win; 
-        int winSize = (int)(prcMass* MassSpecConstants.DBINWIDTH*ACCURACYFACTOR + 0.5)/win;
-        overAll *= 0.05f; // make overAll == 5
 
-        for(int i = 0; i < win; i++) {
-            double max = 0;
-            for(int j = 0; j < winSize; j++) {
-                int index = i*winSize + j;
-                if(tempIntens[index] > max) {
-                    max = tempIntens[index];
-                }
-            }
-            for(int j = 0; j < winSize; j++) {
-                int index = i*winSize + j;
-                if(tempIntens[index] > overAll) {
-                    //peaks with tempIntens < 5 will be ignored, i.e, peaks 
-                    // with original intensity <  25 will be ignored
-                    massCorr[index] = tempIntens[index]*50/max; // make all peaks to [2.5, 50]
-                }
-            }
-        }
-       /* 
-        int numNone0 = 0;
-        double min = 1000;
-        for(int i = 0; i< massCorr.length; i++) {
-          
-            if(massCorr[i] > 0) {
-                System.out.println(i + "\t" + massCorr[i]);
-                if(massCorr[i] < min) {
-                    min = massCorr[i];
-                }
-                numNone0++;
-            }
-        }   
-        System.out.println("Num None 0 massCorr peaks: " + numNone0 + "\tmin: " + min);
-       */
 
-        int numBins = massCorr.length - 1;
-        for(int i = 0; i < numBins; i++) {
-            int left = i - 75;
-            int right = i + 75;
-            left = left < 0 ? 0 : left;
-            right = right > numBins ? numBins : right;
-            double intensitysum = 0;
-            for(int j = left; j < i; j++) {
-                intensitysum += massCorr[j];
-            }
-            for(int j = right; j > i; j--) {
-                intensitysum += massCorr[j];
-            }
-            massSum[i] = intensitysum;
-        }
-
-    }
     public void preprocess(int mode) {
         TimeUtils timer = new TimeUtils();
         //timer.startTiming();
         switch (mode) {
-            case DEFAULTPREPROCESS: defaultPreprocess();
-            break;
+
             case XCORRPREPROCESS: xcorrPreprocess();
                // writeLogFile();
             break;
-            case TOPDOWNPREPROCESS: topdownPreprocess();
-            break;
+
         }
         //System.out.print("Scan#: " + peakList.getLoscan() + "\t+" + zline.getChargeState() + "\tNumPeaks: " + peakList.numPeaks()+ "\tm2z: " + zline.getM2z() + "\tptrue: " + pTrue);
     }
 
-   
+    protected void shift(int indexShift, int intM2z, int id) {
+
+        int leftIndex = intM2z - indexShift;
+        int rightIndex = intM2z + indexShift;
+        //boolMasses[leftIndex] = true;
+        //boolMasses[rightIndex] = true;
+        ///massSet.add(leftIndex);
+        massPeakIdMap.put(leftIndex,id);
+        massPeakIdMap.put(rightIndex,id);
+
+        //massSet.add(rightIndex);
+        if(leftIndex<firstTrue)
+        {
+            firstTrue = leftIndex;
+        }
+        if(rightIndex>lastTrue)
+        {
+            lastTrue = rightIndex;
+        }
+
+/*        if (intensityVal[leftIndex] <= transformedIntensity) {
+            intensityVal[leftIndex] = transformedIntensity;
+        }
+
+        if (intensityVal[rightIndex] <= transformedIntensity) {
+            intensityVal[rightIndex] = transformedIntensity;
+        }*/
+    }
+
+
+
     protected void shift(int indexShift, int intM2z, double transformedIntensity) {
         
         int leftIndex = intM2z - indexShift;
         int rightIndex = intM2z + indexShift;
-        boolMasses[leftIndex] = true;
-        boolMasses[rightIndex] = true;
+        //boolMasses[leftIndex] = true;
+        //boolMasses[rightIndex] = true;
+        ///massSet.add(leftIndex);
+     //   massPeakIdMap.put(leftIndex,(float)transformedIntensity);
+     //   massPeakIdMap.put(rightIndex,(float)transformedIntensity);
+
+        //massSet.add(rightIndex);
+        if(leftIndex<firstTrue)
+        {
+            firstTrue = leftIndex;
+        }
+        if(rightIndex>lastTrue)
+        {
+            lastTrue = rightIndex;
+        }
+
 /*        if (intensityVal[leftIndex] <= transformedIntensity) {
             intensityVal[leftIndex] = transformedIntensity;
         } 
@@ -614,24 +515,7 @@ for(Peak p : theorPeaks) {
             intensityVal[rightIndex] = transformedIntensity;
         }*/
     }
-    protected void topdownPreprocess() {
-        List<Peak> intensPeaks = getIntensPeaks();
-        for (Peak p : intensPeaks) {
-            int intM2z = (int)(p.getM2z()*10 + 0.5);
-            int indexShift = maxShift;
-            double sqrtIntens = Math.sqrt(p.getIntensity());
-            
-            while (indexShift >= 0) {
-                double shiftProduct = indexShift*indexShift;
-                //double maxShiftProduct = maxShift*maxShift;
-                double tempIntens = sqrtIntens* Math.exp(-shiftProduct/2/maxShiftProduct);
-                shift(indexShift, intM2z, tempIntens);
-                indexShift--;
-            }
-        }
 
-        // entropy and BUILD_EXP_MASS goes here 
-    }
 
     public int getFinalNumPeaks() {
         return finalNumPeaks;
@@ -639,42 +523,49 @@ for(Peak p : theorPeaks) {
     protected void xcorrPreprocess() {
         //Iterator <Peak> peakIt = peaks.getPeaks();
         //Iterator <Peak> peakIt = getIntensPeaks(params.getPeakRankThreshold()).iterator();
-        //int counter = 0;
-        if(boolMasses == null) boolMasses = new boolean[(int) (prcMass+params.getMaxMassShift()+20.5)*PRECISIONFACTOR];
+      //  if(boolMasses == null) boolMasses = new boolean[(int) (prcMass+params.getMaxMassShift()+20.5)*PRECISIONFACTOR];
+        //if(massSet == null) massSet = new TIntHashSet();
+         //massSet = new TIntHashSet();
+        massPeakIdMap = new TIntIntHashMap();
         int myNumPeaks = 0;
         //while (peakIt.hasNext()) {
-        List<Peak> peaks = getIntensPeaks(params.getPeakRankThreshold());
+        if(topPeaks==null)
+         topPeaks = getIntensPeaks(params.getPeakRankThreshold());
         //printPeaksToLog(peaks);
-        for(Peak p : peaks) {
+        firstTrue = Integer.MAX_VALUE;
+        lastTrue = Integer.MIN_VALUE;
+        int peakID = 0;
+
+        for(Peak p : topPeaks) {
 
             //Peak p = peakIt.next();
             //int intM2z = (int) (10.f*p.getM2z()*MassSpecConstants.DBINWIDTH+0.5f);
             double m2z = p.getM2z();
             if(m2z < prcMass) {
                 int intM2z = (int) (PRECISIONFACTOR*m2z + 0.5f);
-                double sqrtIntens = Math.sqrt(p.getIntensity());
             //if (sqrtIntens > globMax) {
                 int indexShift = maxShift;
                 myNumPeaks++;
                 while (indexShift >= 0) {
-                    double shiftProduct = indexShift*indexShift;
                     //double maxShiftProduct = maxShift*maxShift;
                     // transformedInt as ftemp in PREPROCESS in pep_prob
-                    double transformedInt = (sqrtIntens* Math.exp(-shiftProduct/2/maxShiftProduct));
-                    int tempInt = (int)(100f*transformedInt/maxTransformedInten + 0.5f);
-                    shift(indexShift, intM2z, tempInt); 
+                    shift(indexShift, intM2z,peakID );
+
+                    //shift(indexShift, intM2z, p.getIntensity());
                     indexShift--;
                 }
+
             }
+            peakID++;
            // }
-           // counter++;
         }           
         //System.out.print("FNumPeaks: " + myNumPeaks + "\t");
         finalNumPeaks = myNumPeaks;
         //int firstTrue = 0;
         //int lastTrue = 0;
-        numTrues =0;
-        for(int i = 0; i < boolMasses.length; i++) {
+       // numTrues =0;
+        //firstTrue =0;
+   /*     for(int i = 0; i < boolMasses.length; i++) {
             if (boolMasses[i]) {
                 //System.out.println(i);
                 if(firstTrue == 0) {
@@ -683,100 +574,21 @@ for(Peak p : theorPeaks) {
                 numTrues++;
                 lastTrue = i;
             }
-        }
+        }*/
+        numTrues = massPeakIdMap.size();
         //System.out.print("NumTrues: " + numTrues + "\tFirstTrue: " + firstTrue + "\tLastTrue: " + lastTrue);
         numFragBins = (lastTrue - firstTrue);
         pTrue = (0.0+numTrues)/(lastTrue-firstTrue);
         // set the working aamasses here
         //System.out.println("\tchargeState: " + chargeState + "\tpTrue: " + pTrue + "\t");
     }
-
-    private void writeLogFile() {
-        String fileNameBool = "/var/tmp/boolMasses.txt";
-        String fileNameIntensity = "/var/tmp/IntensityVals.txt";
-
-        try {
-
-            File file = new File(fileNameBool);
-            if (file != null && file.exists()) {
-                file.delete();
-            }
-            file = new File(fileNameIntensity);
-            if (file != null && file.exists()) {
-                file.delete();
-            }
-            FileOutputStream outBool = new FileOutputStream(fileNameBool);
-            FileOutputStream outIntensity = new FileOutputStream(fileNameIntensity);
-            BufferedWriter writerBool = new BufferedWriter(new OutputStreamWriter(outBool));
-            BufferedWriter writerIntensity = new BufferedWriter(new OutputStreamWriter(outIntensity));
-/*
-            String bm = Arrays.toString(boolMasses);
-            writerBool.write(bm.replace(",", " ").replace("[", "").replace("]", ""));
-            String iv = Arrays.toString(intensityVal);
-            writerIntensity.write(iv.replace(",", " ").replace("[", "").replace("]", ""));
-*/
-            for(boolean b: boolMasses)
-            {
-                writerBool.write(b+"\t");
-                writerBool.newLine();
-            }
-            for(double d: intensityVal)
-            {
-                writerIntensity.write(d+"\t");
-                writerIntensity.newLine();
-            }
-
-
-            writerBool.close();
-            writerIntensity.close();
-
-            outBool.close();
-            outIntensity.close();
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-    public void printPeaksToLog(float [][] peakarray)
+    public double getIntensityFromTopPeak(int peakId)
     {
-        String location = "/var/tmp/peaksLog.txt";
-        try
-        {
-            BufferedWriter bw = new BufferedWriter(new FileWriter(location));
-            for(int i=0; i<peakarray[0].length; i++)
-            {
-                bw.write(peakarray[0][i]+"\t"+peakarray[1][i]);
-                bw.newLine();
-            }
-            bw.close();
-        }
-        catch(IOException ioe)
-        {
-
-        }
-        System.out.println("Peaks log printed at "+location);
+        return topPeaks.get(peakId).getIntensity();
     }
-    public void printPeaksToLog(List<Peak> peaks)
-    {
-        String location = "/var/tmp/peaksLog.txt";
-        try
-        {
-            BufferedWriter bw = new BufferedWriter(new FileWriter(location));
-            for(Peak peak: peaks)
-            {
-                bw.write(peak.getM2z()+"\t"+peak.getIntensity());
-                bw.newLine();
-            }
-            bw.close();
-        }
-        catch(IOException ioe)
-        {
 
-        }
-        System.out.println("Peaks log printed at "+location);
-    }
+
+
 
     public int getFirstTrue() {
         return firstTrue;
@@ -787,6 +599,12 @@ for(Peak p : theorPeaks) {
     public boolean [] getBoolMasses() {
         if(boolMasses==null) xcorrPreprocess();
         return boolMasses;
+    }
+
+    public TIntHashSet getMassSet()
+    {
+        if(massSet == null) xcorrPreprocess();
+        return massSet;
     }
     public int getNumTrues() {
         return numTrues;
@@ -881,7 +699,19 @@ for(Peak p : theorPeaks) {
     public void dumpBoolMass()
     {
         boolMasses = null;
+        massSet = null;
+        massPeakIdMap = null;
     }
+    public int getID()
+    {
+        return id;
+    }
+
+    public int getTopPeaksSize()
+    {
+        return topPeaks.size();
+    }
+
 }
 
 

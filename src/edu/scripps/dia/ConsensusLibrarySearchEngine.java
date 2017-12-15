@@ -110,7 +110,7 @@ public class ConsensusLibrarySearchEngine {
                 TIntArrayList highLimits = new TIntArrayList();
                 TIntArrayList lowLimits = new TIntArrayList();
                 MassRangeFinder.findRange(prcMass, params, lowLimits, highLimits);
-                ProcessedPeakList ppl = new ProcessedPeakList(peakList, zline, params, mc, true);
+                ProcessedPeakList ppl = new ProcessedPeakList(peakList, zline, params, mc);
                 ppl.preprocess(params.getPreprocess());
                 searchResult = new SearchResult(ppl);
                 set.clear();
@@ -218,7 +218,7 @@ public class ConsensusLibrarySearchEngine {
                libraryPeakListTable[z] = new ArrayList<>();
                massIndex[z] = new int[endRange - startRange];
            }
-           ProcessedPeakList ppl = new ProcessedPeakList(peakList,peakList.getZlines().next(),params,mc,true);
+           ProcessedPeakList ppl = new ProcessedPeakList(peakList,peakList.getZlines().next(),params,mc);
            libraryPeakListTable[z].add(ppl);
            massIndex[z][massLocation]++;
         }

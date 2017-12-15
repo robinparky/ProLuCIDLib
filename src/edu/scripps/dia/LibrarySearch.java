@@ -84,9 +84,9 @@ public class LibrarySearch {
 
                     if(libFiles.endsWith("ms2"))
                     {
-                        int index = libFiles.lastIndexOf(".");
+                        //int index = libFiles.lastIndexOf(".");
 
-                        String output = ms2DirectoryStr+File.separator+msName+"_"+libFiles.substring(0,index)+".sqt";
+                        String output = ms2DirectoryStr+File.separator+msName+".sqt";
                         System.out.println(output);
                         String libPath = libraryPath+File.separator+libFiles;
                         clse.readMS2TargetFile(libPath);
@@ -108,6 +108,9 @@ public class LibrarySearch {
                                 }
                                 //bw.newLine();
                             }
+                        }
+                        for (SearchResult sr : srList) {
+                            bw.write(sr.outputResults());
                         }
                         bw.close();
                         System.out.println("written to: "+output);
@@ -149,7 +152,7 @@ public class LibrarySearch {
                 for(PeakList pl: peakLists)
                 {
                     pl.setFilename(f);
-                    ProcessedPeakList ppl = new ProcessedPeakList(pl,pl.getZlines().next(),params,mc,true);
+                    ProcessedPeakList ppl = new ProcessedPeakList(pl,pl.getZlines().next(),params,mc);
                     pplMap.put(f+"_"+pl.getHiscan(),ppl);
                 }
                 spectrumReader.closeDataFile();
@@ -171,7 +174,7 @@ public class LibrarySearch {
                     PeakList pl = plIterator.next();
                     pl.setFilename(f);
                     Zline zline = pl.getZlines().next();
-                    ProcessedPeakList targetppl = new ProcessedPeakList(pl,pl.getZlines().next(),params,mc,true);
+                    ProcessedPeakList targetppl = new ProcessedPeakList(pl,pl.getZlines().next(),params,mc);
                     for(Map.Entry<String,ProcessedPeakList> entry: pplMap.entrySet())
                     {
                         ProcessedPeakList sourceppl = entry.getValue();
