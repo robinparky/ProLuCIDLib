@@ -1,5 +1,8 @@
 package edu.scripps.dia;
 
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeMap;
+import com.google.common.collect.TreeRangeMap;
 import edu.scripps.dia.util.MzxmlPeakList;
 import edu.scripps.dia.util.MzxmlSpectrumReader;
 import edu.scripps.dia.util.SpectrumReader;
@@ -20,12 +23,13 @@ import java.util.*;
  */
 public class LibrarySearchEngine {
     private static int NUMFINALRESULT = 5;
-
+    private RangeMap<Integer,List<String>> massRangeFileMap =  TreeRangeMap.create();
     private int tempMaxCS = 20;
     private List<PeakList> peakLists;
     private List<PeakList> libraryPeakLists = new ArrayList<>();
     private List<ProcessedPeakList>[] libraryPeakListTable = new List[tempMaxCS];
     private int [][] massIndex = new int[tempMaxCS][];
+    private List<String> [] fileIndex = new List[6_000_000];
     private SearchParams params;
     private String ms2FilePath;
     private LibrarySQLiteManager library;
@@ -208,19 +212,7 @@ public class LibrarySearchEngine {
        // System.out.println();
         //searchResult.setFinalResultsForPrelimScores();
         //System.out.println(">>>>cache size is "+cache.size());
-        if(cache.size() >5_000)
-        {
-          //  System.out.println("Dumping");
-            for(ProcessedPeakList pl:cache)
-            {
-                pl.dumpBoolMass();
-            }
 
-
-
-            cache = new HashSet<>();
-            searchCount =0;
-        }
         return searchResult;
     }
 
@@ -485,9 +477,86 @@ public class LibrarySearchEngine {
         this.endRange = endrange;
         br.close();
     }
+
+    public void getLibraryRanges(String [] libArray, String path) throws IOException {
+        BufferedReader br;
+        String line;
+        for(String libFiles: libArray)
+        {
+            if(libFiles.endsWith("ms2")) {
+                String hString = getRangeString(path+File.separatorChar+libFiles);
+                String [] arr = hString.split("\t");
+                int start  = Integer.parseInt(arr[2]);
+                int end = Integer.parseInt(arr[3]);
+                for(int i = start; i<end; i++)
+                {
+                    if(fileIndex[i]==null)
+                    {
+                        fileIndex[i] = new ArrayList<>();
+                    }
+                    fileIndex[i].add(libFiles);
+                }
+
+
+               /* List<String> startList= massRangeFileMap.get(start);
+                List<String> endList= massRangeFileMap.get(start);
+                if(startList!=null)
+                {
+                    startList.add(hString);
+                }
+                if(endList!=null)
+                {
+                    endList.add(hString);
+                }
+                if(startList== null && endList == null)
+                {
+                    Range<Integer> range = Range.closed(start,end);
+                    List<String> list = new ArrayList<>();
+                    list.add()
+                    massRangeFileMap.put(range,list);
+                }*/
+                //massRangeFileMap.put(range,libFiles);
+            }
+        }
+    }
+
+    public static String getRangeString(String ms2file) throws IOException {
+        BufferedReader br = new BufferedReader(new FileReader(ms2file));
+        String line = br.readLine();
+        br.close();
+        return line;
+    }
+
+    /*public RangeMap<Integer, String> getMassRangeFileMap() {
+        return massRangeFileMap;
+    }*/
+
     public edu.scripps.pms.mspid.SearchParams getSearchParams()
     {
         return params;
+    }
+
+    public int getStartRange() {
+        return startRange;
+    }
+
+    public int getEndRange() {
+        return endRange;
+    }
+
+    public List<String> getFilesInRange()
+    {
+
+        Set<String> resultSet = new HashSet<>();
+        for(int i=startRange; i<endRange; i++)
+        {
+            if(fileIndex[i]!=null)
+            {
+                resultSet.addAll(fileIndex[i]);
+            }
+        }
+
+        return new ArrayList<>(resultSet);
     }
 
 }

@@ -216,6 +216,7 @@ for(int i = 0; i < freq.length; i++) {
             appendMline(result, p);
         }
     }
+    public static final String MLINEHEADER = "MLINE\tPSCORE\tSCANHI\tSCANLOW\tPRCMASS\tR-SQUARED\tRET-TIME\tIS-DECOY\tTARGET-PATH";
 
     private void appendMLineSpectraComparison(StringBuffer result, ScoredPeptideHit sph)
     {
@@ -253,6 +254,10 @@ for(int i = 0; i < freq.length; i++) {
 
 
     }
+
+    public static final String SLINEHEADER = "SLINE\tSCANHI\tSCANLOW\tCHARGE\tHOSTNAME\tPRCMASS\tTOTAL-INTENSITY\tP-TRUE" +
+            "\tNUM-SPECTRA-MATCHED\tRET-TIME\tMSNAME";
+
     private void appendSline(StringBuffer result) {
 
         // Format of S line:
@@ -733,6 +738,7 @@ for(int i = 0; i < freq.length; i++) {
             }
         });
         finalResult = sphList;
+        numPeptidesMatched = finalResult.size();
     }
 
     public static int getNUMFINALRESULT()

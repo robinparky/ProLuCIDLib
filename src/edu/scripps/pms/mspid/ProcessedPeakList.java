@@ -299,8 +299,27 @@ public class ProcessedPeakList {
         //TIntHashSet altSet = peakList.getMassSet();
         //TIntHashSet mySet = this.getMassSet();
 
-        List<Peak> peaks = getIntensPeaks(params.getPeakRankThreshold());
-        TIntIntHashMap altMap = peakList.getMassPeakIdMap();
+        //List<Peak> peaks = getIntensPeaks(params.getPeakRankThreshold());
+        TIntIntHashMap myMap = getMassPeakIdMap();
+        List<Peak> altpeaks = peakList.getIntensPeaks(params.getPeakRankThreshold());
+        numTheroticPeaks = altpeaks.size();
+
+        for(Peak p: altpeaks)
+        {
+            int mass  = (int)(p.getM2z() *PRECISIONFACTOR+ 0.5f);
+            if(myMap.containsKey(mass))
+            {
+                int myPeakID = myMap.get(mass);
+                //  System.out.println("+++"+altPeakID);
+                double intensity =getIntensityFromTopPeak(myPeakID);
+                sr.addData(p.getIntensity(),intensity);
+                numPeaksMatched++;
+            }
+        }
+
+
+
+    /*    TIntIntHashMap altMap = peakList.getMassPeakIdMap();
         TIntIntHashMap myMap = getMassPeakIdMap();
         TIntHashSet idSet = new TIntHashSet();
 
@@ -323,7 +342,7 @@ public class ProcessedPeakList {
                 }
             }
 
-        }
+        }*/
 
 
      /*   numTheroticPeaks = peakList.getTopPeaksSize();
@@ -350,7 +369,7 @@ public class ProcessedPeakList {
         }*/
         //peakList.dumpBoolMass();
         //this.dumpBoolMass();
-        double probability = DistributionCalculator.getBinomialSum(peakList.getPTrue(), numTheroticPeaks, numPeaksMatched);
+        double probability = DistributionCalculator.getBinomialSum(getPTrue(), numTheroticPeaks, numPeaksMatched);
         ScoredPeptideHit sph = new ScoredPeptideHit(probability);
         sph.setPrcMass(peakList.prcMass);
         sph.setrSqaured(sr.getRSquare());
@@ -701,6 +720,7 @@ public class ProcessedPeakList {
         boolMasses = null;
         massSet = null;
         massPeakIdMap = null;
+        topPeaks = null;
     }
     public int getID()
     {

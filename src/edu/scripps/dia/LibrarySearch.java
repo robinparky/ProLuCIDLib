@@ -1,5 +1,7 @@
 package edu.scripps.dia;
 
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeMap;
 import edu.scripps.dia.util.SpectrumReader;
 import edu.scripps.pms.mspid.*;
 import edu.scripps.pms.mspid.SearchParams;
@@ -7,6 +9,7 @@ import edu.scripps.pms.util.spectrum.Peak;
 import edu.scripps.pms.util.spectrum.PeakList;
 import edu.scripps.pms.util.spectrum.Zline;
 import org.jdom.JDOMException;
+import org.omg.PortableServer.SERVANT_RETENTION_POLICY_ID;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -77,8 +80,19 @@ public class LibrarySearch {
                 String msName = ms2Files.substring(0,ms2Files.lastIndexOf('.'));
                 LibrarySearchEngine clse = new LibrarySearchEngine(msPath, paramsPath);
                 clse.calcRange();
+                clse.getLibraryRanges(libArray,libraryPath);
+\
+                List<String> targetFiles = clse.getFilesInRange();
 
-                for(String libFiles: libArray)
+
+                String output = ms2DirectoryStr+File.separator+msName+".sqt";
+
+                BufferedWriter bw = new BufferedWriter(new FileWriter(output));
+                bw.write(SearchResult.SLINEHEADER);
+                bw.newLine();
+                bw.write(SearchResult.MLINEHEADER);
+                bw.newLine();
+                for(String libFiles: targetFiles)
                 {
 
 
@@ -86,13 +100,11 @@ public class LibrarySearch {
                     {
                         //int index = libFiles.lastIndexOf(".");
 
-                        String output = ms2DirectoryStr+File.separator+msName+".sqt";
-                        System.out.println(output);
+                       // System.out.println(output);
                         String libPath = libraryPath+File.separator+libFiles;
                         clse.readMS2TargetFile(libPath);
                         System.out.println("searching: "+libFiles);
                         List<PeakList> peakLists = clse.getPeakLists();
-                        BufferedWriter bw = new BufferedWriter(new FileWriter(output));
 
                         for(PeakList peakList: peakLists) {
                             for (Iterator<Zline> it = peakList.getZlines(); it.hasNext(); ) {
@@ -112,11 +124,15 @@ public class LibrarySearch {
                         for (SearchResult sr : srList) {
                             bw.write(sr.outputResults());
                         }
-                        bw.close();
-                        System.out.println("written to: "+output);
-                        clse.clear();
+                        srList = new ArrayList<>();
+
                     }
+                    clse.clear();
+
                 }
+
+                bw.close();
+                System.out.println("written to: "+output);
             }
 
         }
