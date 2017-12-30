@@ -81,17 +81,17 @@ public class LibrarySearch {
                 LibrarySearchEngine clse = new LibrarySearchEngine(msPath, paramsPath);
                 clse.calcRange();
                 clse.getLibraryRanges(libArray,libraryPath);
-\
+
                 List<String> targetFiles = clse.getFilesInRange();
 
 
                 String output = ms2DirectoryStr+File.separator+msName+".sqt";
 
                 BufferedWriter bw = new BufferedWriter(new FileWriter(output));
-                bw.write(SearchResult.SLINEHEADER);
-                bw.newLine();
-                bw.write(SearchResult.MLINEHEADER);
-                bw.newLine();
+                //bw.write(SearchResult.SLINEHEADER);
+               // bw.newLine();
+              //  bw.write(SearchResult.MLINEHEADER);
+                //bw.newLine();
                 for(String libFiles: targetFiles)
                 {
 
