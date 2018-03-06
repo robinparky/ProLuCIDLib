@@ -29,7 +29,7 @@ public class LibrarySearchEngine {
     private List<PeakList> libraryPeakLists = new ArrayList<>();
     private List<ProcessedPeakList>[] libraryPeakListTable = new List[tempMaxCS];
     private int [][] massIndex = new int[tempMaxCS][];
-    private List<String> [] fileIndex = new List[6_000_000];
+    private List<String> [] fileIndex = new List[6_500_000];
     private SearchParams params;
     private String ms2FilePath;
     private LibrarySQLiteManager library;
@@ -488,6 +488,7 @@ public class LibrarySearchEngine {
                 String [] arr = hString.split("\t");
                 int start  = Integer.parseInt(arr[2]);
                 int end = Integer.parseInt(arr[3]);
+                if(start<0) continue;
                 for(int i = start; i<end; i++)
                 {
                     if(fileIndex[i]==null)
