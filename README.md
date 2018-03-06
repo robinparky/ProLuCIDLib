@@ -4,7 +4,8 @@ Current version 0.9b
 
 
 
-To build consensus library:
+## To build consensus library:
+
 java -cp /path/to/classpath/ edu.scripps.dia.LibraryBuilder /path/to//DTASelect-filter.txt /path/to//search.xml  /path/to/target.ms2
 
 DTASelect-filter.txt: DTASelect output file
@@ -13,15 +14,17 @@ search.xml - search param file
 
 target.ms2 -ouput file 
 
-Split Ms2 file:
+## Split Ms2 file:
+
 java -cp /path/to/classpath/ script.Ms2FileSplit /path/to/dir numSplit
 
 /path/to/dir- path to directory of library files; should be the output from LibraryBuilder
 
 numSplit - number of files the library will be spit into; 500 is recommended
 
-To Run:
- java -cp /path/to/classpath/ edu.scripps.dia.ConsensusLibrarySearchEngine /path/to/source.ms2 /path/to/search.xml /path/to/lib  /path/to/output.txt
+## To Run:
+
+java -cp /path/to/classpath/ edu.scripps.dia.ConsensusLibrarySearchEngine /path/to/source.ms2 /path/to/search.xml /path/to/lib  /path/to/output.txt
  
 source.ms2 - spectra file to search against
 
