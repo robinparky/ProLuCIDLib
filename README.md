@@ -1,5 +1,7 @@
 # libsearch
 
+Current version 0.9b
+
 To build consensus library:
 java -cp /path/to/classpath/ edu.scripps.dia.LibraryBuilder /path/to//DTASelect-filter.txt /path/to//search.xml  /path/to/target.ms2
 
