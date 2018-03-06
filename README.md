@@ -33,3 +33,8 @@ search.xml - search param file
 /path/to/lib - path to library directory generated from ms2split
 
 target.ms2 - file generated from building consensus library 
+
+Test data can be download from 
+
+http://massive.ucsd.edu
+Massive data id: MSV000081719
