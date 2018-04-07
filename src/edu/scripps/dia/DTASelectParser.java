@@ -114,6 +114,8 @@ public class DTASelectParser {
         int scanNum = Integer.parseInt(fileArr[1]);
 
         int cs = Integer.parseInt(fileArr[3]);
+        float xcorr = Float.parseFloat(peptideRow[2]);
+        float deltaCN = Float.parseFloat(peptideRow[3]);
         //String fileScan = filePath+fileArr[1];
 
         float theorMass= Float.parseFloat(peptideRow[theoreticalMassIndex]);

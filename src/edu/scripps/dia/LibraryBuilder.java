@@ -79,7 +79,7 @@ public class LibraryBuilder {
             if(i%1000==0)
             {
                 float percent = i/(float)peptideList.size() *100;
-                System.out.println(percent+"% done");
+                System.out.println("^^^>>> "+percent+"% done");
             }
             i++;
         }
