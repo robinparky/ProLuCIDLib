@@ -384,6 +384,7 @@ public class PeakList {
                 peaksSortedByM2z = sortedPeaks;
             }
         }
+
         for (Peak p : peaks) {
             sortedPeaks.add(p);
         }

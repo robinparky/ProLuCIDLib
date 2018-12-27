@@ -152,7 +152,7 @@ public class ConsensusLibrarySearchEngine {
         //searchResult.setFinalResultsForPrelimScores();
         List<ScoredPeptideHit> sphList = new ArrayList<>(sphQueue);
         int size = sphList.size()<NUMFINALRESULT?sphList.size():NUMFINALRESULT;
-        searchResult.setPrelimScoreHits(sphList.subList(0,size));
+        searchResult.setPrelimScoreHits(sphList,size);
         return searchResult;
     }
 

@@ -1,21 +1,16 @@
 package edu.scripps.dia;
 
-import com.google.common.collect.Range;
-import com.google.common.collect.RangeMap;
 import edu.scripps.dia.util.SpectrumReader;
 import edu.scripps.pms.mspid.*;
 import edu.scripps.pms.mspid.SearchParams;
-import edu.scripps.pms.util.spectrum.Peak;
 import edu.scripps.pms.util.spectrum.PeakList;
 import edu.scripps.pms.util.spectrum.Zline;
 import org.jdom.JDOMException;
-import org.omg.PortableServer.SERVANT_RETENTION_POLICY_ID;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.*;
 
 
@@ -138,10 +133,91 @@ public class LibrarySearch {
         }
     }
 
+    public static void rangedIndexSearch(String ms2path, String paramPath) throws Exception {
+        SearchParams sp = new SearchParams(paramPath);
+        String libPath = sp.getDatabaseName();
+        LibraryIndexer libraryIndexer = new LibraryIndexer(libPath);
+
+        File ms2File = new File(ms2path);
+        String ms2DirectoryStr = ms2File.getAbsoluteFile().getParent();
+
+        String msPath = ms2DirectoryStr+File.separator+ms2File.getName();
+        String msName = ms2path.substring(0,ms2path.lastIndexOf('.'));
+        LibrarySearchEngine clse = new LibrarySearchEngine(ms2path, paramPath);
+        clse.calcRange();
+        clse.setLibraryIndexer(libraryIndexer);
+        clse.queryRangeFromIndex();
+        List<PeakList> peakLists = clse.getPeakLists();
+        BufferedWriter bw = new BufferedWriter(new FileWriter(msName+".sqt"));
+        for(PeakList peakList: peakLists)
+        {
+            for (Iterator<Zline> it = peakList.getZlines(); it.hasNext(); ) {
+                Zline zline = it.next();
+                SearchResult r = clse.searchIndexedDB(peakList,zline);
+                r.setMs2Name(msName);
+                bw.write(r.outputResults());
+                bw.newLine();
+            }
+        }
+        bw.close();
+
+
+
+    }
+
+    public static void rangedIndexSearchMultiThreaded(String ms2path, String paramPath, int numThreads) throws Exception {
+        SearchParams sp = new SearchParams(paramPath);
+        String libPath = sp.getDatabaseName();
+        LibraryIndexer libraryIndexer = new LibraryIndexer(libPath);
+
+        File ms2File = new File(ms2path);
+        String ms2DirectoryStr = ms2File.getAbsoluteFile().getParent();
+
+        String msPath = ms2DirectoryStr+File.separator+ms2File.getName();
+        String msName = ms2path.substring(0,ms2path.lastIndexOf('.'));
+        LibrarySearchEngine clse = new LibrarySearchEngine(ms2path, paramPath);
+        clse.calcRange();
+        clse.setLibraryIndexer(libraryIndexer);
+        clse.queryRangeFromIndex();
+        List<Thread> threadList = new ArrayList<>();
+        clse.setOutputPath(msName+".sqt");
+        for(int i=0 ; i< numThreads; i++) {
+            Thread th = new Thread(new LibrarySearchThread(clse,msName));
+            th.start();
+            threadList.add(th);
+        }
+        for(int i=0 ; i< numThreads; i++) {
+            threadList.get(i).join();
+        }
+        clse.clear();
+        clse.close();
+
+
+    }
+
 
     public static void main(String[] args) throws Exception {
-        rangedSearched(args);
-         //simpleSearch(args);
+        //rangedSearched(args);
+        //rangedIndexSearch(args[0],args[1]);
+        if(args.length>3)
+        {
+            String paramPath = args[args.length-2];
+            int numThreads = Integer.parseInt(args[args.length-1]);
+            for(int i=0; i<args.length-2; i++)
+            {
+                String ms2Path = args[i];
+                rangedIndexSearchMultiThreaded(ms2Path,paramPath,numThreads);
+            }
+        }
+        else
+        {
+            String ms2Path = args[0];
+            String paramPath = args[1];
+            int numThreads = Integer.parseInt(args[2]);
+            rangedIndexSearchMultiThreaded(ms2Path,paramPath,numThreads);
+        }
+
+        //simpleSearch(args);
         //inverseSearch(args);
     }
 
@@ -239,7 +315,7 @@ public class LibrarySearch {
             SearchResult sr = new SearchResult(ppl);
             List<ScoredPeptideHit> sphList = new ArrayList<>(queue);
             int size = sphList.size()<SearchResult.getNUMFINALRESULT()?sphList.size():SearchResult.getNUMFINALRESULT();
-            sr.setPrelimScoreHits(sphList.subList(0,size));
+          //  sr.setPrelimScoreHits(sphList.subList(0,size));
             bw.append(sr.outputResults());
           //  bw.newLine();
             bw.flush();

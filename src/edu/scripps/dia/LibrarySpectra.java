@@ -1,6 +1,12 @@
 package edu.scripps.dia;
 
+import edu.scripps.pms.util.spectrum.Peak;
+import edu.scripps.pms.util.spectrum.PeakList;
 import gnu.trove.TFloatArrayList;
+
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Created by Titus Jung titusj@scripps.edu on 3/29/18.
@@ -17,11 +23,14 @@ public class LibrarySpectra {
     public final String filename;
     public final int scan;
     public final long id;
+    private  List<String> accessionList = new ArrayList<>();
+    private  List<String> descriptionList= new ArrayList<>();
     private TFloatArrayList mzList = new TFloatArrayList();
     private TFloatArrayList intensityList = new TFloatArrayList();
+    private PeakList peakList = null;
 
     public LibrarySpectra(String sequence, int chargeState, float mz, float retTime, float score, float deltaCn,
-                          String key, String filename, int scan, long id) {
+                          String key, String filename, int scan, long id, String accession, String proteinDescription) {
         this.sequence = sequence;
         this.chargeState = chargeState;
         this.mz = mz;
@@ -32,6 +41,10 @@ public class LibrarySpectra {
         this.filename = filename;
         this.scan = scan;
         this.id = id;
+        accessionList.add(accession);
+        descriptionList.add(proteinDescription);
+       // this.accession = accession;
+       // this.proteinDescription = proteinDescription;
     }
 
     public TFloatArrayList getMzList() {
@@ -74,4 +87,40 @@ public class LibrarySpectra {
         return sb.toString();
     }
 
+    public void createPeakList()
+    {
+        peakList = new PeakList();
+        for(int i=0; i<mzList.size(); i++)
+        {
+            peakList.addPeak(new Peak(mzList.get(i),intensityList.get(i)));
+        }
+    }
+
+    public synchronized List<Peak> getIntensPeaks(int num) {
+        if(peakList==null) createPeakList();
+        List<Peak> sortedPeaks = peakList.getSortedPeaks(PeakList.SORTBYINTENSITY);
+        List<Peak> intensPeaks = new LinkedList<Peak>();
+        int numPeaks = sortedPeaks.size();
+        int numIntensPeaks = 0;
+        while(numIntensPeaks < num && numIntensPeaks < numPeaks) {
+            numIntensPeaks++;
+            Peak p = sortedPeaks.get(numPeaks-numIntensPeaks);
+            intensPeaks.add(p);
+        }
+        return intensPeaks;
+    }
+
+    public void addProtein(String accession, String description)
+    {
+        accessionList.add(accession);
+        descriptionList.add(description);
+    }
+
+    public List<String> getAccessionList() {
+        return accessionList;
+    }
+
+    public List<String> getDescriptionList() {
+        return descriptionList;
+    }
 }

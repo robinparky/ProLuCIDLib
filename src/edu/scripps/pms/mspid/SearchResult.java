@@ -53,6 +53,8 @@ public class SearchResult {
     private int enzymeSpecificity;
     public static DecimalFormat threeDigits = new DecimalFormat("0.000");
     private static DecimalFormat fourDigits = new DecimalFormat("0.0000");
+    private static DecimalFormat deltaCNDigits = new DecimalFormat("0.0000E0");
+
     private static DecimalFormat fiveDigits = new DecimalFormat("0.00000");
     private static DecimalFormat twoDigits = new DecimalFormat("0.00");
     private ScoredPeptideHit bestSecondaryScore;
@@ -242,13 +244,84 @@ for(int i = 0; i < freq.length; i++) {
 
     }
 
+    private void appendMlineIndexedSpectra(StringBuffer result, ScoredPeptideHit sph) {
+        // Format of M line:
+        // "M\tRankByXcorr\tRankBySp\tCalculatedMass\tDeltaCN\tXcorr\t
+        // Sp\tNumMatchedIons\tNumExpectedIons\tPeptideSequence\tValidateState\n"
+        if (sph == null) return;
+        result.append("M");
+        result.append(DELIMITER);
+        result.append(sph.getPrimaryRank());
+        result.append(DELIMITER);
+        result.append(sph.getPrimaryRank());
+        result.append(DELIMITER);
+        result.append(fiveDigits.format(sph.getPrcMass()));
+        result.append(DELIMITER);
+        result.append(fiveDigits.format(getDeltaCn(sph))); //deltaCn
+        result.append(DELIMITER);
+        result.append(fourDigits.format(sph.getPrimaryScore())); // XCorr
+        result.append(DELIMITER);
+        //result.append(threeDigits.format(sph.getSecondaryScore())); // XCorr
+        result.append(sph.getSecondaryScore()); // for probablity scores, cannot use format
+        result.append(DELIMITER);
+      //  result.append(sph.getNumPeaksMatched()); //numPeaksMatched
+        result.append(DELIMITER);
+        result.append(sph.getNumPeaksMatched()); //numPeaks
+        result.append(DELIMITER);
+        result.append(sph.getNumPeaks()); //numPeaks
+        result.append(DELIMITER);
+        result.append(sph.getExtendedSequence()); // Peptide sequence
+        result.append(DELIMITER);
+     //   result.append(sph.getLibrarySpectra().filename);
+      //  result.append(DELIMITER);
+/*
+        result.append(ppl.getZline().getScanInfo());
+        result.append(DELIMITER);*/
+        result.append("U\n"); // Validation state
+
+        int locusType = params.getLocusType();
+        //append Llines
+
+        List<String> accessionList = sph.getLibrarySpectra().getAccessionList();
+        List<String> descriptionList = sph.getLibrarySpectra().getDescriptionList();
+
+        for(int i=0; i<accessionList.size(); i++)
+        {
+            result.append("L\t").append(accessionList.get(i)).append("\t")
+                    .append(0).append("\t")
+                    .append(sph.getSequence()).append("\n");
+        }
+
+       /*
+        for(PeptideHit p : sph.getPeptideHits()) {
+
+
+
+            if(locusType == 1) {
+                result.append("L\t" + p.getSequestLikeAccession());
+            } else {
+                result.append("L\t" + p.getAccession());
+            }
+
+            List<String> defList = p.getDefList();
+            for(Iterator<String> itr=defList.iterator(); itr.hasNext(); ) {
+                String eachDef = itr.next();
+
+                result.append("L\t").append(eachDef).append("\t")
+                        .append(p.getStart()).append("\t")
+                        .append(p.getExtraExtendedSequence()).append("\n");
+            }
+        }
+        */
+    }
+
 
     private void appendMline(StringBuffer result, ScoredPeptideHit sph) {
         // Format of M line:
         // "M\tRankByXcorr\tRankBySp\tCalculatedMass\tDeltaCN\tXcorr\t
         // Sp\tNumMatchedIons\tNumExpectedIons\tPeptideSequence\tValidateState\n"
 
-            appendMLineSpectraComparison(result,sph);
+        appendMlineIndexedSpectra(result,sph);
             return;
 
 
@@ -285,13 +358,14 @@ for(int i = 0; i < freq.length; i++) {
         result.append(DELIMITER);
         result.append(ppl.getPeakList().getRetentionTime());
         result.append(DELIMITER);
-        result.append(ms2Name);
+        //result.append(ms2Name);
 
 
 
         result.append("\n");
     }
     public void calcScores() {
+        setPScoreRank(finalResult);
        // calcScores(null);
         }
 
@@ -342,8 +416,8 @@ for(int i = 0; i < freq.length; i++) {
             double pScore = p.getPScore();
             if(pScore < lastScore) {
                 rank++;
-                lastScore = pScore; 
-            } 
+                lastScore = pScore;
+            }
             p.setPScoreRank(rank);
         }
     }
@@ -729,7 +803,7 @@ for(int i = 0; i < freq.length; i++) {
 
     }
 
-    public void setPrelimScoreHits(List<ScoredPeptideHit> sphList)
+    public void setPrelimScoreHits(List<ScoredPeptideHit> sphList, int size)
     {
         Collections.sort(sphList, new Comparator<ScoredPeptideHit>() {
             @Override
@@ -737,7 +811,7 @@ for(int i = 0; i < freq.length; i++) {
                 return Double.compare(scoredPeptideHit.getPScore(),t1.getPScore());
             }
         });
-        finalResult = sphList;
+        finalResult = sphList.subList(0,size);
         numPeptidesMatched = finalResult.size();
     }
 

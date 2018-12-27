@@ -56,12 +56,12 @@ public class MassRangeFinder {
     public static void findRange(double prcMass, SearchParams params, TIntArrayList lowLimits, TIntArrayList highlimits)
     {
         helper(prcMass,params,lowLimits,highlimits);
-        for(Iterator<Modifications> it = params.getAllModifications(); it.hasNext();) {
+       /* for(Iterator<Modifications> it = params.getAllModifications(); it.hasNext();) {
             Modifications m = it.next();
             if(m != null && m.getDiffModsShift() != 0 ) {
                 helper(prcMass-(float)m.getMassShift(),params,lowLimits,highlimits);
             }
-        }
+        }*/
     }
 
     private static void helper(double mass, SearchParams params, TIntArrayList lowLimits, TIntArrayList highLimits)

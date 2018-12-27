@@ -6,6 +6,7 @@
  */
 package edu.scripps.pms.mspid;
 
+import edu.scripps.dia.LibrarySpectra;
 import edu.scripps.pms.util.TimeUtils;
 import edu.scripps.pms.util.spectrum.*;
 import gnu.trove.*;
@@ -286,15 +287,14 @@ public class ProcessedPeakList {
         if(massPeakIdMap ==null) xcorrPreprocess();
         return massPeakIdMap;
     }
-
     public ScoredPeptideHit prelimScoreCorrelation(ProcessedPeakList peakList)
     {
         int numTheroticPeaks =0;
         int numPeaksMatched =0;
         int i=0;
         SimpleRegression sr = new SimpleRegression();
-       // boolean [] boolMass = peakList.getBoolMasses();
-       // boolean [] mybools = this.getBoolMasses();
+        // boolean [] boolMass = peakList.getBoolMasses();
+        // boolean [] mybools = this.getBoolMasses();
 
         //TIntHashSet altSet = peakList.getMassSet();
         //TIntHashSet mySet = this.getMassSet();
@@ -374,6 +374,43 @@ public class ProcessedPeakList {
         sph.setPrcMass(peakList.prcMass);
         sph.setrSqaured(sr.getRSquare());
         sph.setRetTime(peakList.getPeakList().getRetentionTime());
+        return sph;
+    }
+
+
+    public ScoredPeptideHit prelimScoreCorrelation(LibrarySpectra spectra)
+    {
+        int numTheroticPeaks =0;
+        int numPeaksMatched =0;
+        int i=0;
+        SimpleRegression sr = new SimpleRegression();
+
+        TIntIntHashMap myMap = getMassPeakIdMap();
+        List<Peak> altpeaks = spectra.getIntensPeaks(params.getPeakRankThreshold());
+        numTheroticPeaks = altpeaks.size();
+
+        for(Peak p: altpeaks)
+        {
+            int mass  = (int)(p.getM2z() *PRECISIONFACTOR+ 0.5f);
+            if(myMap.containsKey(mass))
+            {
+                int myPeakID = myMap.get(mass);
+                //  System.out.println("+++"+altPeakID);
+                double intensity =getIntensityFromTopPeak(myPeakID);
+                sr.addData(p.getIntensity(),intensity);
+                numPeaksMatched++;
+            }
+        }
+
+        double probability = DistributionCalculator.getBinomialSum(getPTrue(), numTheroticPeaks, numPeaksMatched);
+        ScoredPeptideHit sph = new ScoredPeptideHit(probability);
+        sph.setNumMatchedPeaks(numPeaksMatched);
+        sph.setMs2CompareValues(spectra.scan,spectra.scan,spectra.filename);
+        sph.setPrcMass(spectra.mz);
+        sph.setrSqaured(sr.getRSquare());
+        sph.setNumPeaks(altpeaks.size());
+        sph.setLibrarySpectra(spectra);
+        sph.setRetTime(spectra.retTime);
         return sph;
     }
 

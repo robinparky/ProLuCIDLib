@@ -15,7 +15,7 @@ import java.util.Comparator;
 public class PeakComparator implements Comparator {
 
     // how to comapare two PeakComparaters
-    private static boolean compareByIntensity = false; 
+    private  boolean compareByIntensity = false;
 
     public PeakComparator(boolean compareByIntensity) {
         this.compareByIntensity = compareByIntensity;

@@ -40,6 +40,9 @@ public class LibraryIndexer {
     private PreparedStatement addProteinToPeptideStatement;
     private PreparedStatement getSpectraMassStatement;
     private PreparedStatement getProteinIDFromLocusStatement;
+    private PreparedStatement getPeptideProteinTable;
+    private PreparedStatement retrievePeptideIDs;
+    private PreparedStatement retreiveSequenceKeys;
     private String dbAddress="";
     private int descriptiveIndex=-1;
     private int locusIndex=-1;
@@ -53,12 +56,14 @@ public class LibraryIndexer {
     private Map<String, TLongHashSet>   seqKeyProteinSetMap = new HashMap<>();
     private Map<String, Long>           locusProteinIDMap = new HashMap<>();
     public static final float NO_FLOAT_VALUE = -2000;
+    public static final String CSV_HEADER =
+            "H\tPeptideID\tFilePath\tSequence\tChargeState\tRetentionTime\tMass\tNumberOfPeaks\tMassList\tIntensityList";
 
 
     public final static int MZ_KEY_SHIFT = 1000;
 
-    public final static String PROTEIN_TABLE_NAME = "ProteinLibraryTable";
-    public final static String PEPTIDE_PROTEIN_INDEX_TABLE = "PeptideProteinLibraryIndexTable";
+    public final static String PROTEIN_TABLE_NAME = "ProteinTable";
+    public final static String PEPTIDE_PROTEIN_INDEX_TABLE = "PeptideProteinIndexTable";
     public static final String proteinSchema =
             "(proteinID," +
                     "Accession," +
@@ -73,15 +78,15 @@ public class LibraryIndexer {
                     "proteinID)";
 
     public static final String peptideProteinIndexTableCreationSchema =
-            "(peptideID INTEGER, " +
+            "(peptideID  INTEGER, " +
                     "proteinID INTEGER)";
 
     public static final String peptideSchema
             = " (peptideID," + // 1
             "peptideSeq," + // 2
-            "precursorMZKey," +// 3
+            "massKey," +// 3
             "precursorMZ," +// 4
-            "precursorCharge," +// 5
+            "chargeState," +// 5
             "copies," +// 6
             "numPeaks," +// 7
             "retentionTime," +// 8
@@ -100,9 +105,9 @@ public class LibraryIndexer {
     public static final String peptideSchemaCreation
             = " (peptideID INTEGER," +
             "peptideSeq TEXT," +
-            "precursorMZKey INTEGER," +
+            "massKey INTEGER," +
             "precursorMZ REAL," +
-            "precursorCharge INTEGER," +
+            "chargeState INTEGER," +
             "copies INTEGER," +
             "numPeaks INTEGER," +
             "retentionTime REAL," +
@@ -115,8 +120,8 @@ public class LibraryIndexer {
             "sequenceCS TEXT," +
             "scan INTEGER) ";
 
-    public static final String PEPTIDE_TABLE_NAME = "PeptideLibraryTable";
-    public static final String SPECTRA_TABLE_NAME = "SpectraLibraryTable";
+    public static final String PEPTIDE_TABLE_NAME = "PeptideTable";
+    public static final String SPECTRA_TABLE_NAME = "SpectraTable";
     public static final String spectraShema = " (peptideID,peakMZ,peakIntensity,massKey)";
     public static final String spectraShemaCreation
             = " (peptideID INTEGER," +
@@ -134,12 +139,19 @@ public class LibraryIndexer {
         init();
     }
 
+    public LibraryIndexer() {
+        seqKeyScoreMap = new HashMap<>();
+        seqKeyIDMap = new HashMap<>();
+        peptideID = 0;
+    }
+
     protected void init() throws SQLException {
         SQLiteConfig config = new SQLiteConfig();
         final int indexFactor = 1;
         final int cacheSize = 100000 / indexFactor;
         final int pageSize = 4096;
-
+        String tempDir = System.getProperty("java.io.tmpdir");
+        config.setTempStoreDirectory(tempDir);
         //optimize for multiple connections that can share data structures
         config.setSharedCache(true);
         config.setCacheSize(cacheSize);
@@ -163,8 +175,8 @@ public class LibraryIndexer {
                 + " "+spectraShemaCreation).execute();
         con.prepareStatement("CREATE TABLE IF NOT EXISTS "+PEPTIDE_PROTEIN_INDEX_TABLE
                 + " "+peptideProteinIndexTableCreationSchema).execute();
-        con.prepareStatement("CREATE INDEX IF NOT EXISTS precursorMZKey_index_dsc ON "
-                + PEPTIDE_TABLE_NAME +" (precursorMZKey DESC);").execute();
+        con.prepareStatement("CREATE INDEX IF NOT EXISTS massKey_index_dsc ON "
+                + PEPTIDE_TABLE_NAME +" (massKey DESC);").execute();
         con.prepareStatement("CREATE UNIQUE INDEX IF NOT EXISTS sequenceCSKey_index_dsc ON "
                 + PEPTIDE_TABLE_NAME +" (sequenceCS DESC);").execute();
         con.prepareStatement("CREATE INDEX IF NOT EXISTS id_index_dsc ON "
@@ -187,15 +199,20 @@ public class LibraryIndexer {
         getEntryByMassRangeStatement = con.prepareStatement(
                 "SELECT * "
                         + "FROM " + PEPTIDE_TABLE_NAME + " "
-                        + "WHERE precursorMZKey BETWEEN ? AND ?" +
-                        " ORDER BY peptideID;");
+                        + "INNER JOIN "+ PEPTIDE_PROTEIN_INDEX_TABLE
+                        + " ON " +PEPTIDE_TABLE_NAME+".peptideID="+PEPTIDE_PROTEIN_INDEX_TABLE+".peptideID "
+                        + "INNER JOIN "+PROTEIN_TABLE_NAME
+                        +" ON "+PEPTIDE_PROTEIN_INDEX_TABLE+".proteinID ="+PROTEIN_TABLE_NAME+".proteinID "
+                        + "WHERE massKey BETWEEN ? AND ?" +
+                        " ORDER BY peptideID;")
+        ;
         getEntrySequenceCSStatement= con.prepareStatement(
                 "SELECT * "
                         + "FROM " + PEPTIDE_TABLE_NAME + " "
                         + "WHERE sequenceCS = ?;");
         updateEntry = con.prepareStatement(
                 "UPDATE "+ PEPTIDE_TABLE_NAME +
-                        " SET precursorMZKey =?," +
+                        " SET massKey =?," +
                         "precursorMZ =?," +
                         "numPeaks =?," +
                  //       "copies =?,"+
@@ -228,7 +245,8 @@ public class LibraryIndexer {
         updateSpectraStatement = con.prepareStatement(
                 "UPDATE "+ SPECTRA_TABLE_NAME +
                         " SET peakMZ=?," +
-                        "peakIntensity =?" +
+                        "peakIntensity =?," +
+                        "massKey = ?" +
                         "WHERE peptideID = ?;"
         );
         addProteinEntryStatement =  con.prepareStatement(
@@ -268,6 +286,12 @@ public class LibraryIndexer {
         getPeptideCountStatement = con.prepareStatement("SELECT count(*) FROM "+
                 PEPTIDE_TABLE_NAME +";"
         );
+        getPeptideProteinTable = con.prepareStatement("SELECT * FROM "+PEPTIDE_PROTEIN_INDEX_TABLE);
+
+        retreiveSequenceKeys = con.prepareStatement("SELECT sequenceCS FROM "+PEPTIDE_TABLE_NAME);
+
+        retrievePeptideIDs = con.prepareStatement("SELECT peptideID FROM "+PEPTIDE_TABLE_NAME);
+
         System.out.println(">>>> finished initializing sqlite ");
 
 
@@ -437,7 +461,48 @@ public class LibraryIndexer {
         return result;
     }
 
+    public void querySpectra(int mass1, int mass2,   List<LibrarySpectra> spectraList) throws SQLException, IOException {
+        int massKey1 = mass1;
+        int massKey2 = mass2;
+        getSpectraMassStatement.setInt(1,massKey1);
+        getSpectraMassStatement.setInt(2,massKey2);
+        final ResultSet rs = getSpectraMassStatement.executeQuery();
+        int i=0;
+        while(rs.next())
+        {
+            int id = rs.getInt(1);
 
+            InputStream is = rs.getBinaryStream(2);
+            byte [] buffer = new byte[Float.BYTES];
+            ByteArrayInputStream bins ;
+            TFloatArrayList mzList = new TFloatArrayList();
+            TFloatArrayList intList = new TFloatArrayList();
+
+            while((is.read(buffer))>0)
+            {
+                float f =ByteBuffer.wrap(buffer).getFloat();
+                mzList.add(f);
+            }
+            is = rs.getBinaryStream(3);
+            buffer = new byte[Float.BYTES];
+            while((is.read(buffer))>0)
+            {
+                float f =ByteBuffer.wrap(buffer).getFloat();
+                intList.add(f);
+            }
+            int mass = rs.getInt(4);
+            if(id!=spectraList.get(i).id)
+            {
+                System.out.println(id+ " "+spectraList.get(i).id+" "+mass);
+                System.out.println("Mismatch !");
+                System.exit(-1);
+            }
+
+            spectraList.get(i).setMzList(mzList);
+            spectraList.get(i).setIntensityList(intList);
+            i++;
+        }
+    }
 
     public void querySpectra(float mass1, float mass2,   List<LibrarySpectra> spectraList) throws SQLException, IOException {
         int massKey1 = (int)(mass1*MZ_KEY_SHIFT);
@@ -539,16 +604,24 @@ public class LibraryIndexer {
         updateEntry.setInt(11,scan);
         updateEntry.executeUpdate();
     }
-    private void updateSpectra(long id, List<Float> mzList, List<Float>  intList) throws IOException, SQLException {
+    private void updateSpectra(long id, List<Float> mzList, List<Float>  intList,float mass) throws IOException, SQLException {
         List<Long> mzBinList = new ArrayList<>();
 
         byte[] mzByteArr = convertToByteArr(mzList);
         byte[] intByteArr = convertToByteArr(intList);
-
-        updateSpectraStatement.setLong(3,id);
+        int massKey = (int)(mass*MZ_KEY_SHIFT);
+        updateSpectraStatement.setLong(4,id);
+        updateSpectraStatement.setInt(3,massKey);
         updateSpectraStatement.setBytes(1,mzByteArr);
         updateSpectraStatement.setBytes(2,intByteArr);
         updateSpectraStatement.executeUpdate();
+    }
+
+    public List<LibrarySpectra> queryEntry(float start, float end) throws SQLException, IOException {
+        List<LibrarySpectra> libList = new ArrayList<>();
+        queryEntry(start,end,libList);
+        querySpectra(start,end);
+        return libList;
     }
 
 
@@ -556,37 +629,133 @@ public class LibraryIndexer {
         int key1 = (int)(start*MZ_KEY_SHIFT);
         int key2 = (int)(end*MZ_KEY_SHIFT);
         int idarr [] = new int[2];
+        return queryEntry(key1,key2,spectraList);
+    }
+
+
+    public int[] queryEntry(int start, int end, List<LibrarySpectra> spectraList) throws SQLException {
+        int key1 = start;
+        int key2 = end;
+        int idarr [] = new int[2];
         getEntryByMassRangeStatement.setInt(1,key1);
         getEntryByMassRangeStatement.setInt(2,key2);
         final ResultSet rs = getEntryByMassRangeStatement.executeQuery();
         int i=0;
+        long prevId =-1;
+        LibrarySpectra prevsSpectra = null;
         while (rs.next()) {
             if(i==0)idarr[0] =rs.getInt(1);
             else idarr[1] = rs.getInt(1);
-
-            String seq = rs.getString(2);
             long id= rs.getLong(1);
-            float xcorr = rs.getFloat(12);
-            float mass = rs.getFloat(4);
-            int cs = rs.getInt(5);
-            float retTime = rs.getFloat(8);
-            float deltaCN = rs.getFloat(14);
-            String key = rs.getString(15);
-            String fileName = rs.getString(11);
-            int scan = rs.getInt(16);
-            LibrarySpectra librarySpectra = new LibrarySpectra(seq,cs,mass,retTime, xcorr, deltaCN,key,fileName,scan,id);
-            spectraList.add(librarySpectra);
+            String accession = rs.getString(20);
+            String proteinDescription = rs.getString(21);
+           /* if(id==6732)
+            {
+                System.out.println(">>>");
+            }*/
+
+            if(id!=prevId)
+            {
+                String seq = rs.getString(2);
+
+                float xcorr = rs.getFloat(12);
+                float mass = rs.getFloat(4);
+                int cs = rs.getInt(5);
+                float retTime = rs.getFloat(8);
+                float deltaCN = rs.getFloat(14);
+                String key = rs.getString(15);
+                String fileName = rs.getString(11);
+                int scan = rs.getInt(16);
+
+                LibrarySpectra librarySpectra = new LibrarySpectra(seq,cs,mass,retTime, xcorr, deltaCN,key,fileName,scan,id, accession, proteinDescription);
+                spectraList.add(librarySpectra);
+                prevsSpectra =librarySpectra;
+            }
+            else prevsSpectra.addProtein(accession,proteinDescription);
+            prevId=id;
+
+
             i++;
         }
         rs.close();
         return idarr;
     }
+    public void readDTASelect(String dtaSelectFile) throws JDOMException, SQLException, IOException {
+        String path = dtaSelectFile.substring(0,dtaSelectFile.lastIndexOf(File.separatorChar));
+        readDTASelect(dtaSelectFile,path);
+    }
+
+    public void readDTASelectCreateCSV(String dtaSelectFile, String workingDirectory,
+                                       String outPeptideCSV, String outProteinCSV, Map<String,Long> seqKeyMap)
+            throws IOException {
+        boolean start = false;
+        indexedMap = IndexUtil.createIndexedHt(workingDirectory,"ms2");
+
+        // initializeLocalMaps();
+        int peptideRowLength=0;
+        int proteinRowLength =0;
+        BufferedReader br = new BufferedReader(new FileReader(dtaSelectFile));
+        BufferedWriter peptideBW = new BufferedWriter(new FileWriter(outPeptideCSV,true));
+        String line;
+        String locus = "";
+        String description = "";
+        String accession = " ";
+
+
+        //peptideBW.append(CSV_HEADER);
+        peptideBW.newLine();
+        while((line=br.readLine())!=null)
+        {
+            if(!start && line.startsWith("Locus"))
+            {
+                String arr [] = line.split("\t");
+                proteinRowLength = arr.length;
+                processProteinHeader(arr);
+            }
+            else if(!start && line.startsWith("Unique") )
+            {
+                String arr [] = line.split("\t");
+                peptideRowLength =arr.length;
+                start = true;
+                processPeptideHeader(arr);
+                continue;
+            }
+            if(start)
+            {
+                String arr [] = line.split("\t");
+                if(arr.length==1)
+                {
+                    start = false;
+                    continue;
+                }
+                if(arr[1].startsWith("Proteins"))
+                {
+                    start = false;
+                    continue;
+                }
+                if(arr.length ==peptideRowLength)
+                {
+                    processPeptideLineCSV(arr,peptideBW,accession,description,seqKeyMap);
+                    peptideBW.newLine();
+                    peptideBW.flush();
+                }//
+                else if(arr.length<=proteinRowLength)
+                {
+                    locus = arr[locusIndex];
+                    description = arr[descriptiveIndex];
+                    accession  = getSequestLikeAccession(locus);
+                    // System.out.println(getSequestLikeAccession(locus));
+                }
+
+            }
+        }
+        peptideBW.close();
+        br.close();
+    }
 
 
 
-
-
-    public void readDTASelect(String dtaSelectFile,String path, String searchXML) throws IOException, JDOMException, SQLException {
+    public void readDTASelect(String dtaSelectFile,String path) throws IOException, JDOMException, SQLException {
         boolean start = false;
          indexedMap = IndexUtil.createIndexedHt(path,"ms2");
          seqKeyScoreMap = new HashMap<>();
@@ -621,17 +790,28 @@ public class LibraryIndexer {
             if(start)
             {
                 String arr [] = line.split("\t");
+                if(arr.length==1)
+                {
+                    start = false;
+                    continue;
+                }
+                if(arr[1].startsWith("Proteins"))
+                {
+                    start = false;
+                    continue;
+                }
                 if(arr.length ==peptideRowLength)
                 {
                        processPeptideLine(arr,path,accession,description);
                 }
-                else if(arr.length==proteinRowLength)
+                else if(arr.length<=proteinRowLength)
                 {
                    locus = arr[locusIndex];
                    description = arr[descriptiveIndex];
                     accession  = getSequestLikeAccession(locus);
                    // System.out.println(getSequestLikeAccession(locus));
                 }
+
             }
         }
         br.close();
@@ -647,10 +827,73 @@ public class LibraryIndexer {
         float retTime = readSpectraFromMS2(ifile,scan,mzList,intList);
         updateEntry(seqKey,mass,mzList.size(),0,retTime,0,0,filename,
                 score,0,deltacn,scan);
-        updateSpectra(id,mzList,intList);
+        updateSpectra(id,mzList,intList,mass);
         return id;
     }
 
+    private void processPeptideLineCSV(String[] peptideArr,Appendable ap, String accession, String description, Map<String, Long> seqKeyMap) throws IOException {
+        float xcorr = Float.parseFloat(peptideArr[xcorrIndex]);
+        String sequence = peptideArr[seqIndex];
+        float mass = Float.parseFloat(peptideArr[theoreticalMassIndex-1]);
+        String fileString = peptideArr[fileNameIndex];
+        String regex = "\\.";
+        String [] fileArr = fileString.split(regex);
+        String fileName=  fileArr[0]+".ms2";
+        int cs = Integer.parseInt(fileArr[3]);
+        int scan = Integer.parseInt(fileArr[2]);
+        long peptideID=-1;
+        String seqKey = removePrePostFix(sequence)+cs;
+
+       /* if(seqKeyIDMap.containsKey(seqKey))
+        {
+            peptideID = seqKeyIDMap.get(seqKey);
+        }
+        else
+        {
+            peptideID = this.peptideID++;
+            seqKeyIDMap.put(seqKey,peptideID);
+        }*/
+        if(seqKeyMap.containsKey(seqKey))
+        {
+            peptideID = seqKeyMap.get(seqKey);
+        }
+        else
+        {
+            peptideID = LibraryCSV.peptideID++;
+            seqKeyMap.put(seqKey, peptideID);
+        }
+
+
+        String fpath = fileName;
+        IndexedFile ifile = indexedMap.get(fpath);
+        List<Float> mzList = new ArrayList<>();
+        List<Float> intList = new ArrayList<>();
+        float retTime = readSpectraFromMS2(ifile,scan,mzList,intList);
+
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(peptideID).append("\t");
+        sb.append(fpath).append("\t");
+        sb.append(sequence).append("\t");
+        sb.append(cs).append("\t");
+        sb.append(retTime).append("\t");
+        sb.append(mass).append("\t");
+        sb.append(mzList.size()).append("\t");
+        for(float f: mzList)
+        {
+            sb.append(f).append(",");
+        }
+        sb.append("\t");
+        for(float f: intList)
+        {
+            sb.append(f).append(",");
+        }
+        sb.append("\t");
+        ap.append(sb);
+
+
+
+    }
 
 
 
@@ -698,6 +941,7 @@ public class LibraryIndexer {
         }
         else
         {
+            peptideID = seqKeyIDMap.get(seqKey);
             libraryScore = seqKeyScoreMap.get(seqKey);
             proteinSet = seqKeyProteinSetMap.get(seqKey);
         }
@@ -749,8 +993,11 @@ public class LibraryIndexer {
                 proteinID = uploadProtein(accession,description);
             }
         }
+        else proteinID = locusProteinIDMap.get(seqKey);
         if(addProteinToPeptide || !proteinSet.contains(proteinID))
         {
+            proteinSet.add(proteinID);
+            //System.out.println(peptideID+ " " +proteinID);
             insertProteinToPeptideIndex(peptideID,proteinID);
         }
 
@@ -875,17 +1122,36 @@ public class LibraryIndexer {
         int idArr[] =queryEntry(mzStart,mzEnd,result);
         querySpectra(mzStart,mzEnd,result);
         return result;
-
     }
+
+    public List<LibrarySpectra> querySpectra(int mzStart, int mzEnd) throws SQLException, IOException {
+        List<LibrarySpectra> result = new ArrayList<>();
+        int idArr[] =queryEntry(mzStart,mzEnd,result);
+        querySpectra(mzStart,mzEnd,result);
+        return result;
+    }
+
+
+
 
 
     public static void main(String [] args) throws SQLException, IOException, JDOMException {
         //testLibCreation();
-        testReadingDTASelect();
+        //testReadingDTASelect();
         //testReadLibrary();
 //        testReadLib2();
-        System.out.println("Working Directory = " +
-                System.getProperty("user.dir"));
+        String libAddress = args[0];
+        File f = new File(libAddress);
+        if(f.exists()) f.delete();
+        LibraryIndexer libraryIndexer = new LibraryIndexer(libAddress);
+        for(int i=1; i<args.length; i++)
+        {
+            System.out.println("reading "+args[i]);
+            libraryIndexer.readDTASelect(args[i]);
+        }
+
+      /*  System.out.println("Working Directory = " +
+                System.getProperty("user.dir"));*/
         //testReadingDTASelect2();
 
     }
@@ -911,7 +1177,7 @@ public class LibraryIndexer {
         /*libraryIndexer.readDTASelect("/home/yateslab/project_data/LibraryBuilder/2803sqliteBuild/DTASelect-filter.txt",
                 "/home/yateslab/project_data/LibraryBuilder/2803sqliteBuild/","");*/
         libraryIndexer.readDTASelect("/home/yateslab/project_data/LibraryBuilder/2803sqliteBuild/DTASelect-filter3.txt",
-                "/home/yateslab/project_data/LibraryBuilder/2803sqliteBuild/","");
+                "/home/yateslab/project_data/LibraryBuilder/2803sqliteBuild/");
     }
 
 
@@ -924,14 +1190,41 @@ public class LibraryIndexer {
 
         LibraryIndexer libraryIndexer = new LibraryIndexer(address);
         libraryIndexer.readDTASelect("/home/yateslab/project_data/LibraryBuilder/2803sqliteBuild/DTASelect-filter.txt",
-                "/home/yateslab/project_data/LibraryBuilder/2803sqliteBuild/","");
-        /*libraryIndexer.readDTASelect("/home/yateslab/project_data/LibraryBuilder/2803sqliteBuild/DTASelect-filter2.txt",
-                "/home/yateslab/project_data/LibraryBuilder/2803sqliteBuild/","");
+                "/home/yateslab/project_data/LibraryBuilder/2803sqliteBuild/");
+        libraryIndexer.readDTASelect("/home/yateslab/project_data/LibraryBuilder/2803sqliteBuild/DTASelect-filter2.txt",
+                "/home/yateslab/project_data/LibraryBuilder/2803sqliteBuild/");
         libraryIndexer.readDTASelect("/home/yateslab/project_data/LibraryBuilder/2803sqliteBuild/DTASelect-filter3.txt",
-                "/home/yateslab/project_data/LibraryBuilder/2803sqliteBuild/","");*/
+                "/home/yateslab/project_data/LibraryBuilder/2803sqliteBuild/");
     }
 
+    public void queryPeptideProteinTable(List<Integer> peptideIDList, List<Integer> proteinIDList) throws SQLException {
+        ResultSet rs = getPeptideProteinTable.executeQuery();
+        while(rs.next())
+        {
+            peptideIDList.add(rs.getInt(1));
+            proteinIDList.add(rs.getInt(2));
+        }
+    }
 
+    public List<Integer> queryPeptideIDS() throws SQLException {
+        List<Integer> peptideIDList = new ArrayList<>();
+        ResultSet rs = retrievePeptideIDs.executeQuery();
+        while(rs.next())
+        {
+            peptideIDList.add(rs.getInt(1));
+        }
+        return peptideIDList;
+    }
+
+    public List<String> queryPeptideKeys() throws SQLException {
+        List<String> peptideKeys = new ArrayList<>();
+        ResultSet rs = retreiveSequenceKeys.executeQuery();
+        while(rs.next())
+        {
+            peptideKeys.add(rs.getString(1));
+        }
+        return peptideKeys;
+    }
 
 
 }

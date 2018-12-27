@@ -383,7 +383,8 @@ public class Fasta implements Comparable<Fasta> {
 
     public static void main(String args[]) throws Exception
     {
-
+        String seq = getSequestLikeAccession("IPI:IPI00004273.6|SWISS-PROT:P49756-1|TR");
+        System.out.println(seq);
 
     }
 

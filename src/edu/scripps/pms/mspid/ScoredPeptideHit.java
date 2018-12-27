@@ -9,6 +9,8 @@
 
 package edu.scripps.pms.mspid;
 
+import edu.scripps.dia.LibrarySpectra;
+
 import java.util.LinkedList;
 import java.util.List;
 
@@ -26,7 +28,8 @@ public class ScoredPeptideHit implements Comparable<ScoredPeptideHit> {
     private double prcMass;
     private double rSqaured;
     private double retTime;
-
+    private int numPeaks=-1;
+    private int numMatchedPeaks = -1;
     private boolean isDecoy = false;
     private int scanHi;
     private int scanLow;
@@ -49,6 +52,7 @@ public class ScoredPeptideHit implements Comparable<ScoredPeptideHit> {
     public double getTheorMass() {
         return hits.get(0).getTheorMass();
     }
+    private LibrarySpectra librarySpectra;
 
     public ScoredPeptideHit(double probability) {
         hasPeptide = false;
@@ -85,11 +89,11 @@ public class ScoredPeptideHit implements Comparable<ScoredPeptideHit> {
         return hits.get(0).getSequence();
     }
     public String getSequence() {
-        return sequence;
+        return librarySpectra.sequence;
         //return hits.get(0).getExtendedSequence();
     }
     public String getExtendedSequence() {
-        return hits.get(0).getExtendedSequence();
+        return librarySpectra.sequence;
     }
     public int getXCorrRank() {
         return xcorrRank;
@@ -124,12 +128,14 @@ public class ScoredPeptideHit implements Comparable<ScoredPeptideHit> {
         }    
     }
     public double getPrimaryScore() {
-        switch(primaryScoreType) {
+        return pScore;
+
+     /*   switch(primaryScoreType) {
             case 0: return pScore;
             case 1: return xcorr; 
             case 2: return zscore; 
             default: return pScore;
-        }    
+        }    */
     }
     public void setPrimaryRank(int r) {
         
@@ -158,10 +164,12 @@ public class ScoredPeptideHit implements Comparable<ScoredPeptideHit> {
         return xcorr;
     }
     public int getNumPeaks() {
-        return hits.get(0).getNumPeaks();
+        return numPeaks;
+        //return hits.get(0).getNumPeaks();
     }
     public int getNumPeaksMatched() {
-        return hits.get(0).getNumPeaksMatched();
+       return numMatchedPeaks;
+       // return hits.get(0).getNumPeaksMatched();
     } 
     public void addPeptideHit(PeptideHit p) {
         hits.add(p);
@@ -252,5 +260,21 @@ public class ScoredPeptideHit implements Comparable<ScoredPeptideHit> {
 
     public void setRetTime(double retTime) {
         this.retTime = retTime;
+    }
+
+    public void setNumPeaks(int numPeaks) {
+        this.numPeaks = numPeaks;
+    }
+
+    public void setNumMatchedPeaks(int numMatchedPeaks) {
+        this.numMatchedPeaks = numMatchedPeaks;
+    }
+
+    public LibrarySpectra getLibrarySpectra() {
+        return librarySpectra;
+    }
+
+    public void setLibrarySpectra(LibrarySpectra librarySpectra) {
+        this.librarySpectra = librarySpectra;
     }
 }
