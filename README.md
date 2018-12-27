@@ -1,8 +1,18 @@
 # libsearch
 
 Current version 0.9b
+## To build consensus library(sqlite):
 
+java -cp /path/to/classpath/ edu.scripps.dia.ConsensusLibraryBuilder /path/to/DTASelect-filter.txt /path/to//search.xml /path/to//test.db
 
+DTASelect-filter.txt: DTASelect output file
+search.xml - search param file
+test.db -ouput db; If already exists will added peptides from dtaselect-filter.txt
+## To Run Search(sqlite):
+
+java -cp /path/to/classpath/ edu.scripps.dia.LibrarySearch /path/to/test.ms2 /path/to//search.xml \[num threads]
+
+search.xml - database_name must contain path to sqlite path
 
 ## To build consensus library:
 
