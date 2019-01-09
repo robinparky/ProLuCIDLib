@@ -2,9 +2,12 @@ package edu.scripps.dia;
 
 import edu.scripps.pms.util.spectrum.Peak;
 import edu.scripps.pms.util.spectrum.PeakList;
+import gnu.trove.TDoubleArrayList;
 import gnu.trove.TFloatArrayList;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -28,6 +31,7 @@ public class LibrarySpectra {
     private TFloatArrayList mzList = new TFloatArrayList();
     private TFloatArrayList intensityList = new TFloatArrayList();
     private PeakList peakList = null;
+
 
     public LibrarySpectra(String sequence, int chargeState, float mz, float retTime, float score, float deltaCn,
                           String key, String filename, int scan, long id, String accession, String proteinDescription) {
@@ -122,5 +126,12 @@ public class LibrarySpectra {
 
     public List<String> getDescriptionList() {
         return descriptionList;
+    }
+
+
+    public PeakList getPeakList() {
+        if(peakList==null) createPeakList();
+
+        return peakList;
     }
 }

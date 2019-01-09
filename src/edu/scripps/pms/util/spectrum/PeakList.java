@@ -10,6 +10,8 @@
 package edu.scripps.pms.util.spectrum;
 
 import edu.scripps.pms.mspid.MassSpecConstants;
+import gnu.trove.TFloatArrayList;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 import java.text.DecimalFormat;
 import java.util.*;
@@ -447,11 +449,11 @@ public class PeakList {
     }
     public double getMaxM2z() {
         List<Peak> sortedPeaks = getSortedPeaks(SORTBYM2Z);
-        return sortedPeaks.get(numPeaks()-1).getM2z();
+        return sortedPeaks.get(0).getM2z();
     }
     public double getMinM2z() {
         List<Peak> sortedPeaks = getSortedPeaks(SORTBYM2Z);
-        return sortedPeaks.get(0).getM2z();
+        return sortedPeaks.get(numPeaks()-1).getM2z();
     }
     public double getMaxIntensity() {
         List<Peak> sortedPeaks = getSortedPeaks(SORTBYINTENSITY);
@@ -816,5 +818,39 @@ System.out.println("FirstMass: " + firstMass + "\tnoShiftMass: " + noShiftMass+ 
     public String getFilename()
     {
         return filename;
+    }
+
+    public TFloatArrayList generateBinSpectra(int shift, float fragment_tolerance,
+                                              int intensities_sum_or_mean_or_median, float minMz, float maxMz) {
+        TFloatArrayList bin_spec_al = new TFloatArrayList();
+
+        float binSize = (fragment_tolerance * 2),
+                upperLimit = maxMz + 0.00001f;
+        for (float lowerLimit = minMz; lowerLimit < upperLimit; lowerLimit = lowerLimit + binSize) {
+            float tmp_intensity_bin = 0;
+            DescriptiveStatistics obj = new DescriptiveStatistics();
+            for (Iterator<Peak> peakIterator =  this.getPeaks(); peakIterator.hasNext();) {
+                Peak p = peakIterator.next();
+                double mz = p.getM2z()+ shift;
+                if (mz >= lowerLimit && mz < lowerLimit + binSize) {
+                    obj.addValue(p.getIntensity());
+                }
+            }
+            if (obj.getN() > 0) {
+                if (intensities_sum_or_mean_or_median == 0) {
+                    tmp_intensity_bin = (float)obj.getSum();
+                } else if (intensities_sum_or_mean_or_median == 1) {
+                    tmp_intensity_bin =(float) obj.getMean();
+                } else if (intensities_sum_or_mean_or_median == 2) {
+                    tmp_intensity_bin = (float)obj.getPercentile(50);
+                }
+            }
+            // put every bin_pectrum
+            bin_spec_al.add(tmp_intensity_bin);
+        }
+        // convert an arraylist to double array
+        // initiate size of array
+
+        return bin_spec_al;
     }
 }

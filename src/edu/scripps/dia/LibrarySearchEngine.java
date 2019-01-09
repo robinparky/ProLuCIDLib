@@ -140,7 +140,7 @@ public class LibrarySearchEngine {
                      //   ProcessedPeakList ppl2 =indexedSpectraListTable[zline.getChargeState()].get(j);
                         //ProcessedPeakList ppl2 = new ProcessedPeakList(pl,pl.getZlines().next(),params,mc,true);
                        // PeakList pl = ppl2.getPeakList();
-                        sph= ppl.prelimScoreCorrelation(spectra);
+                        sph= ppl.normalizedDotProduct(spectra);
                         //cache.add(ppl2);
                         //pplCache.put(ppl.getID(),ppl);
 
@@ -180,7 +180,7 @@ public class LibrarySearchEngine {
                         //   ProcessedPeakList ppl2 =indexedSpectraListTable[zline.getChargeState()].get(j);
                         //ProcessedPeakList ppl2 = new ProcessedPeakList(pl,pl.getZlines().next(),params,mc,true);
                         // PeakList pl = ppl2.getPeakList();
-                        sph= ppl.prelimScoreCorrelation(spectra);
+                        sph= ppl.normalizedDotProduct(spectra);
                         //cache.add(ppl2);
                        // pplCache.put(ppl.getID(),ppl);
 

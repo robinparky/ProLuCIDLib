@@ -414,6 +414,69 @@ public class ProcessedPeakList {
         return sph;
     }
 
+    public ScoredPeptideHit normalizedDotProduct(LibrarySpectra spectra)
+    {
+        double score = calculateDotProductDerived(spectra, 1, 0,true);
+
+        ScoredPeptideHit sph = new ScoredPeptideHit(score);
+        sph.setMs2CompareValues(spectra.scan,spectra.scan,spectra.filename);
+        sph.setPrcMass(spectra.mz);
+        sph.setNumPeaks(spectra.getMzList().size());
+        sph.setLibrarySpectra(spectra);
+        sph.setRetTime(spectra.retTime);
+        return sph;
+    }
+
+    public double calculateDotProductDerived(LibrarySpectra spectra,
+                                             float x, float y, boolean isNormalized) {
+        // TODO: Make sure if any of binSpectra is empty, score i NaN! and return!
+        // now, calculate dot product score
+        PeakList libpeaks = spectra.getPeakList();
+        float min = libpeaks.getMinM2z()<peakList.getMinM2z()? (float)libpeaks.getMinM2z(): (float)peakList.getMinM2z();
+        float max = libpeaks.getMaxM2z()>peakList.getMaxM2z()? (float)libpeaks.getMaxM2z(): (float)peakList.getMaxM2z();
+        float[] yArray = spectra.getPeakList().generateBinSpectra(maxShift,(float)fragTolerance,
+                0,min,max).toNativeArray();
+        float[] xArray = this.peakList.generateBinSpectra(maxShift,(float)fragTolerance,
+                0,min,max).toNativeArray();
+
+        float dot_product_alpha_beta = 0,
+                dot_product_alpha_alpha = 0,
+                dot_product_beta_beta = 0;
+        float binSize = (float)(2 * fragTolerance),
+                mz = (float)peakList.getMinM2z() + binSize;
+        for (int i = 0; i < xArray.length; i++) {
+            float mz_peakA = mz,
+                    mz_peakB = mz,
+                    intensity_peakA = xArray[i],
+                    intensity_peakB = yArray[i];
+            boolean control = false;
+            if (intensity_peakA == 0 && intensity_peakB == 0) {
+                control = true;
+            }
+            if (!control) {
+                if (i == xArray.length - 1) {// make sure last one is not empty..
+                    mz_peakA = mz_peakA + 0.0000001f;
+                    mz_peakB = mz_peakB + 0.0000001f;
+                }
+                float alpha =(float)( Math.pow(intensity_peakA, x) * Math.pow(mz_peakA, y)),
+                        beta =(float)( Math.pow(intensity_peakB, x) * Math.pow(mz_peakB, y));
+                dot_product_alpha_beta = dot_product_alpha_beta + (float) (alpha * beta);
+                dot_product_alpha_alpha = dot_product_alpha_alpha + (float) (alpha * alpha);
+                dot_product_beta_beta = dot_product_beta_beta + (float) (beta * beta);
+                mz = mz + binSize;
+            }
+        }
+        float score;
+        if (isNormalized) {
+            float normalized_dot_product = (float) dot_product_alpha_beta / (float) (Math.sqrt(dot_product_alpha_alpha * dot_product_beta_beta));
+            score = normalized_dot_product;
+        } else {
+            score = dot_product_alpha_beta;
+        }
+        System.out.println(score);
+        return score;
+    }
+
 
 
     public ScoredPeptideHit prelimScoreCorrelation(PeakList peakList)
