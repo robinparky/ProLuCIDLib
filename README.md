@@ -9,7 +9,7 @@ DTASelect-filter.txt: DTASelect output file
 
 search.xml - search param file
 
-test.db -ouput db; If already exists will added peptides from dtaselect-filter.txt
+test.db -output db; If it already exists will add peptides from new dtaselect-filter.txt
 ## To Run Search(sqlite):
 
 java -cp /path/to/classpath/ edu.scripps.dia.LibrarySearch /path/to/test.ms2 /path/to//search.xml \[num threads]
