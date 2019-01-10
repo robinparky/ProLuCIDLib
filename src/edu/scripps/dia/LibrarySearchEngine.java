@@ -1,6 +1,5 @@
 package edu.scripps.dia;
 
-import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.google.common.collect.TreeRangeMap;
 import edu.scripps.dia.util.MzxmlPeakList;
@@ -140,12 +139,25 @@ public class LibrarySearchEngine {
                      //   ProcessedPeakList ppl2 =indexedSpectraListTable[zline.getChargeState()].get(j);
                         //ProcessedPeakList ppl2 = new ProcessedPeakList(pl,pl.getZlines().next(),params,mc,true);
                        // PeakList pl = ppl2.getPeakList();
-                        sph= ppl.normalizedDotProduct(spectra);
-                        //cache.add(ppl2);
+
+                        switch (params.getScoringAlgorithm())
+                        {
+                            case PEARSON_CORRELATION:
+                                sph= ppl.pearsonsCorrelation(spectra);
+
+                                break;
+                            case SPEARMAN_RHO:
+                                sph= ppl.spearmansCorrelation(spectra);
+                                break;
+                            default:
+                                sph= ppl.normalizedDotProduct(spectra);
+                                break;
+                        }
+                        //c                        //cache.add(ppl2);
                         //pplCache.put(ppl.getID(),ppl);
 
                      //   sph.setMs2CompareValues(pl.getHiscan(),pl.getLoscan(), pl.getFilename());
-                        if(sph.getPScore()<worseScore || sphQueue.size()<params.getCandidatePeptideThreshold())
+                        if(sph.getPScore()>worseScore || sphQueue.size()<params.getCandidatePeptideThreshold())
                         {
                             sphQueue.add(sph);
                             if(sphQueue.size()>params.getCandidatePeptideThreshold())
@@ -180,12 +192,25 @@ public class LibrarySearchEngine {
                         //   ProcessedPeakList ppl2 =indexedSpectraListTable[zline.getChargeState()].get(j);
                         //ProcessedPeakList ppl2 = new ProcessedPeakList(pl,pl.getZlines().next(),params,mc,true);
                         // PeakList pl = ppl2.getPeakList();
-                        sph= ppl.normalizedDotProduct(spectra);
+                        switch (params.getScoringAlgorithm())
+                        {
+                            case PEARSON_CORRELATION:
+                                sph= ppl.pearsonsCorrelation(spectra);
+
+                                break;
+                            case SPEARMAN_RHO:
+                                sph= ppl.spearmansCorrelation(spectra);
+                                break;
+                            case NORMALIZED_DOT_PRODUCT:
+                            default:
+                                sph= ppl.normalizedDotProduct(spectra);
+                                break;
+                        }
                         //cache.add(ppl2);
                        // pplCache.put(ppl.getID(),ppl);
 
                         //   sph.setMs2CompareValues(pl.getHiscan(),pl.getLoscan(), pl.getFilename());
-                        if(sph.getPScore()<worseScore || sphQueue.size()<params.getCandidatePeptideThreshold())
+                        if(sph.getPScore()>worseScore || sphQueue.size()<params.getCandidatePeptideThreshold())
                         {
                             sphQueue.add(sph);
                             if(sphQueue.size()>params.getCandidatePeptideThreshold())

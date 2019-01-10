@@ -808,7 +808,7 @@ for(int i = 0; i < freq.length; i++) {
         Collections.sort(sphList, new Comparator<ScoredPeptideHit>() {
             @Override
             public int compare(ScoredPeptideHit scoredPeptideHit, ScoredPeptideHit t1) {
-                return Double.compare(scoredPeptideHit.getPScore(),t1.getPScore());
+                return -Double.compare(scoredPeptideHit.getPScore(),t1.getPScore());
             }
         });
         finalResult = sphList.subList(0,size);

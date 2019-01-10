@@ -10,6 +10,8 @@ import edu.scripps.dia.LibrarySpectra;
 import edu.scripps.pms.util.TimeUtils;
 import edu.scripps.pms.util.spectrum.*;
 import gnu.trove.*;
+import org.apache.commons.math3.stat.correlation.PearsonsCorrelation;
+import org.apache.commons.math3.stat.correlation.SpearmansCorrelation;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
 
 import java.io.*;
@@ -21,27 +23,27 @@ public class ProcessedPeakList {
     public static final int DEFAULTPREPROCESS = 0;
     public static final int XCORRPREPROCESS = 1;
     public static final int TOPDOWNPREPROCESS = 2;
-    public static final int XCORRWINDOWSIZE = 1100; 
+    public static final int XCORRWINDOWSIZE = 1100;
     //public static final int MAXNUMPEAKS = 80000;
     public static final int PRECISIONFACTOR = 1000; // for sp process
     public static final int ACCURACYFACTOR = 1;  // for XCorr
     private static int ID_SEED=0;
     private int id ;
-    
+
     protected PeakList peakList;
     protected ArrayList<Peak> peaks;
     protected SearchParams params;
     //protected double [] intensityVal = new double[MAXNUMPEAKS];
     protected double [] intensityVal; // = new double[MAXNUMPEAKS];
     protected double [] intensityVal2;
-    
+
     // as exp_intensity in pep_prob
     //protected boolean [] boolMasses = new boolean[MAXNUMPEAKS]; // boolean representation of masses
     protected boolean [] boolMasses; // = new boolean[MAXNUMPEAKS]; // boolean representation of masses
     protected TIntHashSet massSet;
     protected TIntIntHashMap massPeakIdMap;
 
-//    protected int numPeaks; 
+//    protected int numPeaks;
     protected double cutoff = 0.06;
     //protected int lowestM2z; 
     //protected int highestM2z;
@@ -94,11 +96,12 @@ public class ProcessedPeakList {
 //    protected abstract int [] getTheorMasses(ScoredPeptideHit s);
 
     public boolean isEtdSpectrum() {
-        return isEtd; 
+        return isEtd;
     }
+
     public double [] getFragMasses() {
         return masses;
-    } 
+    }
     public double getNTermStart() {
         return nTermStart;
     }
@@ -193,6 +196,7 @@ public class ProcessedPeakList {
     public boolean isDeCharged() {
         return isDeCharged;
     }
+
     protected void processSinglyChargedBIon(int [] theorMass, double mass) {
         try {
             int intMass = (int)mass;
@@ -210,24 +214,26 @@ public class ProcessedPeakList {
             index = intMass - 17; // NH3 loss
             if (theorMass[index] < 10) theorMass[index] = 10;
         } catch(Exception e) {}// igore exception caused by weird aa residue
-       
+
     }
+
     protected void processSinglyChargedYIon(int [] theorMass, double mass) {
-        try { 
+        try {
             int intMass = (int)mass;
             //System.out.println("intmass: " + intMass);
             theorMass[intMass] = 50;
             int index = intMass + 1;
             if(theorMass[index] < 25)  theorMass[index] = 25;
- 
+
             index++; // -= 2; 
             if(theorMass[index] < 25) theorMass[index] = 25;
 
             index = intMass - 17; // loss NH3
             if(theorMass[index] < 10) theorMass[index] = 10;
-        
+
         } catch(Exception e) {}
     }
+
     protected void processDoublyChargedYIon(int theorMass[], double yMass) {
         try {
             double tempy = (yMass+ MassSpecConstants.MASSPROTONDB)/2.f;
@@ -239,8 +245,8 @@ public class ProcessedPeakList {
             index++; // -= 2;
             if(theorMass[index] < 25) theorMass[index] = 25;
 
-            index = (int)(tempy - PLUS3NH3IONADJUSTMENT); 
-            if(theorMass[index] < 10) theorMass[index] = 10; 
+            index = (int)(tempy - PLUS3NH3IONADJUSTMENT);
+            if(theorMass[index] < 10) theorMass[index] = 10;
         } catch(Exception e) {}// igore exception caused by weird aa residue?
     }
 
@@ -261,7 +267,7 @@ public class ProcessedPeakList {
             if(theorMass[index] < 10) theorMass[index] = 10;
             index = (int)(tempb - PLUS3NH3IONADJUSTMENT); // for loss NH3
             if(theorMass[index] < 10) theorMass[index] = 10;
-        
+
         } catch(Exception e) {}// igore exception caused by weird aa residue
     }
     public double autoCorrelation(int [] values) {
@@ -427,6 +433,81 @@ public class ProcessedPeakList {
         return sph;
     }
 
+    public ScoredPeptideHit pearsonsCorrelation(LibrarySpectra spectra)
+    {
+        double score = calcPearsonsCorrelation(spectra);
+
+        ScoredPeptideHit sph = new ScoredPeptideHit(score);
+        sph.setMs2CompareValues(spectra.scan,spectra.scan,spectra.filename);
+        sph.setPrcMass(spectra.mz);
+        sph.setNumPeaks(spectra.getMzList().size());
+        sph.setLibrarySpectra(spectra);
+        sph.setRetTime(spectra.retTime);
+       // System.out.println(">> SCORE "+score);
+        return sph;
+    }
+
+    public ScoredPeptideHit spearmansCorrelation(LibrarySpectra spectra)
+    {
+        double score = calcSpearmansCorrelation(spectra);
+
+        ScoredPeptideHit sph = new ScoredPeptideHit(score);
+        sph.setMs2CompareValues(spectra.scan,spectra.scan,spectra.filename);
+        sph.setPrcMass(spectra.mz);
+        sph.setNumPeaks(spectra.getMzList().size());
+        sph.setLibrarySpectra(spectra);
+        sph.setRetTime(spectra.retTime);
+        return sph;
+    }
+
+    public double calcPearsonsCorrelation(LibrarySpectra spectra)
+    {
+        PeakList libpeaks = spectra.getPeakList();
+        float min = libpeaks.getMinM2z()<peakList.getMinM2z()? (float)libpeaks.getMinM2z(): (float)peakList.getMinM2z();
+        float max = libpeaks.getMaxM2z()>peakList.getMaxM2z()? (float)libpeaks.getMaxM2z(): (float)peakList.getMaxM2z();
+        PearsonsCorrelation correlation = new PearsonsCorrelation();
+        float[] yArray = spectra.getPeakList().generateBinSpectra(maxShift,(float)fragTolerance,
+                0,min,max).toNativeArray();
+        float[] xArray = this.peakList.generateBinSpectra(maxShift,(float)fragTolerance,
+                0,min,max).toNativeArray();
+        double[] xArrayd = new double[xArray.length];
+        double[] yArrayd = new double[yArray.length];
+        for(int i=0; i<xArray.length; i++)
+        {
+            xArrayd[i] = xArray[i];
+        }
+        for(int i=0; i<yArray.length; i++)
+        {
+            yArrayd[i] = yArray[i];
+        }
+        return correlation.correlation(xArrayd,yArrayd);
+    }
+
+    public double calcSpearmansCorrelation(LibrarySpectra spectra)
+    {
+        PeakList libpeaks = spectra.getPeakList();
+        float min = libpeaks.getMinM2z()<peakList.getMinM2z()? (float)libpeaks.getMinM2z(): (float)peakList.getMinM2z();
+        float max = libpeaks.getMaxM2z()>peakList.getMaxM2z()? (float)libpeaks.getMaxM2z(): (float)peakList.getMaxM2z();
+        SpearmansCorrelation correlation = new SpearmansCorrelation();
+        float[] yArray = spectra.getPeakList().generateBinSpectra(maxShift,(float)fragTolerance,
+                0,min,max).toNativeArray();
+        float[] xArray = this.peakList.generateBinSpectra(maxShift,(float)fragTolerance,
+                0,min,max).toNativeArray();
+        double[] xArrayd = new double[xArray.length];
+        double[] yArrayd = new double[yArray.length];
+        for(int i=0; i<xArray.length; i++)
+        {
+            xArrayd[i] = xArray[i];
+        }
+        for(int i=0; i<yArray.length; i++)
+        {
+            yArrayd[i] = yArray[i];
+        }
+        return correlation.correlation(xArrayd,yArrayd);
+    }
+
+
+
     public double calculateDotProductDerived(LibrarySpectra spectra,
                                              float x, float y, boolean isNormalized) {
         // TODO: Make sure if any of binSpectra is empty, score i NaN! and return!
@@ -473,7 +554,6 @@ public class ProcessedPeakList {
         } else {
             score = dot_product_alpha_beta;
         }
-        System.out.println(score);
         return score;
     }
 

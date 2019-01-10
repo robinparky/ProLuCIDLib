@@ -604,6 +604,7 @@ public class LibraryIndexer {
         updateEntry.setInt(11,scan);
         updateEntry.executeUpdate();
     }
+
     private void updateSpectra(long id, List<Float> mzList, List<Float>  intList,float mass) throws IOException, SQLException {
         List<Long> mzBinList = new ArrayList<>();
 

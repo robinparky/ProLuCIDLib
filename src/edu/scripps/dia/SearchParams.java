@@ -81,6 +81,14 @@ public class SearchParams extends edu.scripps.pms.mspid.SearchParams {
     private HashSet<Modifications> mods = new HashSet<Modifications>();
     private double maxMassShift = -10000;
 
+    public enum ScoringAlgorithm
+    {
+        NORMALIZED_DOT_PRODUCT, SPEARMAN_RHO, PEARSON_CORRELATION
+    }
+
+    private ScoringAlgorithm scoringAlgorithm = ScoringAlgorithm.NORMALIZED_DOT_PRODUCT;
+
+
     public SearchParams(String path, String paramFile) throws IOException, JDOMException {
         paramFilePath = path;
         paramFileName = paramFile;
@@ -256,6 +264,7 @@ public class SearchParams extends edu.scripps.pms.mspid.SearchParams {
 
         Element root = doc.getRootElement();
         readDatabase(root.getChild("database"));
+        readScoringAlgorithmInfo(root.getChild("scoring_algorithm"));
         readSearchMode(root.getChild("search_mode"));
         readIsotopes(root.getChild("isotopes"));
         readTolerance(root.getChild("tolerance"));
@@ -279,6 +288,30 @@ public class SearchParams extends edu.scripps.pms.mspid.SearchParams {
 
         paramInput.close();
     }
+
+    private void readScoringAlgorithmInfo(Element e)
+    {
+        String text = e.getTextTrim().toUpperCase();
+        if(text.equals("SPEARMANS_RHO"))
+        {
+            System.out.println(">>>> scoring algorithm is Spearman's Rho");
+            scoringAlgorithm = ScoringAlgorithm.SPEARMAN_RHO;
+        }
+        else if(text.equals("PEARSONS_CORRELATION"))
+        {
+            System.out.println(">>>> scoring algorithm is Pearson Correlation");
+
+            scoringAlgorithm = ScoringAlgorithm.PEARSON_CORRELATION;
+        }
+        else
+        {
+            System.out.println(">>>> scoring algorithm is Normalized Dot Product");
+
+            scoringAlgorithm = ScoringAlgorithm.NORMALIZED_DOT_PRODUCT;
+        }
+    }
+
+
     private void readEnzymeInfo(Element e) {
         enzymeSpecificity = Integer.parseInt(e.getChildTextTrim("specificity"));
         String maxmiscleavage =  e.getChildTextTrim("max_num_internal_mis_cleavage");
@@ -816,6 +849,10 @@ public class SearchParams extends edu.scripps.pms.mspid.SearchParams {
 
     public void setPrecursorToleranceFloat(float precursorToleranceFloat) {
         this.precursorToleranceFloat = precursorToleranceFloat;
+    }
+
+    public ScoringAlgorithm getScoringAlgorithm() {
+        return scoringAlgorithm;
     }
 }
 
