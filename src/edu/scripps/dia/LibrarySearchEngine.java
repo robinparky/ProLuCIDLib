@@ -110,7 +110,15 @@ public class LibrarySearchEngine {
         ProcessedPeakList ppl = new ProcessedPeakList(peakList, zline, params, mc);
 
         SearchResult searchResult = new SearchResult(ppl);
+      /*  System.out.print(">>> ");
+        for(ListIterator<Peak> itr = peakList.getPeaks(); itr.hasNext(); )
+        {
+            Peak p = itr.next();
+            System.out.print(p.getM2z()+", "+p.getIntensity()+" ");
+        }
+        System.out.println();*/
         // System.out.println(peakList.getLoscan());
+        int origSearchCount = 0;
         if (numPeaks > params.getMinNumSpectra() && numPeaks < params.getMaxNumSpectra()) {
             float prcMass = (float) zline.getM2z();
             ScoredPeptideHit sph;
@@ -134,6 +142,7 @@ public class LibrarySearchEngine {
                         if(set.contains(j)){
                             continue;
                         }
+                        origSearchCount++;
                         set.add(j);
                         LibrarySpectra spectra = indexedSpectraListTable[zline.getChargeState()].get(j);
                      //   ProcessedPeakList ppl2 =indexedSpectraListTable[zline.getChargeState()].get(j);
@@ -144,86 +153,42 @@ public class LibrarySearchEngine {
                         {
                             case PEARSON_CORRELATION:
                                 sph= ppl.pearsonsCorrelation(spectra);
-
                                 break;
                             case SPEARMAN_RHO:
                                 sph= ppl.spearmansCorrelation(spectra);
                                 break;
+                            case DOT_PRODUCT:
+                                sph = ppl.dotProduct(spectra);
+                                break;
+                            case NORMALIZED_DOT_PRODUCT_SOKOLOW:
+                                sph = ppl.normalizedDotProduct(spectra,0.5f, 1);
+                                break;
                             default:
-                                sph= ppl.normalizedDotProduct(spectra);
+                                sph= ppl.normalizedDotProduct(spectra,1,0);
                                 break;
                         }
                         //c                        //cache.add(ppl2);
                         //pplCache.put(ppl.getID(),ppl);
 
                      //   sph.setMs2CompareValues(pl.getHiscan(),pl.getLoscan(), pl.getFilename());
-                        if(sph.getPScore()>worseScore || sphQueue.size()<params.getCandidatePeptideThreshold())
+                        if(!Double.isInfinite(sph.getPScore()) && !Double.isNaN(sph.getPScore()))
                         {
-                            sphQueue.add(sph);
-                            if(sphQueue.size()>params.getCandidatePeptideThreshold())
+                            if(sph.getPScore()>worseScore || sphQueue.size()<params.getCandidatePeptideThreshold())
                             {
-                                sphQueue.poll();
+                                sphQueue.add(sph);
+                                if(sphQueue.size()>params.getCandidatePeptideThreshold())
+                                {
+                                    sphQueue.poll();
+                                }
+                                worseScore = sphQueue.peek().getPrimaryScore();
                             }
-                            worseScore = sphQueue.peek().getPrimaryScore();
                         }
+
                     }
 
                 }
 
-                highLimits = new TIntArrayList();
-                lowLimits = new TIntArrayList();
-                MassRangeFinder.findRange(prcMass+LibrarySearch.DECOY_DIFF, params, lowLimits, highLimits);
-                for (int i = 0; i < highLimits.size(); i++) {
-                    int high = highLimits.get(i);
-                    int low = lowLimits.get(i);
-                    if(low<startRange || high>endRange ) continue;
-                    int massLow = massIndex[zline.getChargeState()][low-startRange];
-                    int massHigh = massIndex[zline.getChargeState()][high-startRange];
-                    // System.out.println("low "+massLow+" high "+massHigh);
 
-                    for(int j=massLow; j<massHigh; j++)
-                    {
-                        if(set.contains(j)){
-                            continue;
-                        }
-                        set.add(j);
-                        set.add(j);
-                        LibrarySpectra spectra = indexedSpectraListTable[zline.getChargeState()].get(j);
-                        //   ProcessedPeakList ppl2 =indexedSpectraListTable[zline.getChargeState()].get(j);
-                        //ProcessedPeakList ppl2 = new ProcessedPeakList(pl,pl.getZlines().next(),params,mc,true);
-                        // PeakList pl = ppl2.getPeakList();
-                        switch (params.getScoringAlgorithm())
-                        {
-                            case PEARSON_CORRELATION:
-                                sph= ppl.pearsonsCorrelation(spectra);
-
-                                break;
-                            case SPEARMAN_RHO:
-                                sph= ppl.spearmansCorrelation(spectra);
-                                break;
-                            case NORMALIZED_DOT_PRODUCT:
-                            default:
-                                sph= ppl.normalizedDotProduct(spectra);
-                                break;
-                        }
-                        //cache.add(ppl2);
-                       // pplCache.put(ppl.getID(),ppl);
-
-                        //   sph.setMs2CompareValues(pl.getHiscan(),pl.getLoscan(), pl.getFilename());
-                        if(sph.getPScore()>worseScore || sphQueue.size()<params.getCandidatePeptideThreshold())
-                        {
-                            sphQueue.add(sph);
-                            if(sphQueue.size()>params.getCandidatePeptideThreshold())
-                            {
-                                sphQueue.poll();
-                            }
-                            worseScore = sphQueue.peek().getPrimaryScore();
-                        }
-                        sph.setIsDecoy(true);
-
-                    }
-
-                }
 
                 //ppl.dumpBoolMass();
 
@@ -643,9 +608,29 @@ public class LibrarySearchEngine {
                 }
             }
         }
-        this.startRange = startrange;
-        this.endRange = endrange+1000;
         br.close();
+        BufferedReader br2 = new BufferedReader(new FileReader(ms2FilePath));
+        String line;
+        int cs =1;
+        double highestZmass = 0;
+        while((line = br2.readLine())!=null)
+        {
+            if(line.startsWith("Z\t"))
+            {
+                String [] arr = line.split("\t");
+                int csCan = Integer.parseInt(arr[1]);
+                double zmass = Double.parseDouble(arr[2]);
+                if(zmass>highestZmass)
+                {
+                    cs =csCan;
+                    highestZmass = zmass;
+                }
+            }
+        }
+        br2.close();
+        int decoyBuffer = cs*8000;
+        this.startRange = startrange;
+        this.endRange = endrange+1000+decoyBuffer;
     }
 
     public boolean queryRangeFromIndex() throws IOException, SQLException {
@@ -654,6 +639,8 @@ public class LibrarySearchEngine {
         System.out.println("Start "+startRange+" end "+endRange);
 
         List<LibrarySpectra> spectraList = libraryIndexer.querySpectra(startRange,endRange);
+        List<LibrarySpectra> decoyList = libraryIndexer.queryDecoySpectra(startRange,endRange);
+        spectraList.addAll(decoyList);
         for(LibrarySpectra spectra : spectraList)
         {
             float mass = spectra.mz;

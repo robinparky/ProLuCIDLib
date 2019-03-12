@@ -284,7 +284,12 @@ for(int i = 0; i < freq.length; i++) {
 
         List<String> accessionList = sph.getLibrarySpectra().getAccessionList();
         List<String> descriptionList = sph.getLibrarySpectra().getDescriptionList();
-
+      /*  if(sph.isDecoy())
+        {
+            result.append("L\t").append("Reverse_Protein").append("\t")
+                    .append(0).append("\t")
+                    .append(sph.getSequence()).append("\n");
+        }*/
         for(int i=0; i<accessionList.size(); i++)
         {
             result.append("L\t").append(accessionList.get(i)).append("\t")
@@ -411,7 +416,7 @@ for(int i = 0; i < freq.length; i++) {
     private void setPScoreRank(List<ScoredPeptideHit> scoredList) {
 
         int rank = 0;
-        double lastScore = 100;
+        double lastScore = Double.MAX_VALUE;
         for(ScoredPeptideHit p : scoredList) {
             double pScore = p.getPScore();
             if(pScore < lastScore) {

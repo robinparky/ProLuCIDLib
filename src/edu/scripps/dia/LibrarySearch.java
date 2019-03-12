@@ -18,7 +18,7 @@ import java.util.*;
  * Created by yateslab on 10/12/17.
  */
 public class LibrarySearch {
-    public static final double DECOY_DIFF = 50.0;
+    public static final float DECOY_DIFF = 8;
 
     public static void simpleSearch(String [] args) throws Exception {
         String ms2Path = args[0];

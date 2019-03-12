@@ -2,12 +2,9 @@ package edu.scripps.dia;
 
 import edu.scripps.pms.util.spectrum.Peak;
 import edu.scripps.pms.util.spectrum.PeakList;
-import gnu.trove.TDoubleArrayList;
 import gnu.trove.TFloatArrayList;
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -26,15 +23,36 @@ public class LibrarySpectra {
     public final String filename;
     public final int scan;
     public final long id;
+    public final int massKey;
+
     private  List<String> accessionList = new ArrayList<>();
     private  List<String> descriptionList= new ArrayList<>();
     private TFloatArrayList mzList = new TFloatArrayList();
     private TFloatArrayList intensityList = new TFloatArrayList();
-    private PeakList peakList = null;
+    private  PeakList peakList = null;
+    private boolean isDecoy = false;
+
+    public static String ReveseSequence(String sequence)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        String cleanSeq = sequence.replaceAll("\\([0-9.\\-]*\\)", "");
+        if(cleanSeq.contains("("))
+        {
+            System.out.println();
+        }
+        for(int i=cleanSeq.length()-1; i>=0; i--)
+        {
+            sb.append(cleanSeq.charAt(i));
+        }
+        return  sb.toString();
+    }
+
+
 
 
     public LibrarySpectra(String sequence, int chargeState, float mz, float retTime, float score, float deltaCn,
-                          String key, String filename, int scan, long id, String accession, String proteinDescription) {
+                          String key, String filename, int scan, long id, String accession, String proteinDescription, int massKey) {
         this.sequence = sequence;
         this.chargeState = chargeState;
         this.mz = mz;
@@ -45,12 +63,54 @@ public class LibrarySpectra {
         this.filename = filename;
         this.scan = scan;
         this.id = id;
+        this.massKey = massKey;
         accessionList.add(accession);
         descriptionList.add(proteinDescription);
        // this.accession = accession;
        // this.proteinDescription = proteinDescription;
     }
 
+    public LibrarySpectra(int massKey, int cs,String sequence, boolean isDecoy) {
+        if(isDecoy)
+        {
+            sequence = ReveseSequence(sequence);
+        }
+        this.sequence = sequence;
+        this.chargeState = cs;
+        this.mz = massKey/1000.0f;
+        this.retTime = 0;
+        this.score = 0;
+        this.deltaCn = 0;
+        this.key = "";
+        this.filename = "";
+        this.scan = 0;
+        this.id = 0;
+        this.massKey = massKey;
+        this.isDecoy = isDecoy;
+
+        // this.accession = accession;
+        // this.proteinDescription = proteinDescription;
+    }
+
+
+
+    public LibrarySpectra(int massKey, int cs, boolean isDecoy) {
+        this.sequence = "PEPTIDE";
+        this.chargeState = cs;
+        this.mz = massKey/1000.0f;
+        this.retTime = 0;
+        this.score = 0;
+        this.deltaCn = 0;
+        this.key = "";
+        this.filename = "";
+        this.scan = 0;
+        this.id = 0;
+        this.massKey = massKey;
+        this.isDecoy = isDecoy;
+
+        // this.accession = accession;
+        // this.proteinDescription = proteinDescription;
+    }
     public TFloatArrayList getMzList() {
         return mzList;
     }
@@ -99,6 +159,15 @@ public class LibrarySpectra {
             peakList.addPeak(new Peak(mzList.get(i),intensityList.get(i)));
         }
     }
+    public PeakList createPeakListCopy()
+    {
+        PeakList peakList = new PeakList();
+        for(int i=0; i<mzList.size(); i++)
+        {
+            peakList.addPeak(new Peak(mzList.get(i),intensityList.get(i)));
+        }
+        return peakList;
+    }
 
     public synchronized List<Peak> getIntensPeaks(int num) {
         if(peakList==null) createPeakList();
@@ -116,6 +185,10 @@ public class LibrarySpectra {
 
     public void addProtein(String accession, String description)
     {
+        if(isDecoy)
+        {
+            accession= "Reverse_"+accession;
+        }
         accessionList.add(accession);
         descriptionList.add(description);
     }
@@ -133,5 +206,13 @@ public class LibrarySpectra {
         if(peakList==null) createPeakList();
 
         return peakList;
+    }
+
+    public boolean isDecoy() {
+        return isDecoy;
+    }
+
+    public void setDecoy(boolean decoy) {
+        isDecoy = decoy;
     }
 }

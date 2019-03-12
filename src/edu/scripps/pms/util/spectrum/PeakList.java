@@ -15,6 +15,7 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.stream.DoubleStream;
 
 
 public class PeakList {
@@ -47,6 +48,9 @@ public class PeakList {
     private int precursorScanNumber = -1;
     private double precursorint = -1;
     private String filename;
+
+    private double minM2z = Double.NaN;
+    private double maxM2z = Double.NaN;
 
     public static final DecimalFormat threeDigits = new DecimalFormat("0.000");
     public static final DecimalFormat fourDigits = new DecimalFormat("0.0000");

@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
+import static edu.scripps.dia.SearchParams.ScoringAlgorithm.NORMALIZED_DOT_PRODUCT_SOKOLOW;
 
 
 public class SearchParams extends edu.scripps.pms.mspid.SearchParams {
@@ -83,7 +84,7 @@ public class SearchParams extends edu.scripps.pms.mspid.SearchParams {
 
     public enum ScoringAlgorithm
     {
-        NORMALIZED_DOT_PRODUCT, SPEARMAN_RHO, PEARSON_CORRELATION
+        NORMALIZED_DOT_PRODUCT, SPEARMAN_RHO, PEARSON_CORRELATION, DOT_PRODUCT, NORMALIZED_DOT_PRODUCT_SOKOLOW
     }
 
     private ScoringAlgorithm scoringAlgorithm = ScoringAlgorithm.NORMALIZED_DOT_PRODUCT;
@@ -292,16 +293,26 @@ public class SearchParams extends edu.scripps.pms.mspid.SearchParams {
     private void readScoringAlgorithmInfo(Element e)
     {
         String text = e.getTextTrim().toUpperCase();
-        if(text.equals("SPEARMANS_RHO"))
+        if("SPEARMANS_RHO".equals(text))
         {
             System.out.println(">>>> scoring algorithm is Spearman's Rho");
             scoringAlgorithm = ScoringAlgorithm.SPEARMAN_RHO;
         }
-        else if(text.equals("PEARSONS_CORRELATION"))
+        else if("PEARSONS_CORRELATION".equals(text))
         {
             System.out.println(">>>> scoring algorithm is Pearson Correlation");
 
             scoringAlgorithm = ScoringAlgorithm.PEARSON_CORRELATION;
+        }
+        else if("DOT_PRODUCT".equals(text))
+        {
+            System.out.println(">>>> scoring algorithm is  Dot Product");
+
+            scoringAlgorithm = ScoringAlgorithm.DOT_PRODUCT;
+        }
+        else if("NORMALIZED_DOT_PRODUCT_SOKOLOW".equals(text))
+        {
+            scoringAlgorithm = NORMALIZED_DOT_PRODUCT_SOKOLOW;
         }
         else
         {
@@ -549,11 +560,11 @@ public class SearchParams extends edu.scripps.pms.mspid.SearchParams {
         peakRankThreshold =  peakrankt == null? 200: Integer.parseInt(peakrankt);
 
         String candidatet = me.getChildTextTrim("candidate_peptide_threshold");
-        candidatePeptideThreshold = candidatet == null? 500: Integer.parseInt(candidatet);
 
         String numoutput = me.getChildTextTrim("num_output");
         numOutput = numoutput == null? 5 : Integer.parseInt(numoutput);
         minMatch =  Integer.parseInt(me.getChildTextTrim("min_match"));
+        candidatePeptideThreshold = numOutput;
 
         String preproc = me.getChildTextTrim("preprocess");
         preprocess  =  preproc == null? 1 : Integer.parseInt(preproc);

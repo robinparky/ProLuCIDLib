@@ -270,6 +270,7 @@ public class ProcessedPeakList {
 
         } catch(Exception e) {}// igore exception caused by weird aa residue
     }
+
     public double autoCorrelation(int [] values) {
         double sumProduct = 0.f;
         double moreSumProduct= 0.f;
@@ -420,9 +421,9 @@ public class ProcessedPeakList {
         return sph;
     }
 
-    public ScoredPeptideHit normalizedDotProduct(LibrarySpectra spectra)
+    public ScoredPeptideHit dotProduct(LibrarySpectra spectra)
     {
-        double score = calculateDotProductDerived(spectra, 1, 0,true);
+        double score = calculateDotProductDerived(spectra, 1, 0,false);
 
         ScoredPeptideHit sph = new ScoredPeptideHit(score);
         sph.setMs2CompareValues(spectra.scan,spectra.scan,spectra.filename);
@@ -430,6 +431,22 @@ public class ProcessedPeakList {
         sph.setNumPeaks(spectra.getMzList().size());
         sph.setLibrarySpectra(spectra);
         sph.setRetTime(spectra.retTime);
+        sph.setIsDecoy(spectra.isDecoy());
+        return sph;
+    }
+
+
+    public ScoredPeptideHit normalizedDotProduct(LibrarySpectra spectra, float x , float y)
+    {
+        double score = calculateDotProductDerived(spectra, x, y,true);
+
+        ScoredPeptideHit sph = new ScoredPeptideHit(score);
+        sph.setMs2CompareValues(spectra.scan,spectra.scan,spectra.filename);
+        sph.setPrcMass(spectra.mz);
+        sph.setNumPeaks(spectra.getMzList().size());
+        sph.setLibrarySpectra(spectra);
+        sph.setRetTime(spectra.retTime);
+        sph.setIsDecoy(spectra.isDecoy());
         return sph;
     }
 
@@ -443,6 +460,7 @@ public class ProcessedPeakList {
         sph.setNumPeaks(spectra.getMzList().size());
         sph.setLibrarySpectra(spectra);
         sph.setRetTime(spectra.retTime);
+        sph.setIsDecoy(spectra.isDecoy());
        // System.out.println(">> SCORE "+score);
         return sph;
     }
@@ -457,6 +475,7 @@ public class ProcessedPeakList {
         sph.setNumPeaks(spectra.getMzList().size());
         sph.setLibrarySpectra(spectra);
         sph.setRetTime(spectra.retTime);
+        sph.setIsDecoy(spectra.isDecoy());
         return sph;
     }
 
@@ -466,9 +485,9 @@ public class ProcessedPeakList {
         float min = libpeaks.getMinM2z()<peakList.getMinM2z()? (float)libpeaks.getMinM2z(): (float)peakList.getMinM2z();
         float max = libpeaks.getMaxM2z()>peakList.getMaxM2z()? (float)libpeaks.getMaxM2z(): (float)peakList.getMaxM2z();
         PearsonsCorrelation correlation = new PearsonsCorrelation();
-        float[] yArray = spectra.getPeakList().generateBinSpectra(maxShift,(float)fragTolerance,
+        float[] yArray = spectra.getPeakList().generateBinSpectra(0,(float)fragTolerance,
                 0,min,max).toNativeArray();
-        float[] xArray = this.peakList.generateBinSpectra(maxShift,(float)fragTolerance,
+        float[] xArray = this.peakList.generateBinSpectra(0,(float)fragTolerance,
                 0,min,max).toNativeArray();
         double[] xArrayd = new double[xArray.length];
         double[] yArrayd = new double[yArray.length];
@@ -489,9 +508,9 @@ public class ProcessedPeakList {
         float min = libpeaks.getMinM2z()<peakList.getMinM2z()? (float)libpeaks.getMinM2z(): (float)peakList.getMinM2z();
         float max = libpeaks.getMaxM2z()>peakList.getMaxM2z()? (float)libpeaks.getMaxM2z(): (float)peakList.getMaxM2z();
         SpearmansCorrelation correlation = new SpearmansCorrelation();
-        float[] yArray = spectra.getPeakList().generateBinSpectra(maxShift,(float)fragTolerance,
+        float[] yArray = spectra.getPeakList().generateBinSpectra(0,(float)fragTolerance,
                 0,min,max).toNativeArray();
-        float[] xArray = this.peakList.generateBinSpectra(maxShift,(float)fragTolerance,
+        float[] xArray = this.peakList.generateBinSpectra(0,(float)fragTolerance,
                 0,min,max).toNativeArray();
         double[] xArrayd = new double[xArray.length];
         double[] yArrayd = new double[yArray.length];
@@ -512,12 +531,21 @@ public class ProcessedPeakList {
                                              float x, float y, boolean isNormalized) {
         // TODO: Make sure if any of binSpectra is empty, score i NaN! and return!
         // now, calculate dot product score
-        PeakList libpeaks = spectra.getPeakList();
+        PeakList libpeaks = spectra.createPeakListCopy();
         float min = libpeaks.getMinM2z()<peakList.getMinM2z()? (float)libpeaks.getMinM2z(): (float)peakList.getMinM2z();
         float max = libpeaks.getMaxM2z()>peakList.getMaxM2z()? (float)libpeaks.getMaxM2z(): (float)peakList.getMaxM2z();
-        float[] yArray = spectra.getPeakList().generateBinSpectra(maxShift,(float)fragTolerance,
+       /* if(spectra.isDecoy())
+        {
+            System.out.print(">> ");
+            for(int i=0; i<spectra.getMzList().size(); i++)
+            {
+                System.out.print(spectra.getMzList().get(i)+", "+spectra.getIntensityList().get(i)+" ");
+            }
+            System.out.println();
+        }*/
+        float[] yArray =libpeaks.generateBinSpectra(0,(float)fragTolerance,
                 0,min,max).toNativeArray();
-        float[] xArray = this.peakList.generateBinSpectra(maxShift,(float)fragTolerance,
+        float[] xArray = this.peakList.generateBinSpectra(0,(float)fragTolerance,
                 0,min,max).toNativeArray();
 
         float dot_product_alpha_beta = 0,
