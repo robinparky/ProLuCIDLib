@@ -12,41 +12,44 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow import keras
 
-if len(sys.argv) > 1:
-    showResults = str(sys.argv[1])
+if len(sys.argv) != 4:
+    print("Error with command line inputs")
+    sys.exit(0)
 else:
-    showResults = False
+    inputPath = sys.argv[1]
+    neuralPath = sys.argv[2]
+    showResults = sys.argv[3]
 
 '''--------------------------------------------------------------------------'''
 print("Gathering Data from Files")
-with open ('data/spectrumsList', 'rb') as sp:
+with open (inputPath + 'spectrumsList', 'rb') as sp:
     spectrums = pickle.load(sp)
 sp.close()
-with open ('data/labelList', 'rb') as lp:
+with open (inputPath + 'labelList', 'rb') as lp:
     labelList = pickle.load(lp)
 sp.close()
-with open ('data/indexList', 'rb') as lp:
+with open (inputPath + 'indexList', 'rb') as lp:
     indexList = pickle.load(lp)
 sp.close()
-with open ('data/idList', 'rb') as lp:
+with open (inputPath + 'idList', 'rb') as lp:
     idList = pickle.load(lp)
 sp.close()
-with open ('data/binArray', 'rb') as lp:
+with open (inputPath + 'binArray', 'rb') as lp:
     binArray = pickle.load(lp)
 sp.close()
-with open ('data/testSpec', 'rb') as sp:
+with open (inputPath + 'testSpec', 'rb') as sp:
     testSpec = pickle.load(sp)
 sp.close()
-with open ('data/testBins', 'rb') as lp:
+with open (inputPath + 'testBins', 'rb') as lp:
     testBins = pickle.load(lp)
 sp.close()
-with open ('data/testInd', 'rb') as lp:
+with open (inputPath + 'testInd', 'rb') as lp:
     testInd = pickle.load(lp)
 sp.close()
-with open ('data/testLab', 'rb') as lp:
+with open (inputPath + 'testLab', 'rb') as lp:
     testLab = pickle.load(lp)
 sp.close()
-with open ('data/testId', 'rb') as lp:
+with open (inputPath + 'testId', 'rb') as lp:
     testId = pickle.load(lp)
 sp.close()
 '''--------------------------------------------------------------------------'''
@@ -60,22 +63,24 @@ outputLayers = len(set(indexList))
 def create_model():
     model = keras.Sequential([
         keras.layers.InputLayer(input_shape = (totalBins, )),
-        keras.layers.Dense(inputLayers/2, activation=tf.nn.relu),
-        keras.layers.Dense(inputLayers/2, activation=tf.nn.relu),
+        keras.layers.Dense(outputLayers * 8, activation=tf.nn.relu),
+        keras.layers.Dense(outputLayers * 8, activation=tf.nn.relu),
         keras.layers.Dense(outputLayers, activation=tf.nn.softmax)
     ])
     return model
 model = create_model()
+
 model.compile(optimizer='adam',
               loss='sparse_categorical_crossentropy',
               metrics=['accuracy'])
-model.load_weights('saved/1dDenseWeights.h5')
-#model2 = keras.models.load_model('saved/1dDenseModel.h5')
-#model2.fit(binArray, indexList, epochs = NUM_EPOCHS)
+
+model.load_weights(neuralPath)
+#model = tf.keras.models.load_model('saved/model.h5')
+
 result = model.predict(testBins)
 
 # Graph Results
-if showResults == "True" || showResults == "t" || showResults == "T":
+if showResults == "True" or showResults == "t" or showResults == "T":
     for i, ele in enumerate(result):
         cnt=0; #Variables for keeping track of max values
         maxVal = 0;
@@ -100,11 +105,12 @@ if showResults == "True" || showResults == "t" || showResults == "T":
         print(ind, "  |  ", testInd[i])
         print("Predicted: ", predicted)
         print("ActualVal: ", actual, "\n")
+        print(ind,": ", maxVal, "|", end='')
+        print(ind2,": ", val2, "|", end='')
+        print(ind3,": ", val3, "|", end='')
+        print ("\n")
+
         if predicted != actual:
-            print(ind,": ", maxVal, "|", end='')
-            print(ind2,": ", val2, "|", end='')
-            print(ind3,": ", val3, "|", end='')
-            print ("\n")
 
             ###################################################################
             x1 = [x[0] for x in testSpec[i]]
@@ -221,7 +227,7 @@ if showResults == "True" || showResults == "t" || showResults == "T":
             cnt +=1;
             plt.savefig(path)"""
             print("##############################################")
-            #plt.show()
+            plt.show()
 
         else:
             print("----------------------------------------------")
