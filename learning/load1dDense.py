@@ -53,6 +53,20 @@ with open (inputPath + 'testId', 'rb') as lp:
     testId = pickle.load(lp)
 sp.close()
 '''--------------------------------------------------------------------------'''
+
+print(testSpec[5][80])
+print(testLab[5])
+print(testInd[5])
+print(testId[5])
+
+print(spectrumList[5][80])
+print(labelList[5])
+print(indexList[5])
+print(idList[5])
+
+
+
+
 outputLabels = list(set(labelList));
 inputs = len(spectrums)
 totalBins = len(binArray[0])

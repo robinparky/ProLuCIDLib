@@ -14,13 +14,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 if len(sys.argv) != 5 :
+    print(len(sys.argv))
     print("Error with command line inputs")
     sys.exit(0)
 else:
     save = sys.argv[1]
     outputPath = sys.argv[2]
-    batchSize = sys.argv[4]
-    numEpochs = sys.argv[5]
+    batchSize = int(sys.argv[3])
+    numEpochs = int(sys.argv[4])
 
 start = time.time()
 
@@ -47,6 +48,17 @@ with tf.device('/cpu:0'):
         binArray = pickle.load(lp)
     sp.close()
 '''--------------------------------------------------------------------------'''
+print(spectrums[5][80])
+print(labelList[5])
+print(indexList[5])
+print(idList[5])
+
+
+print(spectrums[33][80])
+print(labelList[33])
+print(indexList[33])
+print(idList[33])
+
 
 #Metrics for printing(mostly)
 inputs = len(spectrums)
@@ -110,7 +122,7 @@ model.compile(optimizer='adam',
 #Train the data
 model.fit(binArray, indexList, batch_size = batchSize, epochs = numEpochs)
 
-model.save_weights(neuralNetworkPath)
+model.save_weights(outputPath)
 #model.save(outputPath)
 
 

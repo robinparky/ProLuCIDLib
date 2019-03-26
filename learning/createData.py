@@ -46,6 +46,7 @@ start = time.time()
 conn = sqlite3.connect(databasePath)
 
 peptideCnt = 0 #Count of number of peptides for alter use
+specCnt = 0
 labelList = [] #List of label associated with peptide
 spectrumList = [] #Spectrum to hold arrays of coords
 idList = [] #List holds scan id associated with spectrum
@@ -60,15 +61,15 @@ pepTable = c.fetchall()
 for j in range(0, 5):
 
     #Match peptide in table to peptide in Spectra Table
-    #eptide = (str(ind[0]), )
+    #peptide = (str(ind[0]), )
     peptide = (str(pepTable[j][0]), )
-
+    peptideCnt += 1;
     c.execute('SELECT *,rowid FROM SpectraTable WHERE peptideID=?', peptide)
     spectrums = c.fetchall()
 
     #Make sure peptide has more than 50 spectrums for accurate training.
     if len(spectrums) >= 50:
-        peptideCnt += 1 #increment peptide count
+        specCnt += 1 #increment peptide count
 
         #Search returned list of matched spectrums for each peptide
         for element in spectrums:
@@ -164,7 +165,7 @@ for ind in range(0, len(spectrumList)):
 
     #Get number of points in the spectrum and iterate through each one
     numPoints = len(spectrumList[ind])
-    for peptideCnt, i in enumerate(spectrumList[ind]):
+    for ele, i in enumerate(spectrumList[ind]):
         x = i[0] # X coord
         y = i[1] # Y coord
 
@@ -206,9 +207,10 @@ idList = np.array(idList)
 
 
 
-
-
-
+print(spectrumList[5][4])
+print(labelList[5])
+print(indexList[5])
+print(idList[5])
 #Split array into test and training sets
 spectrumListSplit = np.split(spectrumList, [int(testNumber)])
 binArraySplit = np.split(binArray, [int(testNumber)])
@@ -228,7 +230,10 @@ labelList = labelListSplit[1]
 indexList = indexListSplit[1]
 idList = idListSplit[1]
 
-
+print(testSpec[5][4])
+print(testLab[5])
+print(testInd[5])
+print(testId[5])
 #'''''''''''''''''''''''''''''''''''''''TEST Data
 print("Peptides: ", peptideCnt, " spectrumList: ", len(spectrumList))
 
