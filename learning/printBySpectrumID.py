@@ -27,6 +27,12 @@ for i, j in zip(mzArr, intArr):
     coords.append(intensity);
     spectrum.append(coords);
 spectrum1 = spectrum
+spec1id  = spectrums[0]
+c.execute("SELECT * FROM PeptideTable WHERE peptideID=?", (spec1id, ))
+peptide = c.fetchone()
+name1 = str(peptide[14])
+
+
 
 c.execute("SELECT * FROM SpectraTable WHERE rowid=?", (id2, ))
 spectrums = c.fetchone();
@@ -42,6 +48,13 @@ for i, j in zip(mzArr, intArr):
     coords.append(intensity);
     spectrum.append(coords);
 spectrum2 = spectrum
+spec2id  = spectrums[0]
+c.execute("SELECT * FROM PeptideTable WHERE peptideID=?", (spec2id, ))
+peptide = c.fetchone()
+name2 = str(peptide[14])
+
+print(str(id1) + ": " + str(name1))
+print(str(id2) + ": " + str(name2))
 
 
 x1 = [];

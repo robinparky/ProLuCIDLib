@@ -59,7 +59,7 @@ print(testLab[5])
 print(testInd[5])
 print(testId[5])
 
-print(spectrumList[5][80])
+print(spectrums[5][80])
 print(labelList[5])
 print(indexList[5])
 print(idList[5])

@@ -25,6 +25,8 @@ Define the width of x bins
 
 Calculate the width of a y bin.
 """
+
+
 Y_TOP_BOUND  = 100000 #Defined top bound
 yBins = 10
 BIN_WIDTH_Y = Y_TOP_BOUND/yBins
@@ -207,10 +209,12 @@ idList = np.array(idList)
 
 
 
-print(spectrumList[5][4])
+"""print(spectrumList[5][4])
 print(labelList[5])
 print(indexList[5])
-print(idList[5])
+print(idList[5])"""
+
+
 #Split array into test and training sets
 spectrumListSplit = np.split(spectrumList, [int(testNumber)])
 binArraySplit = np.split(binArray, [int(testNumber)])
@@ -230,10 +234,40 @@ labelList = labelListSplit[1]
 indexList = indexListSplit[1]
 idList = idListSplit[1]
 
-print(testSpec[5][4])
-print(testLab[5])
-print(testInd[5])
-print(testId[5])
+for i in range(0, len(testSpec)-1):
+    if not np.array_equal(spectrumListSplit[0][i],testSpec[i]) or  not np.array_equal(binArraySplit[0][i],testBins[i]) or labelListSplit[0][i] != testLab[i] or indexListSplit[0][i] != testInd[i] or idListSplit[0][i] != testId[i]:
+        print("---------------------------------")
+        print("\nOriginal")
+        print(spectrumListSplit[0][i][4])
+        print(binArraySplit[0][i][4])
+        print(labelListSplit[0][i])
+        print(indexListSplit[0][i])
+        print(idListSplit[0][i])
+        print("\nTest")
+        print(testSpec[i][4])
+        print(testBins[i][4])
+        print(testLab[i])
+        print(testInd[i])
+        print(testId[i])
+
+for i in range(0, len(spectrumList)-1):
+    if not np.array_equal(spectrumListSplit[1][i],spectrumList[i]) or not np.array_equal(binArraySplit[1][i],binArray[i]) or labelListSplit[1][i] != labelList[i] or indexListSplit[1][i] != indexList[i] or idListSplit[1][i] != idList[i]:
+        print("---------------------------------")
+        print("\nOriginal")
+        print(spectrumListSplit[1][i][4])
+        print(binArraySplit[1][i][4])
+        print(labelListSplit[1][i])
+        print(indexListSplit[1][i])
+        print(idListSplit[1][i])
+        print("\nTraining")
+        print(spectrumList[i][4])
+        print(binArray[i][4])
+        print(labelList[i])
+        print(indexList[i])
+        print(idList[i])
+
+
+
 #'''''''''''''''''''''''''''''''''''''''TEST Data
 print("Peptides: ", peptideCnt, " spectrumList: ", len(spectrumList))
 
