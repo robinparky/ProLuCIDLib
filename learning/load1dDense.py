@@ -94,6 +94,13 @@ model.load_weights(neuralPath)
 result = model.predict(testBins)
 
 # Graph Results
+for i, k in enumerate(outputLabels):
+    print(str(i) + ": " + str(k))
+
+print(str("--------------------------------"))
+for i in testLab:
+    print(i)
+
 if showResults == "True" or showResults == "t" or showResults == "T":
     for i, ele in enumerate(result):
         cnt=0; #Variables for keeping track of max values
@@ -112,6 +119,14 @@ if showResults == "True" or showResults == "t" or showResults == "T":
                 ind2 = ind
                 maxVal = g
                 ind = k
+            elif g > val2:
+                val3 = val2
+                ind3 = ind2
+                val2 = g
+                ind2 = k
+            elif g > val3:
+                val3 = g
+                ind3 = k
 
         predicted = outputLabels[ind]
         actual = outputLabels[testInd[i]]
@@ -135,18 +150,8 @@ if showResults == "True" or showResults == "t" or showResults == "T":
             y2 = [x[1] for x in actualSpectrum]
             plt.style.use('ggplot')
             plt.subplot(2,2,1)
-            plt.axhline(y=10000, c = '#000000')
-            plt.axhline(y=20000, c = '#000000')
-            plt.axhline(y=30000, c = '#000000')
-            plt.axhline(y=40000, c = '#000000')
-            plt.axhline(y=50000, c = '#000000')
-            plt.axhline(y=60000, c = '#000000')
-            plt.axhline(y=70000, c = '#000000')
-            plt.axhline(y=80000, c = '#000000')
-            plt.axhline(y=90000, c = '#000000')
-            plt.axhline(y=100000, c = '#000000')
             plt.title("Spectrum Comparison")
-            plt.scatter(x1, y1, c='r', label = 'Predicted: ' + str(predicted) + " | " + str(testId[i]),s=1)
+            plt.scatter(x1, y1, c='r', label = 'Predicted: ' + str(testLab[i]) + " | " + str(testId[i]),s=1)
             plt.scatter(x2, y2, c='b', label = 'Actual: ' + str(actual)+ " | " + str(idList[index]),s=1)
             plt.legend(loc='upper left');
             #######################################################################
@@ -160,22 +165,17 @@ if showResults == "True" or showResults == "t" or showResults == "T":
             for j in range(0, totalBins):
                 if predictedBins[j] !=0:
                     xValueList1.append(j%2000 + .5);
-                    yValueList1.append(math.floor(j/2000) * 10000 + 5000)
+                    yValueList1.append(math.floor(j/2000) + .5)
                 if actualBins[j] !=0:
                     xValueList2.append(j%2000 + .5);
-                    yValueList2.append(math.floor(j/2000) * 10000 + 5000)
+                    yValueList2.append(math.floor(j/2000) + .5)
             plt.scatter(xValueList1, yValueList1, c='r', label = 'Predicted: ' + str(predicted)+ " | " + str(testId[i]),s=8)
             plt.scatter(xValueList2, yValueList2, c='b', label = 'Actual: ' + str(actual) + " | " + str(idList[index]),s=8)
-            plt.axhline(y=10000, c = '#000000')
-            plt.axhline(y=20000, c = '#000000')
-            plt.axhline(y=30000, c = '#000000')
-            plt.axhline(y=40000, c = '#000000')
-            plt.axhline(y=50000, c = '#000000')
-            plt.axhline(y=60000, c = '#000000')
-            plt.axhline(y=70000, c = '#000000')
-            plt.axhline(y=80000, c = '#000000')
-            plt.axhline(y=90000, c = '#000000')
-            plt.axhline(y=100000, c = '#000000')
+            plt.axhline(y=1, c = '#000000')
+            plt.axhline(y=2, c = '#000000')
+            plt.axhline(y=3, c = '#000000')
+            plt.axhline(y=4, c = '#000000')
+            plt.axhline(y=5, c = '#000000')
             plt.legend(loc='upper left')
             plt.title("Bin Comparison")
             plt.xlabel("Bins")
@@ -189,19 +189,9 @@ if showResults == "True" or showResults == "t" or showResults == "T":
             y2 = [x[1] for x in actualSpectrum]
 
             plt.subplot(2,2,3)
-            plt.axhline(y=10000, c = '#000000')
-            plt.axhline(y=20000, c = '#000000')
-            plt.axhline(y=30000, c = '#000000')
-            plt.axhline(y=40000, c = '#000000')
-            plt.axhline(y=50000, c = '#000000')
-            plt.axhline(y=60000, c = '#000000')
-            plt.axhline(y=70000, c = '#000000')
-            plt.axhline(y=80000, c = '#000000')
-            plt.axhline(y=90000, c = '#000000')
-            plt.axhline(y=100000, c = '#000000')
             plt.title("Spectrum Comparison")
             plt.scatter(x1, y1, c='r', label = 'Predicted: ' + str(predicted)+ " | " + str(testId[i]),s=1)
-            plt.scatter(x2, y2, c='b', label = 'Actual: ' + str(predicted)+ " | " + str(idList[index]),s=1)
+            plt.scatter(x2, y2, c='b', label = 'Actual: ' + str(labelList[index])+ " | " + str(idList[index]),s=1)
             plt.legend(loc='upper left');
             #######################################################################
             plt.subplot(2,2,4)
@@ -214,22 +204,17 @@ if showResults == "True" or showResults == "t" or showResults == "T":
             for j in range(0, totalBins):
                 if predictedBins[j] !=0:
                     xValueList1.append(j%2000 + .5);
-                    yValueList1.append(math.floor(j/2000) * 10000 + 5000)
+                    yValueList1.append(math.floor(j/2000) + .5)
                 if actualBins[j] !=0:
                     xValueList2.append(j%2000 + .5);
-                    yValueList2.append(math.floor(j/2000) * 10000 + 5000)
+                    yValueList2.append(math.floor(j/2000) + .5)
             plt.scatter(xValueList1, yValueList1, c='r', label = 'Predicted: ' + str(predicted)+ " | " + str(testId[i]),s=8)
-            plt.scatter(xValueList2, yValueList2, c='b', label = 'Actual: ' + str(predicted)+ " | " + str(idList[index]),s=8)
-            plt.axhline(y=10000, c = '#000000')
-            plt.axhline(y=20000, c = '#000000')
-            plt.axhline(y=30000, c = '#000000')
-            plt.axhline(y=40000, c = '#000000')
-            plt.axhline(y=50000, c = '#000000')
-            plt.axhline(y=60000, c = '#000000')
-            plt.axhline(y=70000, c = '#000000')
-            plt.axhline(y=80000, c = '#000000')
-            plt.axhline(y=90000, c = '#000000')
-            plt.axhline(y=100000, c = '#000000')
+            plt.scatter(xValueList2, yValueList2, c='b', label = 'Actual: ' + str(labelList[index])+ " | " + str(idList[index]),s=8)
+            plt.axhline(y=1, c = '#000000')
+            plt.axhline(y=2, c = '#000000')
+            plt.axhline(y=3, c = '#000000')
+            plt.axhline(y=4, c = '#000000')
+            plt.axhline(y=5, c = '#000000')
             plt.legend(loc='upper left')
             plt.title("Bin Comparison")
             plt.xlabel("Bins")

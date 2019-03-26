@@ -27,8 +27,8 @@ Calculate the width of a y bin.
 """
 
 
-Y_TOP_BOUND  = 100000 #Defined top bound
-yBins = 10
+Y_TOP_BOUND  = 5 #Defined top bound
+yBins = 5
 BIN_WIDTH_Y = Y_TOP_BOUND/yBins
 BIN_WIDTH_X = 1
 #BIN_WIDTH_Y = 1
@@ -59,12 +59,12 @@ c.execute("SELECT * FROM PeptideTable")
 pepTable = c.fetchall()
 
 #Iterate through table and pull information about each peptide and its scans
-#for ind in pepTable:
-for j in range(0, 5):
+for ind in pepTable:
+#for j in range(0, 5):
 
     #Match peptide in table to peptide in Spectra Table
-    #peptide = (str(ind[0]), )
-    peptide = (str(pepTable[j][0]), )
+    peptide = (str(ind[0]), )
+    #peptide = (str(pepTable[j][0]), )
     peptideCnt += 1;
     c.execute('SELECT *,rowid FROM SpectraTable WHERE peptideID=?', peptide)
     spectrums = c.fetchall()
@@ -141,7 +141,8 @@ for j in spectrumList:
 
 #Bound each x and y to nearest 1000, ceiling to not cut off
 MAX_X = int(math.ceil(MAX_X / 1000.0)) * 1000
-MAX_Y =int(math.ceil(MAX_Y / 1000.0)) * 1000
+#MAX_Y =int(math.ceil(MAX_Y / 1000.0)) * 1000
+MAX_Y = math.ceil(math.log10(MAX_Y))
 
 #Calculate the number of xbins and ybins.
 xBins = math.ceil(MAX_X / BIN_WIDTH_X)
@@ -172,12 +173,16 @@ for ind in range(0, len(spectrumList)):
         y = i[1] # Y coord
 
         #Floor to max val if necessary
-        if  y > Y_TOP_BOUND:
+        if  math.log10(y) > Y_TOP_BOUND:
             y = Y_TOP_BOUND - 1
 
         #Calculate what bin to put coords in and increment one to the bin
         x = math.floor(x/BIN_WIDTH_X)
-        y = math.floor(y/BIN_WIDTH_Y)
+        #y = math.floor(y/BIN_WIDTH_Y)
+        y = math.floor(math.log10(y))
+
+
+
         binNumber = int(x + (y*xBins))
         binList[binNumber] += 1
 
@@ -265,7 +270,6 @@ for i in range(0, len(spectrumList)-1):
         print(labelList[i])
         print(indexList[i])
         print(idList[i])
-
 
 
 #'''''''''''''''''''''''''''''''''''''''TEST Data
