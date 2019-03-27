@@ -52,22 +52,12 @@ sp.close()
 with open (inputPath + 'testId', 'rb') as lp:
     testId = pickle.load(lp)
 sp.close()
+
+with open (inputPath + 'outputLabels', 'rb') as lp:
+    outputLabels = pickle.load(lp)
+sp.close()
 '''--------------------------------------------------------------------------'''
 
-print(testSpec[5][80])
-print(testLab[5])
-print(testInd[5])
-print(testId[5])
-
-print(spectrums[5][80])
-print(labelList[5])
-print(indexList[5])
-print(idList[5])
-
-
-
-
-outputLabels = list(set(labelList));
 inputs = len(spectrums)
 totalBins = len(binArray[0])
 inputLayers = len(binArray)
@@ -95,14 +85,11 @@ result = model.predict(testBins)
 
 # Graph Results
 for i, k in enumerate(outputLabels):
-    print(str(i) + ": " + str(k))
-
-print(str("--------------------------------"))
-for i in testLab:
-    print(i)
+    print(str(i)+": "+str(k))
 
 if showResults == "True" or showResults == "t" or showResults == "T":
     for i, ele in enumerate(result):
+        print(ele)
         cnt=0; #Variables for keeping track of max values
         maxVal = 0;
         val2 = 0;
@@ -130,6 +117,7 @@ if showResults == "True" or showResults == "t" or showResults == "T":
 
         predicted = outputLabels[ind]
         actual = outputLabels[testInd[i]]
+        #actual = testLab[i]
         print("Test ", i)
         print(ind, "  |  ", testInd[i])
         print("Predicted: ", predicted)
@@ -140,6 +128,7 @@ if showResults == "True" or showResults == "t" or showResults == "T":
         print ("\n")
 
         if predicted != actual:
+        #if 1 == 1:
 
             ###################################################################
             x1 = [x[0] for x in testSpec[i]]
@@ -151,7 +140,7 @@ if showResults == "True" or showResults == "t" or showResults == "T":
             plt.style.use('ggplot')
             plt.subplot(2,2,1)
             plt.title("Spectrum Comparison")
-            plt.scatter(x1, y1, c='r', label = 'Predicted: ' + str(testLab[i]) + " | " + str(testId[i]),s=1)
+            plt.scatter(x1, y1, c='r', label = 'Predicted: ' + str(predicted) + " | " + str(testId[i]),s=1)
             plt.scatter(x2, y2, c='b', label = 'Actual: ' + str(actual)+ " | " + str(idList[index]),s=1)
             plt.legend(loc='upper left');
             #######################################################################

@@ -48,16 +48,6 @@ with tf.device('/cpu:0'):
         binArray = pickle.load(lp)
     sp.close()
 '''--------------------------------------------------------------------------'''
-print(spectrums[5][80])
-print(labelList[5])
-print(indexList[5])
-print(idList[5])
-
-
-print(spectrums[33][80])
-print(labelList[33])
-print(indexList[33])
-print(idList[33])
 
 
 #Metrics for printing(mostly)
