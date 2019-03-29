@@ -65,6 +65,7 @@ for j in range(10,15):
     #Match peptide in table to peptide in Spectra Table
     #peptide = (str(ind[0]), )
     peptide = (str(pepTable[j][0]), )
+
     peptideCnt += 1;
     c.execute('SELECT *,rowid FROM SpectraTable WHERE peptideID=?', peptide)
     spectrums = c.fetchall()
@@ -104,6 +105,8 @@ for j in range(10,15):
             peptideRow = c.fetchone()
             seq = peptideRow[14]
             labelList.append(seq)
+    else:
+        peptidCnt -= 1
 
 #Convert list of labelList to list of indices. The indices will correspond to
 # each unique peptide
@@ -181,13 +184,21 @@ for ind in range(0, len(spectrumList)):
         #y = math.floor(y/BIN_WIDTH_Y)
         y = math.floor(math.log10(y))
 
-
-
         binNumber = int(x + (y*xBins))
-        binList[binNumber] += 1
+        binList[binNumber] = 1 #CHANGED FROM +=, Uncomment for percentage bins
+        if binList[binNumber] != 0:
+            binList[binNumber] = (binList[binNumber] + (y/MAX_Y))/2
+        else:
+            binList[binNumber] = y/MAX_Y
+
+
 
     #Divide everything by the number of coords to get all bins to be [0,1]
-    binList = np.true_divide(binList,numPoints)
+    #binList = np.true_divide(binList,numPoints) #Uncomment for percentage bins
+
+    """for i, ele in enumerate(binList):       #This is multiplying by intensity value
+        if ele != 0:
+            binList[i] = 10 ** (i//2000) * 5"""
 
     #Append the binList to a holder, reset the binlist to all 0's and loop
     binArray.append(binList)
