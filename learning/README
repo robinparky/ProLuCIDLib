@@ -1,0 +1,8 @@
+Create Data.py
+python createData.py [sqlite path] [output folder] [number of test elements]
+
+learn1dDense.py
+python learn1dDense.py [inputFolder] [outputPath (.h5)] [batch size] [epochs]
+
+load1dDense.py
+python load1dDense.py [inputFolder] [neuralNet path (.h5)] [printStats to Screen true/false]
