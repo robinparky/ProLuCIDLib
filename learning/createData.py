@@ -27,10 +27,10 @@ Calculate the width of a y bin.
 """
 
 
-Y_TOP_BOUND  = 5 #Defined top bound
-yBins = 5
+Y_TOP_BOUND  = 1 #Defined top bound
+yBins = 1
 BIN_WIDTH_Y = Y_TOP_BOUND/yBins
-BIN_WIDTH_X = 1
+BIN_WIDTH_X = .5
 #BIN_WIDTH_Y = 1
 
 #Healper Function, Converts bitstring to float
@@ -106,7 +106,7 @@ for j in range(10,15):
             seq = peptideRow[14]
             labelList.append(seq)
     else:
-        peptidCnt -= 1
+        peptideCnt -= 1
 
 #Convert list of labelList to list of indices. The indices will correspond to
 # each unique peptide
@@ -145,7 +145,7 @@ for j in spectrumList:
 #Bound each x and y to nearest 1000, ceiling to not cut off
 MAX_X = int(math.ceil(MAX_X / 1000.0)) * 1000
 #MAX_Y =int(math.ceil(MAX_Y / 1000.0)) * 1000
-MAX_Y = math.ceil(math.log10(MAX_Y))
+MAX_Y = math.ceil(MAX_Y)
 
 #Calculate the number of xbins and ybins.
 xBins = math.ceil(MAX_X / BIN_WIDTH_X)
@@ -153,8 +153,8 @@ yBins = math.ceil(Y_TOP_BOUND/ BIN_WIDTH_Y)
 #yBins = math.ceil(MAX_Y / BIN_WIDTH_Y)
 
 #Total number of bins
-totalBins = xBins + xBins * (yBins-1)
-
+#totalBins = xBins + xBins * (yBins-1)
+totalBins = xBins * yBins
 print( "Putting all coords into ", totalBins, " bins.")
 print( "XBINS: ", xBins, " YBINS: ", yBins)
 print( "Bins are ", BIN_WIDTH_X, " by ", BIN_WIDTH_Y)
@@ -176,15 +176,16 @@ for ind in range(0, len(spectrumList)):
         y = i[1] # Y coord
 
         #Floor to max val if necessary
-        if  math.log10(y) > Y_TOP_BOUND:
+        if  math.log10(y) >= Y_TOP_BOUND:
             y = Y_TOP_BOUND - 1
-
+        else:
+            y = math.floor(math.log10(y))
         #Calculate what bin to put coords in and increment one to the bin
         x = math.floor(x/BIN_WIDTH_X)
         #y = math.floor(y/BIN_WIDTH_Y)
-        y = math.floor(math.log10(y))
 
         binNumber = int(x + (y*xBins))
+
         binList[binNumber] = 1 #CHANGED FROM +=, Uncomment for percentage bins
         if binList[binNumber] != 0:
             binList[binNumber] = (binList[binNumber] + (y/MAX_Y))/2
@@ -222,13 +223,6 @@ spectrumList = np.array(spectrumList)
 labelList = np.array(labelList)
 indexList = np.array(indexList)
 idList = np.array(idList)
-
-
-
-"""print(spectrumList[5][4])
-print(labelList[5])
-print(indexList[5])
-print(idList[5])"""
 
 
 #Split array into test and training sets

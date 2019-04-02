@@ -83,13 +83,15 @@ model.load_weights(neuralPath)
 
 result = model.predict(testBins)
 
+percentagesT = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+percentagesF = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 # Graph Results
 for i, k in enumerate(outputLabels):
     print(str(i)+": "+str(k))
 
-if showResults == "True" or showResults == "t" or showResults == "T":
+if showResults == "True" or showResults == "true" or showResults == "t" or showResults == "T":
     for i, ele in enumerate(result):
-        print(ele)
+        #print(ele)
         cnt=0; #Variables for keeping track of max values
         maxVal = 0;
         val2 = 0;
@@ -128,7 +130,7 @@ if showResults == "True" or showResults == "t" or showResults == "T":
         print ("\n")
 
         if predicted != actual:
-        #if 1 == 1:
+            percentagesF[int(maxVal//.05)] += 1
 
             ###################################################################
             x1 = [x[0] for x in testSpec[i]]
@@ -218,9 +220,36 @@ if showResults == "True" or showResults == "t" or showResults == "T":
             plt.show()
 
         else:
+            percentagesT[int(maxVal//.05)] += 1
             print("----------------------------------------------")
 
 #Test Acccuracy
 np.array(testInd)
 test_loss, test_acc = model.evaluate(testBins, testInd)
 print('Test accuracy:', test_acc)
+
+
+
+n_groups = 20
+fig, ax = plt.subplots()
+index = np.arange(n_groups)
+bar_width = 0.35
+opacity = 0.8
+
+rects1 = plt.bar(index, percentagesT, bar_width,
+alpha=opacity,
+color='b',
+label='correct')
+
+rects2 = plt.bar(index + bar_width, percentagesF, bar_width,
+alpha=opacity,
+color='r',
+label='incorrect')
+
+plt.xlabel('Percentage')
+plt.ylabel('Number')
+plt.title('# o percentages')
+plt.legend()
+
+plt.tight_layout()
+plt.show()
