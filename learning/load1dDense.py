@@ -118,8 +118,7 @@ if showResults == "True" or showResults == "true" or showResults == "t" or showR
                 ind3 = k
 
         predicted = outputLabels[ind]
-        actual = outputLabels[testInd[i]]
-        #actual = testLab[i]
+        actual = testLab[i]
         print("Test ", i)
         print(ind, "  |  ", testInd[i])
         print("Predicted: ", predicted)
@@ -130,6 +129,7 @@ if showResults == "True" or showResults == "true" or showResults == "t" or showR
         print ("\n")
 
         if predicted != actual:
+        #if 1 ==1:
             percentagesF[int(maxVal//.05)] += 1
 
             ###################################################################

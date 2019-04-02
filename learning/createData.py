@@ -213,12 +213,6 @@ print(binArray.shape)
 #Create test set
 print("Creating Test Set")
 
-testSpec = []
-testBins = []
-testInd = []
-testLab = []
-testId = []
-
 spectrumList = np.array(spectrumList)
 labelList = np.array(labelList)
 indexList = np.array(indexList)
