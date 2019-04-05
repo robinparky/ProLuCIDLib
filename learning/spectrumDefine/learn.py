@@ -102,7 +102,7 @@ def create_model():
 
 model  = create_model()
 model.compile(optimizer='adam',
-              loss='sparse_categorical_crossentropy',
+              loss='sigmoid_cross_entropy',
               metrics=['accuracy'])
 #model.summary()
 '''--------------------------------------------------------------------------'''
