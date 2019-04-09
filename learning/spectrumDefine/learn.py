@@ -91,6 +91,18 @@ print("\tOutput Layers: ", outputLayers)
 
 
 
+"""
+def create_model():
+    baseModel = keras.Sequential()
+    baseModel.add(keras.layers.InputLayer(input_shape = (totalBins, )))
+    baseModel.add(keras.layers.Dense(outputLayers * 8, activation=tf.nn.relu))
+    baseModel.add(keras.layers.Dense(outputLayers * 8, activation=tf.nn.relu))
+    baseModel.add(keras.layers.Dense(outputLayers, activation=tf.nn.softmax))
+
+    return baseModel
+"""
+
+
 def create_model():
     baseModel = keras.Sequential()
     baseModel.add(keras.layers.InputLayer(input_shape = (totalBins, )))
