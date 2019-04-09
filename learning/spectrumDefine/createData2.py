@@ -28,7 +28,7 @@ Calculate the width of a y bin.
 
 
 Y_TOP_BOUND  = 1 #Defined top bound
-yBins = 1
+yBins = 6
 BIN_WIDTH_Y = Y_TOP_BOUND/yBins
 BIN_WIDTH_X = .5
 #BIN_WIDTH_Y = 1
@@ -207,7 +207,7 @@ for ind in range(0, len(spectrumList)):
 
 #Reshape and print binarray
 binArray = np.array(binArray)
-binArray = np.reshape(binArray, (len(indexList), totalBins))
+binArray = np.reshape(binArray, (len(indexList), yBins, xBins, 1))
 print(binArray.shape)
 
 #Create test set
@@ -273,7 +273,7 @@ for i in range(0, len(spectrumList)-1):
 
 #'''''''''''''''''''''''''''''''''''''''TEST Data
 print("Peptides: ", peptideCnt, " spectrumList: ", len(spectrumList))
-
+print("Saving Data")
 with open(outputPath +'spectrumsList', 'wb') as sp:
     pickle.dump(spectrumList, sp, protocol=4)
 sp.close()
