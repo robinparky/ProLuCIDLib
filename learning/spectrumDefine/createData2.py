@@ -59,12 +59,12 @@ c.execute("SELECT * FROM PeptideTable")
 pepTable = c.fetchall()
 
 #Iterate through table and pull information about each peptide and its scans
-for ind in pepTable:
-#for j in range(10,15):
+#for ind in pepTable:
+for j in range(10,15):
 
     #Match peptide in table to peptide in Spectra Table
-    peptide = (str(ind[0]), )
-    #peptide = (str(pepTable[j][0]), )
+    #peptide = (str(ind[0]), )
+    peptide = (str(pepTable[j][0]), )
 
     peptideCnt += 1;
     c.execute('SELECT *,rowid FROM SpectraTable WHERE peptideID=?', peptide)

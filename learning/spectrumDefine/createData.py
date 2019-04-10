@@ -27,10 +27,10 @@ Calculate the width of a y bin.
 """
 
 
-Y_TOP_BOUND  = 1 #Defined top bound
-yBins = 1
+Y_TOP_BOUND  = 5 #Defined top bound
+yBins = 5
 BIN_WIDTH_Y = Y_TOP_BOUND/yBins
-BIN_WIDTH_X = .5
+BIN_WIDTH_X = 1
 #BIN_WIDTH_Y = 1
 
 #Healper Function, Converts bitstring to float
@@ -59,12 +59,12 @@ c.execute("SELECT * FROM PeptideTable")
 pepTable = c.fetchall()
 
 #Iterate through table and pull information about each peptide and its scans
-for ind in pepTable:
-#for j in range(10,15):
+#for ind in pepTable:
+for j in range(10,15):
 
     #Match peptide in table to peptide in Spectra Table
-    peptide = (str(ind[0]), )
-    #peptide = (str(pepTable[j][0]), )
+    #peptide = (str(ind[0]), )
+    peptide = (str(pepTable[j][0]), )
 
     peptideCnt += 1;
     c.execute('SELECT *,rowid FROM SpectraTable WHERE peptideID=?', peptide)
@@ -122,6 +122,8 @@ pullData = time.time()
 print ("Time for section: " + str(round(pullData - start)))
 print ("Elapsed Time: " + str(round(pullData - start)) + "\n")
 
+
+'''--------------------------------------------------------------------------'''
 #Shuffle lists so that it is mised and same peptide specs are not adjacent
 shuffle = list(zip(spectrumList, labelList, indexList, idList))
 random.shuffle(shuffle)
@@ -191,8 +193,14 @@ for ind in range(0, len(spectrumList)):
             binList[binNumber] = (binList[binNumber] + (y/MAX_Y))/2
         else:
             binList[binNumber] = y/MAX_Y
-
-
+    """for ind, ele in enumerate(spectrumList):
+        for i in range(0, 2000):
+            sum = 0
+            sum += spectrumList[ind][i % len(spectrumList[ind])][1]
+            for g in range(1, 21):
+                    sum += spectrumList[ind][(i + g) % len(spectrumList[ind])][1]
+            average = sum/20
+            binList[i] = average"""
 
     #Divide everything by the number of coords to get all bins to be [0,1]
     #binList = np.true_divide(binList,numPoints) #Uncomment for percentage bins
@@ -237,38 +245,6 @@ binArray = binArraySplit[1]
 labelList = labelListSplit[1]
 indexList = indexListSplit[1]
 idList = idListSplit[1]
-
-for i in range(0, len(testSpec)-1):
-    if not np.array_equal(spectrumListSplit[0][i],testSpec[i]) or  not np.array_equal(binArraySplit[0][i],testBins[i]) or labelListSplit[0][i] != testLab[i] or indexListSplit[0][i] != testInd[i] or idListSplit[0][i] != testId[i]:
-        print("---------------------------------")
-        print("\nOriginal")
-        print(spectrumListSplit[0][i][4])
-        print(binArraySplit[0][i][4])
-        print(labelListSplit[0][i])
-        print(indexListSplit[0][i])
-        print(idListSplit[0][i])
-        print("\nTest")
-        print(testSpec[i][4])
-        print(testBins[i][4])
-        print(testLab[i])
-        print(testInd[i])
-        print(testId[i])
-
-for i in range(0, len(spectrumList)-1):
-    if not np.array_equal(spectrumListSplit[1][i],spectrumList[i]) or not np.array_equal(binArraySplit[1][i],binArray[i]) or labelListSplit[1][i] != labelList[i] or indexListSplit[1][i] != indexList[i] or idListSplit[1][i] != idList[i]:
-        print("---------------------------------")
-        print("\nOriginal")
-        print(spectrumListSplit[1][i][4])
-        print(binArraySplit[1][i][4])
-        print(labelListSplit[1][i])
-        print(indexListSplit[1][i])
-        print(idListSplit[1][i])
-        print("\nTraining")
-        print(spectrumList[i][4])
-        print(binArray[i][4])
-        print(labelList[i])
-        print(indexList[i])
-        print(idList[i])
 
 
 #'''''''''''''''''''''''''''''''''''''''TEST Data

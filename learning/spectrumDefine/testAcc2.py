@@ -64,13 +64,14 @@ inputLayers = len(binArray)
 output = np.unique(indexList)
 outputLayers = len(set(indexList))
 
+
 def create_model():
     model = keras.Sequential()
-    model.add(keras.layers.Conv2D(64 , (3,3), input_shape = binArray.shape[1:], activation=tf.nn.relu))
-    model.add(keras.layers.MaxPooling2D(pool_size= (2,2)))
+    model.add(keras.layers.Conv2D(64 , (3,200), input_shape = binArray.shape[1:], activation=tf.nn.relu))
+    #model.add(keras.layers.MaxPooling2D(pool_size= (2,2)))
 
-    model.add(keras.layers.Conv2D(64 , (2,2), activation=tf.nn.relu ))
-    model.add(keras.layers.MaxPooling2D(pool_size= (1,1)))
+    model.add(keras.layers.Conv2D(32 , (3,200), activation=tf.nn.relu ))
+    #model.add(keras.layers.MaxPooling2D(pool_size= (2,2)))
 
     model.add(keras.layers.Flatten())
     model.add(keras.layers.Dense(64, activation=tf.nn.relu))
