@@ -104,9 +104,6 @@ for i in range(1, 10):
             normal = False
             mBool = False
             done = True
-
-
-
 """for i in range(len(attList)):
     attList[i][1] = (attList[i][1]-minIntensity)/(maxIntensity - minIntensity) * 1000
     attList[i][2]  = attList[i][2]
@@ -116,9 +113,10 @@ for i in range(1, 10):
     attList[i][6] = attList[i][6]
     attList[i][7] = float(attList[i][7]) * 10"""
 
-"""for i, ele in enumerate(attList):
-    print(ele)
-    print(labelList[i])"""
+
+attList.sort(key=lambda x: x[2])
+for i, ele in enumerate(attList):
+    print('{:80s} {:20s}'.format(str(ele), str(labelList[i])))
 
 
 print ("Finished Pulling Data from Database")
@@ -222,9 +220,7 @@ if 1 == 2:
     plt.scatter(x2,y82,c = 'b', s=2)
     plt.show()
 
-if 1 ==1:
-
-
+if 1 ==0:
     df = pd.DataFrame(attList, columns = ['Charge State', 'Intensity', 'P True', 'numMatched', 'xCorr', 'Length of Peptide', 'Normalized', 'DeltaCn'])
     scatter_matrix(data, alpha=0.2, figsize=(6, 6), diagonal='kde')
 
@@ -244,13 +240,6 @@ testLabelList = labelListSplit[0]
 
 attList = attListSplit[1]
 labelList = labelListSplit[1]
-
-
-
-
-
-
-
 
 #'''''''''''''''''''''''''''''''''''''''Save Data
 print("Created Test Database with ", len(attList), " elements")

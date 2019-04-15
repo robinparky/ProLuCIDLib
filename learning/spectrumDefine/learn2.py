@@ -102,11 +102,11 @@ print("\tOutput Layers: ", outputLayers)
 print(binArray.shape)
 def create_model():
     model = keras.Sequential()
-    model.add(keras.layers.Conv2D(128 , (3,200), input_shape = binArray.shape[1:], activation=tf.nn.relu))
-    #model.add(keras.layers.MaxPooling2D(pool_size= (2,2)))
+    model.add(keras.layers.Conv2D(128 , (5,5), input_shape = binArray.shape[1:], activation=tf.nn.relu))
+    model.add(keras.layers.MaxPooling2D(pool_size= (2,2)))
 
-    model.add(keras.layers.Conv2D(128 , (3,200), activation=tf.nn.relu ))
-    #model.add(keras.layers.MaxPooling2D(pool_size= (2,2)))
+    model.add(keras.layers.Conv2D(128 , (5,5), activation=tf.nn.relu ))
+    model.add(keras.layers.MaxPooling2D(pool_size= (2,2)))
 
     model.add(keras.layers.Flatten())
     model.add(keras.layers.Dense(64, activation=tf.nn.relu))

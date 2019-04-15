@@ -11,11 +11,11 @@ import matplotlib.pyplot as plt
 
 start = time.time()
 print("Gathering Data from Files")
-with open ('data/spectrumsList', 'rb') as sp:
+with open ('arrays/spectrumsList', 'rb') as sp:
     spectrums = pickle.load(sp)
-with open ('data/labelList', 'rb') as lp:
+with open ('arrays/labelList', 'rb') as lp:
     labels = pickle.load(lp)
-with open ('data/indexList', 'rb') as lp:
+with open ('arrays/indexList', 'rb') as lp:
     indexList = pickle.load(lp)
 
 
@@ -91,7 +91,7 @@ if var == "y":
             plt.title(str(i) + " with " + str(len(j)) + " Seperate Points")
             plt.scatter(x, y)
             plt.xlim(0, MAX_X  + (MAX_X * .1))
-            plt.ylim(0, MAX_Y + (MAX_Y * .1))
+            #plt.ylim(0, MAX_Y + (MAX_Y * .1))
             plt.show()
 
 #PRINT ALL DATA POINTS ON 1 GRAPH
