@@ -44,8 +44,8 @@ c.execute("SELECT * FROM PeptideTable")
 pepTable = c.fetchall()
 
 #Iterate through table and pull information about each peptide and its scans
-#for ind in pepTable:
-for j in range(10,15):
+for ind in pepTable:
+#for j in range(10,15):
 
     #Match peptide in table to peptide in Spectra Table
     #peptide = (str(ind[0]), )
@@ -56,41 +56,38 @@ for j in range(10,15):
     spectrums = c.fetchall()
 
     #Make sure peptide has more than 50 spectrums for accurate training.
-    if len(spectrums) >= 50:
-        specCnt += 1 #increment peptide count
+    specCnt += 1 #increment peptide count
 
-        #Search returned list of matched spectrums for each peptide
-        for element in spectrums:
-            spectrum = [] #Holder variable for spectrum
+    #Search returned list of matched spectrums for each peptide
+    for element in spectrums:
+        spectrum = [] #Holder variable for spectrum
 
-            #append the scan id
-            idList.append(element[4])
+        #append the scan id
+        idList.append(element[4])
 
-            #Grab mzArr and intArr from
-            mzArr = convertFloat(element[1])
-            intArr = convertFloat(element[2])
+        #Grab mzArr and intArr from
+        mzArr = convertFloat(element[1])
+        intArr = convertFloat(element[2])
 
-            #Iterate through both arrays and append coordinate pairs
-            for i, j in zip(mzArr, intArr):
-                coords = []
-                mz = float(i[0])
-                intensity = float(j[0])
-                coords.append(mz)
-                coords.append(intensity)
-                spectrum.append(coords)
+        #Iterate through both arrays and append coordinate pairs
+        for i, j in zip(mzArr, intArr):
+            coords = []
+            mz = float(i[0])
+            intensity = float(j[0])
+            coords.append(mz)
+            coords.append(intensity)
+            spectrum.append(coords)
 
-            #Sort the spectrum and append.
-            spectrum = Sort(spectrum)
-            spectrumList.append(spectrum)
+        #Sort the spectrum and append.
+        spectrum = Sort(spectrum)
+        spectrumList.append(spectrum)
 
-            #Grab label corresponding peptide label from the peptide table and
-            #append to the labelList
-            c.execute('SELECT * FROM PeptideTable WHERE peptideID=?', peptide)
-            peptideRow = c.fetchone()
-            seq = peptideRow[14]
-            labelList.append(seq)
-    else:
-        peptideCnt -= 1
+        #Grab label corresponding peptide label from the peptide table and
+        #append to the labelList
+        c.execute('SELECT * FROM PeptideTable WHERE peptideID=?', peptide)
+        peptideRow = c.fetchone()
+        seq = peptideRow[14]
+        labelList.append(seq)SSSS
 
 #Convert list of labelList to list of indices. The indices will correspond to
 # each unique peptide
