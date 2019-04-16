@@ -161,18 +161,14 @@ if showResults == "True" or showResults == "true" or showResults == "t" or showR
             actualBins = binArray[index]
             for j in range(0, totalBins):
                 if predictedBins[j] !=0:
-                    xValueList1.append(j%2000 + .5);
-                    yValueList1.append(math.floor(j/2000) + .5)
+                    xValueList1.append(j);
+                    yValueList1.append(predictedBins[j])
                 if actualBins[j] !=0:
-                    xValueList2.append(j%2000 + .5);
-                    yValueList2.append(math.floor(j/2000) + .5)
-            plt.scatter(xValueList1, yValueList1, c='r', label = 'Predicted: ' + str(predicted)+ " | " + str(testId[i]),s=8)
-            plt.scatter(xValueList2, yValueList2, c='b', label = 'Actual: ' + str(actual) + " | " + str(idList[index]),s=8)
-            plt.axhline(y=1, c = '#000000')
-            plt.axhline(y=2, c = '#000000')
-            plt.axhline(y=3, c = '#000000')
-            plt.axhline(y=4, c = '#000000')
-            plt.axhline(y=5, c = '#000000')
+                    xValueList2.append(j);
+                    yValueList2.append(actualBins[j])
+
+            plt.scatter(xValueList1, yValueList1, c='r', label = 'Predicted: ' + str(predicted)+ " | " + str(testId[i]),s=1)
+            plt.scatter(xValueList2, yValueList2, c='b', label = 'Actual: ' + str(actual) + " | " + str(idList[index]),s=1)
             plt.legend(loc='upper left')
             plt.title("Bin Comparison")
             plt.xlabel("Bins")
@@ -200,18 +196,13 @@ if showResults == "True" or showResults == "true" or showResults == "t" or showR
             actualBins = binArray[index]
             for j in range(0, totalBins):
                 if predictedBins[j] !=0:
-                    xValueList1.append(j%2000 + .5);
-                    yValueList1.append(math.floor(j/2000) + .5)
+                    xValueList1.append(j);
+                    yValueList1.append(predictedBins[j])
                 if actualBins[j] !=0:
-                    xValueList2.append(j%2000 + .5);
-                    yValueList2.append(math.floor(j/2000) + .5)
-            plt.scatter(xValueList1, yValueList1, c='r', label = 'Predicted: ' + str(predicted)+ " | " + str(testId[i]),s=8)
-            plt.scatter(xValueList2, yValueList2, c='b', label = 'Actual: ' + str(labelList[index])+ " | " + str(idList[index]),s=8)
-            plt.axhline(y=1, c = '#000000')
-            plt.axhline(y=2, c = '#000000')
-            plt.axhline(y=3, c = '#000000')
-            plt.axhline(y=4, c = '#000000')
-            plt.axhline(y=5, c = '#000000')
+                    xValueList2.append(j);
+                    yValueList2.append(actualBins[j])
+            plt.scatter(xValueList1, yValueList1, c='r', label = 'Predicted: ' + str(predicted)+ " | " + str(testId[i]),s=1)
+            plt.scatter(xValueList2, yValueList2, c='b', label = 'Actual: ' + str(labelList[index])+ " | " + str(idList[index]),s=1)
             plt.legend(loc='upper left')
             plt.title("Bin Comparison")
             plt.xlabel("Bins")
