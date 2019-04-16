@@ -86,8 +86,14 @@ result = model.predict(testBins)
 percentagesT = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 percentagesF = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 # Graph Results
+
+"""
 for i, k in enumerate(outputLabels):
     print(str(i)+": "+str(k))
+
+for i, k in enumerate(testLab):
+    print(str(k) + " | " + str(testInd[i]))
+"""
 
 if showResults == "True" or showResults == "true" or showResults == "t" or showResults == "T":
     for i, ele in enumerate(result):
@@ -128,7 +134,7 @@ if showResults == "True" or showResults == "true" or showResults == "t" or showR
         print(ind3,": ", val3, "|", end='')
         print ("\n")
 
-        if predicted != actual:
+        if predicted != actual or ind != testInd[i]:
         #if 1 ==1:
             percentagesF[int(maxVal//.05)] += 1
 
@@ -230,7 +236,7 @@ print('Test accuracy:', test_acc)
 
 
 
-n_groups = 20
+"""n_groups = 20
 fig, ax = plt.subplots()
 index = np.arange(n_groups)
 bar_width = 0.35
@@ -252,4 +258,4 @@ plt.title('# o percentages')
 plt.legend()
 
 plt.tight_layout()
-plt.show()
+plt.show()"""

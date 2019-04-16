@@ -53,10 +53,6 @@ c.execute("SELECT * FROM PeptideTable WHERE peptideID=?", (spec2id, ))
 peptide = c.fetchone()
 name2 = str(peptide[14])
 
-print(str(id1) + ": " + str(name1))
-print(str(id2) + ": " + str(name2))
-
-
 x1 = [];
 y1 = [];
 x2 = [];
@@ -69,5 +65,7 @@ x2 = [x[0] for x in spectrum2]
 y2 = [x[1] for x in spectrum2]
 plt.scatter(x1, y1, c='r',s=1)
 plt.scatter(x2, y2, c='b',s=1)
+print(str(id1) + ": " + str(name1) + " | " + str(len(x1)))
+print(str(id2) + ": " + str(name2) + " | " + str(len(x2)))
 plt.show()
 oldSpec = spectrum

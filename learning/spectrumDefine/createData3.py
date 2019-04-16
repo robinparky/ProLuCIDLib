@@ -61,7 +61,6 @@ for j in range(10,15):
 
         #Search returned list of matched spectrums for each peptide
         for element in spectrums:
-
             spectrum = [] #Holder variable for spectrum
 
             #append the scan id
@@ -97,12 +96,12 @@ for j in range(10,15):
 # each unique peptide
 indexList = []
 noDuplicateLabels = list(set(labelList))
-for i in noDuplicateLabels:
-    for y in labelList:
+for y in labelList:
+    for i in noDuplicateLabels:
         if i == y:
             indexList.append(noDuplicateLabels.index(i))
-print(indexList)
-print(len(set(labelList)))
+
+
 print ("Finished Pulling Data from Database")
 pullData = time.time()
 print ("Time for section: " + str(round(pullData - start)))
@@ -150,7 +149,6 @@ binList = np.zeros(xBins)
 # a new representation of the spectrum
 for ind in range(0, len(spectrumList)):
     print(ind,"/",len(spectrumList), end="\r", flush = True)
-
     #Get number of points in the spectrum and iterate through each one
 
     for i in spectrumList[ind]:
@@ -198,6 +196,16 @@ binArray = binArraySplit[1]
 labelList = labelListSplit[1]
 indexList = indexListSplit[1]
 idList = idListSplit[1]
+
+
+for i, k in enumerate(noDuplicateLabels):
+    print(str(i)+": "+str(k))
+
+for i, k in enumerate(testLab):
+    print(str(k) + " | " + str(testInd[i]))
+
+
+
 #'''''''''''''''''''''''''''''''''''''''TEST Data
 print("Peptides: ", peptideCnt, " spectrumList: ", len(spectrumList))
 
