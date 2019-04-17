@@ -50,6 +50,7 @@ with tf.device('/cpu:0'):
 '''--------------------------------------------------------------------------'''
 
 
+
 #Metrics for printing(mostly)
 inputs = len(spectrums)
 totalBins = len(binArray[0])
