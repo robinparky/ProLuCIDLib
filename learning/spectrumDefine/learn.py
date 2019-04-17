@@ -49,7 +49,22 @@ with tf.device('/cpu:0'):
     sp.close()
 '''--------------------------------------------------------------------------'''
 
+def tfdata_generator(bins, labels, is_training, batch_size=128):
 
+    def preprocess_fn(bins, label):
+        return bins, label
+
+    dataset = tf.data.Dataset.from_tensor_slices((bins, labels))
+
+    # Transform and batch data at the same time
+    dataset = dataset.apply(tf.contrib.data.map_and_batch(
+        preprocess_fn, batch_size,
+        num_parallel_batches=4,  # cpu cores
+        drop_remainder=True if is_training else False))
+    dataset = dataset.repeat()
+    dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
+
+    return dataset
 
 #Metrics for printing(mostly)
 inputs = len(spectrums)
@@ -106,13 +121,15 @@ model  = create_model()
 model.compile(optimizer='adam',
               loss='sparse_categorical_crossentropy',
               metrics=['accuracy'])
-#model.summary()
+model.summary()
 '''--------------------------------------------------------------------------'''
 
 
 
 #Train the data
-model.fit(binArray, indexList, batch_size = batchSize, epochs = numEpochs)
+training_set = tfdata_generator(binArray, indexList, is_training=True, batch_size=batchSize)
+
+model.fit(training_set.make_one_shot_iterator(), steps_per_epoch = len(binArray), epochs = numEpochs)
 
 model.save_weights(outputPath)
 #model.save(outputPath)
