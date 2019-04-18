@@ -22,37 +22,38 @@ else:
 
 '''--------------------------------------------------------------------------'''
 print("Gathering Data from Files")
-with open (inputPath + 'spectrumsList', 'rb') as sp:
-    spectrums = pickle.load(sp)
+with open (inputPath + 'attList', 'rb') as sp:
+    attList = pickle.load(sp)
+sp.close()
+with open (inputPath + 'labelList', 'rb') as sp:
+    labelList = pickle.load(sp)
+sp.close()
+with open (inputPath + 'testAttList', 'rb') as sp:
+    testAttList = pickle.load(sp)
+sp.close()
+with open (inputPath + 'testLabelList', 'rb') as sp:
+    testLabelList = pickle.load(sp)
 sp.close()
 '''--------------------------------------------------------------------------'''
 
-inputs = len(spectrums)
-totalBins = len(binArray[0])
-inputLayers = len(binArray)
-output = np.unique(indexList)
-outputLayers = len(set(indexList))
-
-def create_model():
-    model = keras.Sequential([
-        keras.layers.InputLayer(input_shape = (totalBins, )),
-        keras.layers.Dense(outputLayers * 8, activation=tf.nn.relu),
-        keras.layers.Dense(outputLayers * 8, activation=tf.nn.relu),
-        keras.layers.Dense(outputLayers, activation=tf.nn.softmax)
-    ])
-    return model
-model = create_model()
+model = tf.keras.Sequential([
+  tf.keras.layers.Dense(32, activation=tf.nn.relu, input_shape=(8,)),  # input shape required
+  tf.keras.layers.BatchNormalization(),
+  tf.keras.layers.Dense(16, activation=tf.nn.relu),
+  tf.keras.layers.BatchNormalization(),
+  tf.keras.layers.Dense(2, activation=tf.nn.sigmoid )
+])
 
 model.compile(optimizer='adam',
-              loss='sparse_categorical_crossentropy',
-              metrics=['accuracy'])
+           loss='sparse_categorical_crossentropy',
+           metrics=['accuracy'])
 
 model.load_weights(neuralPath)
 #model = tf.keras.models.load_model('saved/model.h5')
 
-result = model.predict(testBins)
+result = model.predict(testAttList)
 
 #Test Acccuracy
-np.array(testInd)
-test_loss, test_acc = model.evaluate(testBins, testInd)
+np.array(testLabelList)
+test_loss, test_acc = model.evaluate(testAttList, testLabelList)
 print('Test accuracy:', test_acc)

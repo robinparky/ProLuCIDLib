@@ -197,13 +197,13 @@ labelList = labelListSplit[1]
 indexList = indexListSplit[1]
 idList = idListSplit[1]
 
-"""
+
 for i, k in enumerate(noDuplicateLabels):
     print(str(i)+": "+str(k))
 
 for i, k in enumerate(testLab):
     print(str(k) + " | " + str(testInd[i]))
-"""
+
 
 
 #'''''''''''''''''''''''''''''''''''''''TEST Data

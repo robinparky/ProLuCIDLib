@@ -64,14 +64,22 @@ inputLayers = len(binArray)
 output = np.unique(indexList)
 outputLayers = len(set(indexList))
 
+
 def create_model():
-    model = keras.Sequential([
-        keras.layers.InputLayer(input_shape = (totalBins, )),
-        keras.layers.Dense(outputLayers * 8, activation=tf.nn.relu),
-        keras.layers.Dense(outputLayers * 8, activation=tf.nn.relu),
-        keras.layers.Dense(outputLayers, activation=tf.nn.softmax)
-    ])
+    model = keras.Sequential()
+    model.add(keras.layers.Conv2D(64 , (3,200), input_shape = binArray.shape[1:], activation=tf.nn.relu))
+    #model.add(keras.layers.MaxPooling2D(pool_size= (2,2)))
+
+    model.add(keras.layers.Conv2D(32 , (3,200), activation=tf.nn.relu ))
+    #model.add(keras.layers.MaxPooling2D(pool_size= (2,2)))
+
+    model.add(keras.layers.Flatten())
+    model.add(keras.layers.Dense(64, activation=tf.nn.relu))
+
+    model.add(keras.layers.Dense(outputLayers, activation=tf.nn.softmax))
+
     return model
+
 model = create_model()
 
 model.compile(optimizer='adam',
@@ -86,14 +94,8 @@ result = model.predict(testBins)
 percentagesT = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 percentagesF = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 # Graph Results
-
-"""
 for i, k in enumerate(outputLabels):
     print(str(i)+": "+str(k))
-
-for i, k in enumerate(testLab):
-    print(str(k) + " | " + str(testInd[i]))
-"""
 
 if showResults == "True" or showResults == "true" or showResults == "t" or showResults == "T":
     for i, ele in enumerate(result):
@@ -134,7 +136,7 @@ if showResults == "True" or showResults == "true" or showResults == "t" or showR
         print(ind3,": ", val3, "|", end='')
         print ("\n")
 
-        if predicted != actual or ind != testInd[i]:
+        if predicted != actual:
         #if 1 ==1:
             percentagesF[int(maxVal//.05)] += 1
 
@@ -161,14 +163,18 @@ if showResults == "True" or showResults == "true" or showResults == "t" or showR
             actualBins = binArray[index]
             for j in range(0, totalBins):
                 if predictedBins[j] !=0:
-                    xValueList1.append(j);
-                    yValueList1.append(predictedBins[j])
+                    xValueList1.append(j%2000 + .5);
+                    yValueList1.append(math.floor(j/2000) + .5)
                 if actualBins[j] !=0:
-                    xValueList2.append(j);
-                    yValueList2.append(actualBins[j])
-
-            plt.scatter(xValueList1, yValueList1, c='r', label = 'Predicted: ' + str(predicted)+ " | " + str(testId[i]),s=1)
-            plt.scatter(xValueList2, yValueList2, c='b', label = 'Actual: ' + str(actual) + " | " + str(idList[index]),s=1)
+                    xValueList2.append(j%2000 + .5);
+                    yValueList2.append(math.floor(j/2000) + .5)
+            plt.scatter(xValueList1, yValueList1, c='r', label = 'Predicted: ' + str(predicted)+ " | " + str(testId[i]),s=8)
+            plt.scatter(xValueList2, yValueList2, c='b', label = 'Actual: ' + str(actual) + " | " + str(idList[index]),s=8)
+            plt.axhline(y=1, c = '#000000')
+            plt.axhline(y=2, c = '#000000')
+            plt.axhline(y=3, c = '#000000')
+            plt.axhline(y=4, c = '#000000')
+            plt.axhline(y=5, c = '#000000')
             plt.legend(loc='upper left')
             plt.title("Bin Comparison")
             plt.xlabel("Bins")
@@ -196,13 +202,18 @@ if showResults == "True" or showResults == "true" or showResults == "t" or showR
             actualBins = binArray[index]
             for j in range(0, totalBins):
                 if predictedBins[j] !=0:
-                    xValueList1.append(j);
-                    yValueList1.append(predictedBins[j])
+                    xValueList1.append(j%2000 + .5);
+                    yValueList1.append(math.floor(j/2000) + .5)
                 if actualBins[j] !=0:
-                    xValueList2.append(j);
-                    yValueList2.append(actualBins[j])
-            plt.scatter(xValueList1, yValueList1, c='r', label = 'Predicted: ' + str(predicted)+ " | " + str(testId[i]),s=1)
-            plt.scatter(xValueList2, yValueList2, c='b', label = 'Actual: ' + str(labelList[index])+ " | " + str(idList[index]),s=1)
+                    xValueList2.append(j%2000 + .5);
+                    yValueList2.append(math.floor(j/2000) + .5)
+            plt.scatter(xValueList1, yValueList1, c='r', label = 'Predicted: ' + str(predicted)+ " | " + str(testId[i]),s=8)
+            plt.scatter(xValueList2, yValueList2, c='b', label = 'Actual: ' + str(labelList[index])+ " | " + str(idList[index]),s=8)
+            plt.axhline(y=1, c = '#000000')
+            plt.axhline(y=2, c = '#000000')
+            plt.axhline(y=3, c = '#000000')
+            plt.axhline(y=4, c = '#000000')
+            plt.axhline(y=5, c = '#000000')
             plt.legend(loc='upper left')
             plt.title("Bin Comparison")
             plt.xlabel("Bins")
@@ -227,7 +238,7 @@ print('Test accuracy:', test_acc)
 
 
 
-"""n_groups = 20
+n_groups = 20
 fig, ax = plt.subplots()
 index = np.arange(n_groups)
 bar_width = 0.35
@@ -249,4 +260,4 @@ plt.title('# o percentages')
 plt.legend()
 
 plt.tight_layout()
-plt.show()"""
+plt.show()

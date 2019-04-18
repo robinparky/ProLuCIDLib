@@ -17,6 +17,21 @@ else:
     outputPath = sys.argv[2] #Path to store created arrays
     testNumber = int(sys.argv[3]) #Number of test elements to create
 
+"""
+Bin constants
+Define maximum y val before flooring
+Define Number of y bins
+Define the width of x bins
+
+Calculate the width of a y bin.
+"""
+
+
+Y_TOP_BOUND  = 5 #Defined top bound
+yBins = 5
+BIN_WIDTH_Y = Y_TOP_BOUND/yBins
+BIN_WIDTH_X = 1
+#BIN_WIDTH_Y = 1
 
 #Healper Function, Converts bitstring to float
 def convertFloat(element):
@@ -61,6 +76,7 @@ for j in range(10,15):
 
         #Search returned list of matched spectrums for each peptide
         for element in spectrums:
+
             spectrum = [] #Holder variable for spectrum
 
             #append the scan id
@@ -96,11 +112,10 @@ for j in range(10,15):
 # each unique peptide
 indexList = []
 noDuplicateLabels = list(set(labelList))
-for y in labelList:
-    for i in noDuplicateLabels:
+for i in noDuplicateLabels:
+    for y in labelList:
         if i == y:
             indexList.append(noDuplicateLabels.index(i))
-
 
 print ("Finished Pulling Data from Database")
 pullData = time.time()
@@ -110,7 +125,6 @@ print ("Elapsed Time: " + str(round(pullData - start)) + "\n")
 
 '''--------------------------------------------------------------------------'''
 #Shuffle lists so that it is mised and same peptide specs are not adjacent
-
 shuffle = list(zip(spectrumList, labelList, indexList, idList))
 random.shuffle(shuffle)
 spectrumList, labelList, indexList, idList = list(zip(*shuffle))
@@ -135,38 +149,73 @@ MAX_X = int(math.ceil(MAX_X / 1000.0)) * 1000
 #MAX_Y =int(math.ceil(MAX_Y / 1000.0)) * 1000
 MAX_Y = math.ceil(MAX_Y)
 
-binWidth = 2
+#Calculate the number of xbins and ybins.
+xBins = math.ceil(MAX_X / BIN_WIDTH_X)
+yBins = math.ceil(Y_TOP_BOUND/ BIN_WIDTH_Y)
+#yBins = math.ceil(MAX_Y / BIN_WIDTH_Y)
 
-xBins = int(MAX_X/binWidth)
+#Total number of bins
+#totalBins = xBins + xBins * (yBins-1)
+totalBins = xBins * yBins
+print( "Putting all coords into ", totalBins, " bins.")
+print( "XBINS: ", xBins, " YBINS: ", yBins)
+print( "Bins are ", BIN_WIDTH_X, " by ", BIN_WIDTH_Y)
 print( "Max X: ", MAX_X, " Max Y: ", MAX_Y, "\n")
-print("xBins: ",xBins)
 
 #Initialize binarray and binList
 binArray = []
-binList = np.zeros(xBins)
+binList = np.zeros(totalBins)
 
 #Iterate through spectrumList and put every coordinate pair in a bin creating
 # a new representation of the spectrum
 for ind in range(0, len(spectrumList)):
     print(ind,"/",len(spectrumList), end="\r", flush = True)
-    #Get number of points in the spectrum and iterate through each one
 
-    for i in spectrumList[ind]:
+    #Get number of points in the spectrum and iterate through each one
+    numPoints = len(spectrumList[ind])
+    for ele, i in enumerate(spectrumList[ind]):
         x = i[0] # X coord
         y = i[1] # Y coord
 
-        binNumber = int(math.floor(x/binWidth))
-        if y > binList[binNumber]:
-            binList[binNumber] = y
+        #Floor to max val if necessary
+        if  math.log10(y) >= Y_TOP_BOUND:
+            y = Y_TOP_BOUND - 1
+        else:
+            y = math.floor(math.log10(y))
+        #Calculate what bin to put coords in and increment one to the bin
+        x = math.floor(x/BIN_WIDTH_X)
+        #y = math.floor(y/BIN_WIDTH_Y)
+
+        binNumber = int(x + (y*xBins))
+
+        binList[binNumber] = 1 #CHANGED FROM +=, Uncomment for percentage bins
+        if binList[binNumber] != 0:
+            binList[binNumber] = (binList[binNumber] + (y/MAX_Y))/2
+        else:
+            binList[binNumber] = y/MAX_Y
+    """for ind, ele in enumerate(spectrumList):
+        for i in range(0, 2000):
+            sum = 0
+            sum += spectrumList[ind][i % len(spectrumList[ind])][1]
+            for g in range(1, 21):
+                    sum += spectrumList[ind][(i + g) % len(spectrumList[ind])][1]
+            average = sum/20
+            binList[i] = average"""
+
+    #Divide everything by the number of coords to get all bins to be [0,1]
+    #binList = np.true_divide(binList,numPoints) #Uncomment for percentage bins
+
+    """for i, ele in enumerate(binList):       #This is multiplying by intensity value
+        if ele != 0:
+            binList[i] = 10 ** (i//2000) * 5"""
 
     #Append the binList to a holder, reset the binlist to all 0's and loop
-    binList = np.true_divide(binList, MAX_Y)
     binArray.append(binList)
-    binList = np.zeros(xBins)
+    binList = np.zeros(totalBins)
 
 #Reshape and print binarray
 binArray = np.array(binArray)
-binArray = np.reshape(binArray, (len(indexList), xBins))
+binArray = np.reshape(binArray, (len(indexList), totalBins))
 print(binArray.shape)
 
 #Create test set
@@ -196,14 +245,6 @@ binArray = binArraySplit[1]
 labelList = labelListSplit[1]
 indexList = indexListSplit[1]
 idList = idListSplit[1]
-
-"""
-for i, k in enumerate(noDuplicateLabels):
-    print(str(i)+": "+str(k))
-
-for i, k in enumerate(testLab):
-    print(str(k) + " | " + str(testInd[i]))
-"""
 
 
 #'''''''''''''''''''''''''''''''''''''''TEST Data

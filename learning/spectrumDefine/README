@@ -1,0 +1,12 @@
+Create Data.py
+python createData.py [sqlite path] [output folder] [number of test elements]
+
+learn.py
+python learn1dDense.py [inputFolder] [outputPath (.h5)] [batch size] [epochs]
+
+testAcc.py
+python load1dDense.py [inputFolder] [neuralNet path (.h5)] [printStats to Screen
+(true to print or anything else to not print]
+
+Programs with a ending 2 are for the convolutional solution to defining the
+spectra. Does not change input/output.

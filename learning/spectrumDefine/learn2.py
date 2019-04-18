@@ -49,22 +49,6 @@ with tf.device('/cpu:0'):
     sp.close()
 '''--------------------------------------------------------------------------'''
 
-def tfdata_generator(bins, labels, is_training, batch_size=128):
-
-    def preprocess_fn(bins, label):
-        return bins, label
-
-    dataset = tf.data.Dataset.from_tensor_slices((bins, labels))
-
-    # Transform and batch data at the same time
-    dataset = dataset.apply(tf.contrib.data.map_and_batch(
-        preprocess_fn, batch_size,
-        num_parallel_batches=4,  # cpu cores
-        drop_remainder=True if is_training else False))
-    dataset = dataset.repeat()
-    dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
-
-    return dataset
 
 #Metrics for printing(mostly)
 inputs = len(spectrums)
@@ -106,30 +90,42 @@ print("\tOutput Layers: ", outputLayers)
     model = keras.utils.multi_gpu_model(baseModel, gpus=2)"""
 
 
-def create_model():
+"""def create_model():
     baseModel = keras.Sequential()
     baseModel.add(keras.layers.InputLayer(input_shape = (totalBins, )))
     baseModel.add(keras.layers.Dense(outputLayers * 8, activation=tf.nn.relu))
     baseModel.add(keras.layers.Dense(outputLayers * 8, activation=tf.nn.relu))
     baseModel.add(keras.layers.Dense(outputLayers, activation=tf.nn.softmax))
 
-    return baseModel
+    return baseModel"""
 
+print(binArray.shape)
+def create_model():
+    model = keras.Sequential()
+    model.add(keras.layers.Conv2D(128 , (5,5), input_shape = binArray.shape[1:], activation=tf.nn.relu))
+    model.add(keras.layers.MaxPooling2D(pool_size= (2,2)))
 
+    model.add(keras.layers.Conv2D(128 , (5,5), activation=tf.nn.relu ))
+    model.add(keras.layers.MaxPooling2D(pool_size= (2,2)))
+
+    model.add(keras.layers.Flatten())
+    model.add(keras.layers.Dense(64, activation=tf.nn.relu))
+
+    model.add(keras.layers.Dense(outputLayers, activation=tf.nn.softmax))
+
+    return model
 
 model  = create_model()
 model.compile(optimizer='adam',
               loss='sparse_categorical_crossentropy',
               metrics=['accuracy'])
-model.summary()
+#model.summary()
 '''--------------------------------------------------------------------------'''
 
 
 
 #Train the data
-training_set = tfdata_generator(binArray, indexList, is_training=True, batch_size=batchSize)
-
-model.fit(training_set.make_one_shot_iterator(), steps_per_epoch = len(binArray), epochs = numEpochs)
+model.fit(binArray, indexList, batch_size = batchSize, epochs = numEpochs)
 
 model.save_weights(outputPath)
 #model.save(outputPath)
