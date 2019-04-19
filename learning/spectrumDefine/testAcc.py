@@ -53,6 +53,10 @@ with open (inputPath + 'testId', 'rb') as lp:
     testId = pickle.load(lp)
 sp.close()
 
+with open (inputPath + 'testMass', 'rb') as lp:
+    testMass = pickle.load(lp)
+sp.close()
+
 with open (inputPath + 'outputLabels', 'rb') as lp:
     outputLabels = pickle.load(lp)
 sp.close()
@@ -83,17 +87,6 @@ model.load_weights(neuralPath)
 
 result = model.predict(testBins)
 
-percentagesT = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-percentagesF = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-# Graph Results
-
-"""
-for i, k in enumerate(outputLabels):
-    print(str(i)+": "+str(k))
-
-for i, k in enumerate(testLab):
-    print(str(k) + " | " + str(testInd[i]))
-"""
 
 if showResults == "True" or showResults == "true" or showResults == "t" or showResults == "T":
     for i, ele in enumerate(result):
@@ -136,7 +129,6 @@ if showResults == "True" or showResults == "true" or showResults == "t" or showR
 
         if predicted != actual or ind != testInd[i]:
         #if 1 ==1:
-            percentagesF[int(maxVal//.05)] += 1
 
             ###################################################################
             x1 = [x[0] for x in testSpec[i]]
@@ -217,36 +209,9 @@ if showResults == "True" or showResults == "true" or showResults == "t" or showR
             plt.show()
 
         else:
-            percentagesT[int(maxVal//.05)] += 1
             print("----------------------------------------------")
 
 #Test Acccuracy
 np.array(testInd)
 test_loss, test_acc = model.evaluate(testBins, testInd)
 print('Test accuracy:', test_acc)
-
-
-
-"""n_groups = 20
-fig, ax = plt.subplots()
-index = np.arange(n_groups)
-bar_width = 0.35
-opacity = 0.8
-
-rects1 = plt.bar(index, percentagesT, bar_width,
-alpha=opacity,
-color='b',
-label='correct')
-
-rects2 = plt.bar(index + bar_width, percentagesF, bar_width,
-alpha=opacity,
-color='r',
-label='incorrect')
-
-plt.xlabel('Percentage')
-plt.ylabel('Number')
-plt.title('# o percentages')
-plt.legend()
-
-plt.tight_layout()
-plt.show()"""
