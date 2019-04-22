@@ -107,6 +107,7 @@ for i, ele in enumerate(result):
     predicted = ""
     precursorMass = 0
     mass = testMass[i]
+    found = False
 
     predictList = zip(ele, outputLabels)
     predictList = sorted(predictList, key = lambda t: t[0], reverse=True)
@@ -117,9 +118,31 @@ for i, ele in enumerate(result):
         c.execute('SELECT * FROM PeptideTable WHERE sequenceCS = ?', (label,))
         peptide = c.fetchone()
         precursorMass =  peptide[3]
-        if abs(mass - precursorMass) < 10:
+
+        delta =  abs(mass - precursorMass)
+        deltaDec = delta % 1
+
+        print("#",delta)
+        if delta < 4:
+            for j in range(4):
+                print(" ----",abs(float(j)-deltaDec))
+                if abs(j - deltaDec) < .05:
+                    print("found")
+                    predicted = label
+                    found = True
+                    break
+            if found:
+                break
+
+        """
+        if delta < .05:
             predicted = label
+            found = True
             break
+        """
+    if not found:
+        predicted = predictList[0][1]
+
 
     actual = testLab[i]
     print("Test ", i + 1)

@@ -118,7 +118,7 @@ if showResults == "True" or showResults == "true" or showResults == "t" or showR
 
         predicted = outputLabels[ind]
         actual = testLab[i]
-        print("Test ", i)
+        print("Test ", i + 1)
         print(ind, "  |  ", testInd[i])
         print("Predicted: ", predicted)
         print("ActualVal: ", actual, "\n")
