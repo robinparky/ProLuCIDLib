@@ -1179,6 +1179,10 @@ public class LibraryIndexer {
                                       float mass, float deltacn, int scan, long id) throws SQLException, IOException {
         //seqKeyScoreMap.put(seqKey,score);
         //String fpath = path+filename;
+        if(isHeavyFile(filename,path))
+        {
+            filename = filename.substring(1,filename.length());
+        }
         IndexedFile ifile = indexedMap.get(filename);
         List<Float> mzList = new ArrayList<>();
         List<Float> intList = new ArrayList<>();
@@ -1310,7 +1314,12 @@ public class LibraryIndexer {
         if(!peptideExistsInLibrary)
         {
             String fpath = fileName;
+            if(isHeavyFile(fpath,path))
+            {
+                fpath = fileName.substring(1,fileName.length());
+            }
             IndexedFile ifile = indexedMap.get(fpath);
+
             List<Float> mzList = new ArrayList<>();
             List<Float> intList = new ArrayList<>();
             float retTime = readSpectraFromMS2(ifile,scan,mzList,intList);
@@ -1390,6 +1399,7 @@ public class LibraryIndexer {
 
     private float readSpectraFromMS2(IndexedFile ifile, int scan,List<Float> mzList, List<Float> intList)
             throws IOException {
+        //System.out.println(">>>>"+ifile.getFileName()+"\t"+scan);
         long pos = ifile.getPositionByScan(scan);
         RandomAccessFile rfile = new RandomAccessFile(ifile.getFileName(),"r");
         rfile.seek(pos);
@@ -1782,4 +1792,22 @@ public class LibraryIndexer {
     public void setUploadBestScoringXcorr(boolean uploadBestScoringXcorr) {
         this.uploadBestScoringXcorr = uploadBestScoringXcorr;
     }
+
+    public static boolean isHeavyFile(String file, String path) {
+
+        if(!file.startsWith("H"))
+            return false;
+
+
+        String lightfile = path + "/" + file.substring(1, file.length());
+
+        File lf = new File(lightfile);
+
+        if(lf.exists())
+            return true;
+        else
+            return false;
+
+    }
+
 }
