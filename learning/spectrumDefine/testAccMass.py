@@ -150,7 +150,13 @@ for i, ele in enumerate(result):
     print("ActualVal: ", actual)
     print("Mass: ", mass)
     print("PrecursorMass: ", precursorMass,   "\n")
-    if predicted == actual:
+
+    #Ignore Charge State
+    predicted = predicted[:-1]
+    actual = actual[:-1]
+
+
+    if predicted == actual :
         correctCnt += 1
         print("---------------------------------------------")
     else:
