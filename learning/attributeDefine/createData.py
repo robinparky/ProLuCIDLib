@@ -88,16 +88,17 @@ for i in range(1, 10):
             data.append(normalized)
             mBool = True
 
-        elif line[0] != "M" and mBool == True:
+        elif line[0] != "M" and mBool == True and done == False:
             if not (line[1][0] == "R" and line[1][1] == "e" and line[1][7] == "_"):
                 normal = True
-        elif line[0] == "M" and mBool == True:
+        elif line[0] == "M" and mBool == True and done == False:
             data.append(line[4])
             if normal == True:
                 labelList.append(1)
+                #data.append(1)
             else:
                 labelList.append(0)
-            #print(data)
+                #data.append(0)
             attList.append(data)
 
             data = []
@@ -114,10 +115,6 @@ for i in range(1, 10):
     attList[i][7] = float(attList[i][7]) * 10"""
 
 
-attList.sort(key=lambda x: x[2])
-for i, ele in enumerate(attList):
-    print('{:80s} {:20s}'.format(str(ele), str(labelList[i])))
-
 
 print ("Finished Pulling Data from Database")
 pullData = time.time()
@@ -133,11 +130,24 @@ attList, labelList = list(zip(*shuffle))
 attList = list(attList)
 labelList = list(labelList)
 
+attList = np.array(attList).astype(np.float)
+attList.reshape((len(attList), 8))
+print(attList)
+
+attList = attList/attList.max(axis = 0)
+
+
+
+#attList.sort(key=lambda x: x[4])
+for i, ele in enumerate(attList):
+    print(str(ele))
+
+
+
 '''--------------------------------------------------------------------------'''
-if 1 == 2:
+if 1 == 0:
     x1 = []
     x2 = []
-
     y11 = []
     y12 = []
     y21 = []
@@ -230,7 +240,7 @@ print("Creating Test Set")
 attList = np.array(attList)
 labelList = np.array(labelList)
 
-
+"""
 #Split array into test and training sets
 attListSplit = np.split(attList, [int(testNumber)])
 labelListSplit = np.split(labelList, [int(testNumber)])
@@ -240,6 +250,10 @@ testLabelList = labelListSplit[0]
 
 attList = attListSplit[1]
 labelList = labelListSplit[1]
+"""
+testAttList = attList
+testLabelList = labelList
+
 
 #'''''''''''''''''''''''''''''''''''''''Save Data
 print("Created Test Database with ", len(attList), " elements")

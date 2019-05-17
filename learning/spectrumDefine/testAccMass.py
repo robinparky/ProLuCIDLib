@@ -104,6 +104,8 @@ correctCnt = 0
 cnt = 0
 
 for i, ele in enumerate(result):
+    if(len(testSpec[i]) < 50):
+        continue
     predicted = ""
     precursorMass = 0
     mass = testMass[i]
@@ -122,7 +124,7 @@ for i, ele in enumerate(result):
         delta =  abs(mass - precursorMass)
         deltaDec = delta % 1
 
-        print("#",delta)
+        print("#",delta, peptide[14])
         if delta < 4:
             for j in range(4):
                 print(" ----",abs(float(j)-deltaDec))
@@ -145,11 +147,16 @@ for i, ele in enumerate(result):
 
 
     actual = testLab[i]
+    actInd = list(labelList).index(actual)
+    predInd = list(labelList).index(predicted)
     print("Test ", i + 1)
     print("Predicted: ", predicted)
     print("ActualVal: ", actual)
-    print("Mass: ", mass)
-    print("PrecursorMass: ", precursorMass,   "\n")
+    print("Spectrum Mass: ", mass)
+    print("Actual PrecursorMass: ", precursorMass)
+    print("Predicted Spectrum ID ",testId[i])
+    print("Actual Spectrum ID", idList[actInd])
+    print("Sampel Predicted ID", idList[predInd],"\n")
 
     #Ignore Charge State
     predicted = predicted[:-1]
@@ -160,7 +167,11 @@ for i, ele in enumerate(result):
         correctCnt += 1
         print("---------------------------------------------")
     else:
+        input()
         print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+
     cnt += 1
 
 print("Accuracy: ", str(correctCnt/cnt))

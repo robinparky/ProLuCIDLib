@@ -33,13 +33,16 @@ for i, line in enumerate(file):
     if i != 0:
         tmp = []
         line = line.split("\t")
-        labelList.append(line[0])
+        labelList.append(int(line[0]))
         for ele in range(1, len(line)):
-            tmp.append(line[ele])
+            tmp.append(float(line[ele]))
         attList.append(tmp)
-
-for ele in attList:
-    print(str(ele[0]))
+"""
+print(labelList)
+for i, ele in enumerate(attList):
+    print(i)
+    print(str(ele[0]), labelList[i])
+"""
 
 attList = np.array(attList)
 print(attList.shape)
@@ -48,6 +51,53 @@ print ("Finished Pulling Data from Database")
 pullData = time.time()
 print ("Time for section: " + str(round(pullData - start)))
 print ("Elapsed Time: " + str(round(pullData - start)) + "\n")
+
+si = []
+
+"""
+for i in range(len(attList[0])):
+    sum = 0
+    #print(i)
+    for g in range(36):
+        xprime = 0
+        if i == 0:
+            xprime = attList[g][i+1]
+        elif i == len(attList[0]) - 1:
+            xprime =  attList[g][i-1]
+        else:
+            if(abs(attList[g][i] - attList[g][i+1]) > abs(attList[g][i] - attList[g][i-1])):
+                xprime = attList[g][i+1]
+            else:
+                xprime = attList[g][i-1]
+        sum += (attList[g][i] + xprime + 1)%2
+    sum = sum/36
+    si.append(sum)
+for i in si:
+    print(i)
+"""
+
+for i in range(len(attList[0])):
+    x = []
+    y = []
+    for g in range(36):
+        print(attList[g][i])
+        if labelList[g] == 1:
+            y.append(0)
+            x.append(attList[g][i])
+        elif labelList[g] == 0:
+            y.append(1)
+            x.append(attList[g][i])
+
+    #x.sort()
+    sorted = list(zip(x,y))
+    random.shuffle(sorted)
+    x,y = list(zip(*sorted))
+    x = list(x)
+    y = list(y)
+    print(x)
+    plt.xticks(rotation='vertical')
+    plt.scatter(x,y)
+    plt.show()
 
 
 

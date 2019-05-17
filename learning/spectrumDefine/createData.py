@@ -32,6 +32,7 @@ start = time.time()
 #Connect to database
 conn = sqlite3.connect(databasePath)
 
+
 peptideCnt = 0 #Count of number of peptides for alter use
 specCnt = 0
 labelList = [] #List of label associated with peptide
@@ -87,6 +88,8 @@ for j in range(10,15):
 
             #Grab label corresponding peptide label from the peptide table and
             #append to the labelList
+
+            ##############################CHANGE#############################
             c.execute('SELECT * FROM PeptideTable WHERE peptideID=?', peptide)
             peptideRow = c.fetchone()
             seq = peptideRow[14]

@@ -115,8 +115,6 @@ model.compile(optimizer='adam',
 model.summary()
 '''--------------------------------------------------------------------------'''
 
-
-
 #Train the data
 
 #model.fit_generator(generator(batchSize), steps_per_epoch = np.ceil(len(binArray)/batchSize), epochs = numEpochs)

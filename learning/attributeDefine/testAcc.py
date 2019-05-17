@@ -53,7 +53,33 @@ model.load_weights(neuralPath)
 
 result = model.predict(testAttList)
 
+outputLabels =  [0,1]
+
+correctCnt = 0
+cnt = 0
+
+sortedList = []
+
+
+for i, ele in enumerate(result):
+    tmp = []
+    predictList = zip(ele, outputLabels)
+    predictList = sorted(predictList, key = lambda t: t[0], reverse=True)
+    #percentages, predictLabels =  list(zip(*predictList))
+
+    tmp.append(predictList[0][0])
+    tmp.append(predictList[0][1])
+    tmp.append(testLabelList[i])
+    sortedList.append(tmp)
+
+
+sortedList = sorted(sortedList, key = lambda t: t[0], reverse=True)
+for i in sortedList:
+    print(i)
+
 #Test Acccuracy
+"""
 np.array(testLabelList)
 test_loss, test_acc = model.evaluate(testAttList, testLabelList)
 print('Test accuracy:', test_acc)
+"""
