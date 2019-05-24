@@ -183,6 +183,7 @@ indexList = np.array(indexList)
 idList = np.array(idList)
 
 
+
 #Split array into test and training sets
 spectrumListSplit = np.split(spectrumList, [int(testNumber)])
 binArraySplit = np.split(binArray, [int(testNumber)])

@@ -47,7 +47,14 @@ with tf.device('/cpu:0'):
     with open (save + 'binArray', 'rb') as lp:
         binArray = pickle.load(lp)
     sp.close()
+    with open (save + 'outputLabels', 'rb') as lp:
+        outputLabels = np.array(pickle.load(lp))
+    sp.close()
 '''--------------------------------------------------------------------------'''
+
+for i in np.sort(indexList):
+    print(i)
+
 print(binArray.shape)
 def generator(batchSize):
     while True:
@@ -61,8 +68,7 @@ def generator(batchSize):
 inputs = len(spectrums)
 totalBins = len(binArray[0])
 inputLayers = len(binArray)
-output = np.unique(indexList)
-outputLayers = len(set(indexList))
+outputLayers = len(outputLabels)
 
 
 print("Inputs (spectrums): ",inputs)
@@ -71,8 +77,8 @@ print("\tType: ", binArray.dtype);
 print("\tInput Layers: ", inputLayers, "\n")
 
 print("Outputs:", )
-print("\tShapes: ", output.shape);
-print("\tType: ", output.dtype);
+print("\tNum: ", outputLabels);
+print("\tType: ", outputLabels.dtype);
 print("\tOutput Layers: ", outputLayers)
 
 """def create_model():
@@ -100,8 +106,10 @@ print("\tOutput Layers: ", outputLayers)
 def create_model():
     baseModel = keras.Sequential()
     baseModel.add(keras.layers.InputLayer(input_shape = (totalBins, )))
-    baseModel.add(keras.layers.Dense(outputLayers * 8, activation=tf.nn.relu))
-    baseModel.add(keras.layers.Dense(outputLayers * 8, activation=tf.nn.relu))
+    #baseModel.add(keras.layers.Dense(outputLayers * 8, activation=tf.nn.relu))
+    #baseModel.add(keras.layers.Dense(outputLayers * 8, activation=tf.nn.relu))
+    baseModel.add(keras.layers.Dense(outputLayers * 3, activation=tf.nn.relu))
+    baseModel.add(keras.layers.Dense(outputLayers * 3, activation=tf.nn.relu))
     baseModel.add(keras.layers.Dense(outputLayers, activation=tf.nn.softmax))
 
     return baseModel
@@ -120,8 +128,8 @@ model.summary()
 #model.fit_generator(generator(batchSize), steps_per_epoch = np.ceil(len(binArray)/batchSize), epochs = numEpochs)
 
 model.fit(binArray, indexList, batch_size = batchSize, epochs = numEpochs)
-model.save_weights(outputPath)
-#model.save(outputPath)
+#model.save_weights(outputPath)
+model.save(outputPath)
 
 
 print ("Finished Training")

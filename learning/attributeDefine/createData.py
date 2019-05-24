@@ -39,15 +39,12 @@ for i in range(1, 10):
     mBool = False # Boolean for in M bounds
     normal = False
 
-
     maxIntensity = 0
     minIntensity = 10000
     maxNum = 0
     minNum = 100000
     maxLength = 0
     minLength = 1000000
-
-
 
     for line in file:
         line = line.split("\t")

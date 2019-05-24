@@ -37,13 +37,14 @@ sp.close()
 '''--------------------------------------------------------------------------'''
 
 model = tf.keras.Sequential([
-  tf.keras.layers.Dense(32, activation=tf.nn.relu, input_shape=(8,)),  # input shape required
-  tf.keras.layers.BatchNormalization(),
-  tf.keras.layers.Dense(16, activation=tf.nn.relu),
-  tf.keras.layers.BatchNormalization(),
-  tf.keras.layers.Dense(2, activation=tf.nn.sigmoid )
+    tf.keras.layers.Dense(len(attList[0]), activation=tf.nn.relu, input_shape=(len(attList[0]),)),  # input shape required
+    tf.keras.layers.Dense(300, activation=tf.nn.relu),
+    tf.keras.layers.Dense(200, activation=tf.nn.relu),
+    tf.keras.layers.Dense(100, activation=tf.nn.relu),
+    tf.keras.layers.Dense(50, activation=tf.nn.relu),
+    tf.keras.layers.Dense(25, activation=tf.nn.relu),
+    tf.keras.layers.Dense(1, activation=tf.nn.sigmoid )
 ])
-
 model.compile(optimizer='adam',
            loss='sparse_categorical_crossentropy',
            metrics=['accuracy'])
@@ -58,24 +59,25 @@ outputLabels =  [0,1]
 correctCnt = 0
 cnt = 0
 
-sortedList = []
+resultList = []
 
+print('\n')
+print("1 Denotes Sick, 0 Denotes Healthy")
+print('\n')
+print("  Predicted  |  Actual ")
 
 for i, ele in enumerate(result):
-    tmp = []
-    predictList = zip(ele, outputLabels)
-    predictList = sorted(predictList, key = lambda t: t[0], reverse=True)
-    #percentages, predictLabels =  list(zip(*predictList))
+    answer = 0
+    if ele[0] > .5:
+        answer = 1
+    print(i, "      ",answer, "  |   ", testLabelList[i])
+    if answer == testLabelList[i]:
+        correctCnt += 1
+    cnt += 1
 
-    tmp.append(predictList[0][0])
-    tmp.append(predictList[0][1])
-    tmp.append(testLabelList[i])
-    sortedList.append(tmp)
-
-
-sortedList = sorted(sortedList, key = lambda t: t[0], reverse=True)
-for i in sortedList:
-    print(i)
+print('\n')
+print("Tested", correctCnt, "correct out of", cnt)
+print("Accuracy:", str(correctCnt/cnt))
 
 #Test Acccuracy
 """

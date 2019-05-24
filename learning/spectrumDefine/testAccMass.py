@@ -84,8 +84,8 @@ model.compile(optimizer='adam',
               loss='sparse_categorical_crossentropy',
               metrics=['accuracy'])
 
-model.load_weights(neuralPath)
-#model = tf.keras.models.load_model('saved/model.h5')
+#model.load_weights(neuralPath)
+model = tf.keras.models.load_model('saved/model.h5')
 
 result = model.predict(testBins)
 
