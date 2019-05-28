@@ -27,24 +27,33 @@ start = time.time()
 file = open(inputPath, "r")
 
 attList = [];
+original = []
+
 
 labelList = np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]);
 
 for i, line in enumerate(file):
+    originalPart = np.array(line.split("\t"))
+    if i == 0:
+        original = originalPart
+    else:
+        original = np.column_stack((original, originalPart))
+
     line = np.array(line.split("\t")[4:])
     if i == 0:
         attList = line
     else:
         attList = np.column_stack((attList, line))
 
-"""
-print(labelList)
-for i, ele in enumerate(attList):
-    print(i)
-    print(str(ele[0]), labelList[i])
-"""
+#original = original.transpose()
+#attList = attList.transpose()
 
+print(original.shape)
 print(attList.shape)
+
+
+#data = pd.DataFrame(attList)
+#print(data)
 
 print ("Finished Pulling Data from Database")
 pullData = time.time()
@@ -99,7 +108,9 @@ with open(outputPath +'testLabelList', 'wb') as sp:
     pickle.dump(testLabelList, sp, protocol=4)
 sp.close()
 
-
+with open(outputPath +'testLabelList', 'wb') as sp:
+    pickle.dump(testLabelList, sp, protocol=4)
+sp.close()
 writeData = time.time()
 print ("Time for section: " + str(round(writeData - pullData)))
 print ("Elapsed Time: " + str(round(writeData - start)) + "\n")
