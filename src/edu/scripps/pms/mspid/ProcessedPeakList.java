@@ -54,6 +54,7 @@ public class ProcessedPeakList {
     protected boolean isDeCharged = false;
     //double tolerance;
     double fragTolerance;
+    double fragTolerenceMillionth;
     //double highLimit;
     //double lowLimit; 
     protected double entropy = 0;
@@ -161,6 +162,7 @@ public class ProcessedPeakList {
 //        intensityVal = new double [(int)(prcMass+params.getMaxMassShift()+20.5)*PRECISIONFACTOR + 100]; // = new double[MAXNUMPEAKS];
 
         fragTolerance = params.getFragmentTolerance()/1000.0f; // change from ppm to .4 etc.
+        fragTolerenceMillionth = params.getFragmentTolerance()/1_000_000.0;
         minimumPeptideLength = params.getMinimumPeptideLength() - 2; // to avoid +1 and >=
 
         //highLimit = prcMass + params.getHighPrecursorTolerance();
@@ -485,10 +487,16 @@ public class ProcessedPeakList {
         float min = libpeaks.getMinM2z()<peakList.getMinM2z()? (float)libpeaks.getMinM2z(): (float)peakList.getMinM2z();
         float max = libpeaks.getMaxM2z()>peakList.getMaxM2z()? (float)libpeaks.getMaxM2z(): (float)peakList.getMaxM2z();
         PearsonsCorrelation correlation = new PearsonsCorrelation();
-        float[] yArray = spectra.getPeakList().generateBinSpectra(0,(float)fragTolerance,
+        double frag = fragTolerenceMillionth * spectra.mz;
+
+        float[] yArray =libpeaks.generateBinSpectra(0,(float)frag,
                 0,min,max).toNativeArray();
-        float[] xArray = this.peakList.generateBinSpectra(0,(float)fragTolerance,
+
+        frag = fragTolerenceMillionth * getPrecursorMass();
+
+        float[] xArray = this.peakList.generateBinSpectra(0,(float)frag,
                 0,min,max).toNativeArray();
+
         double[] xArrayd = new double[xArray.length];
         double[] yArrayd = new double[yArray.length];
         for(int i=0; i<xArray.length; i++)
@@ -508,10 +516,14 @@ public class ProcessedPeakList {
         float min = libpeaks.getMinM2z()<peakList.getMinM2z()? (float)libpeaks.getMinM2z(): (float)peakList.getMinM2z();
         float max = libpeaks.getMaxM2z()>peakList.getMaxM2z()? (float)libpeaks.getMaxM2z(): (float)peakList.getMaxM2z();
         SpearmansCorrelation correlation = new SpearmansCorrelation();
-        float[] yArray = spectra.getPeakList().generateBinSpectra(0,(float)fragTolerance,
+        double frag = fragTolerenceMillionth * spectra.mz;
+
+        float[] yArray =libpeaks.generateBinSpectra(0,(float)frag,
                 0,min,max).toNativeArray();
-        float[] xArray = this.peakList.generateBinSpectra(0,(float)fragTolerance,
+        frag = fragTolerenceMillionth * getPrecursorMass();
+        float[] xArray = this.peakList.generateBinSpectra(0,(float)frag,
                 0,min,max).toNativeArray();
+
         double[] xArrayd = new double[xArray.length];
         double[] yArrayd = new double[yArray.length];
         for(int i=0; i<xArray.length; i++)
@@ -543,9 +555,12 @@ public class ProcessedPeakList {
             }
             System.out.println();
         }*/
-        float[] yArray =libpeaks.generateBinSpectra(0,(float)fragTolerance,
+        double frag = fragTolerenceMillionth * spectra.mz;
+
+        float[] yArray =libpeaks.generateBinSpectra(0,(float)frag,
                 0,min,max).toNativeArray();
-        float[] xArray = this.peakList.generateBinSpectra(0,(float)fragTolerance,
+     //   frag = fragTolerenceMillionth * getPrecursorMass();
+        float[] xArray = this.peakList.generateBinSpectra(0,(float)frag,
                 0,min,max).toNativeArray();
 
         float dot_product_alpha_beta = 0,

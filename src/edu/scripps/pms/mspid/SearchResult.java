@@ -840,4 +840,10 @@ for(int i = 0; i < freq.length; i++) {
     public void setRetTime(double retTime) {
         this.retTime = retTime;
     }
+
+    public boolean isHeavyResult()
+    {
+        if(finalResult == null || finalResult.size()==0) return false;
+        return finalResult.get(0).getLibrarySpectra().isHeavy;
+    }
 }

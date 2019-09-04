@@ -24,6 +24,9 @@ public class LibrarySpectra {
     public final int scan;
     public final long id;
     public final int massKey;
+    public final boolean isHeavy;
+    private float startTime;
+    private float endTime;
 
     private  List<String> accessionList = new ArrayList<>();
     private  List<String> descriptionList= new ArrayList<>();
@@ -52,7 +55,8 @@ public class LibrarySpectra {
 
 
     public LibrarySpectra(String sequence, int chargeState, float mz, float retTime, float score, float deltaCn,
-                          String key, String filename, int scan, long id, String accession, String proteinDescription, int massKey) {
+                          String key, String filename, int scan, long id, String accession, String proteinDescription,
+                          int massKey) {
         this.sequence = sequence;
         this.chargeState = chargeState;
         this.mz = mz;
@@ -60,6 +64,7 @@ public class LibrarySpectra {
         this.score = score;
         this.deltaCn = deltaCn;
         this.key = key;
+        this.isHeavy = key.charAt(key.length()-1) == 'H' ;
         this.filename = filename;
         this.scan = scan;
         this.id = id;
@@ -70,18 +75,20 @@ public class LibrarySpectra {
        // this.proteinDescription = proteinDescription;
     }
 
-    public LibrarySpectra(int massKey, int cs,String sequence, boolean isDecoy) {
+    public LibrarySpectra(int massKey, int cs,String sequence, boolean isDecoy, String key, float retTime ) {
         if(isDecoy)
         {
             sequence = ReveseSequence(sequence);
         }
         this.sequence = sequence;
+        this.retTime =retTime;
         this.chargeState = cs;
         this.mz = massKey/1000.0f;
-        this.retTime = 0;
+
         this.score = 0;
         this.deltaCn = 0;
-        this.key = "";
+        this.key = key;
+        this.isHeavy = key.charAt(key.length()-1) == 'H' ;
         this.filename = "";
         this.scan = 0;
         this.id = 0;
@@ -94,23 +101,7 @@ public class LibrarySpectra {
 
 
 
-    public LibrarySpectra(int massKey, int cs, boolean isDecoy) {
-        this.sequence = "PEPTIDE";
-        this.chargeState = cs;
-        this.mz = massKey/1000.0f;
-        this.retTime = 0;
-        this.score = 0;
-        this.deltaCn = 0;
-        this.key = "";
-        this.filename = "";
-        this.scan = 0;
-        this.id = 0;
-        this.massKey = massKey;
-        this.isDecoy = isDecoy;
 
-        // this.accession = accession;
-        // this.proteinDescription = proteinDescription;
-    }
     public TFloatArrayList getMzList() {
         return mzList;
     }
@@ -214,5 +205,22 @@ public class LibrarySpectra {
 
     public void setDecoy(boolean decoy) {
         isDecoy = decoy;
+    }
+
+
+    public float getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(float startTime) {
+        this.startTime = startTime;
+    }
+
+    public float getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(float endTime) {
+        this.endTime = endTime;
     }
 }

@@ -49,7 +49,8 @@ public class MSIndexFileCreator
         System.out.println(list[i] + " was indexed.");
       }
 
-      return; }
+      return;
+    }
    if("-d".equals(args[0])){
        File f = new File(args[1]);
        String[] list = f.list();

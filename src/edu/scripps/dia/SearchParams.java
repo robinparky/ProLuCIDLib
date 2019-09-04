@@ -42,7 +42,7 @@ public class SearchParams extends edu.scripps.pms.mspid.SearchParams {
     private double fragmentTolerance;
     private double precursorTolerance;
     private float precursorToleranceFloat;
-    private double maxPrecursorMass = 10000;
+    private double maxPrecursorMass = 6000;
     private double minPrecursorMass = 600;
     private int minimumPeptideLength = 5;
     private int maxNumSpectra = 5000;
@@ -253,7 +253,6 @@ public class SearchParams extends edu.scripps.pms.mspid.SearchParams {
             newm.addDiffMod(diffMods.get(index)); // add one
             addTerminalDiffMods(newm);
             addDiffMods(index+1, numToAdd-i, newm); // after add one
-
         }
     }
     private void readParams() throws IOException, JDOMException {
@@ -292,6 +291,12 @@ public class SearchParams extends edu.scripps.pms.mspid.SearchParams {
 
     private void readScoringAlgorithmInfo(Element e)
     {
+
+        if(e == null)
+        {
+            scoringAlgorithm = NORMALIZED_DOT_PRODUCT_SOKOLOW;
+            return;
+        }
         String text = e.getTextTrim().toUpperCase();
         if("SPEARMANS_RHO".equals(text))
         {

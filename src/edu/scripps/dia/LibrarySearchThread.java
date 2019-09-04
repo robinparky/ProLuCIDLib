@@ -30,7 +30,7 @@ public class LibrarySearchThread implements Runnable{
                     Zline zline = it.next();
                     SearchResult r = lse.searchIndexedDB(sourceList,zline);
                     r.setMs2Name(msName);
-                    lse.write(r.outputResults());
+                    lse.write(r.outputResults(), r.isHeavyResult());
                 }
             }
         } catch (Exception e) {

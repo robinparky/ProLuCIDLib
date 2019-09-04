@@ -716,7 +716,6 @@ public class PeakList {
     }
     private List<Peak> getMostIntensPeaks(int numPeaks, double lowM2zLimit, double highM2zLimit) {
         ArrayList<Peak> topPeaks = new ArrayList<Peak>(numPeaks);
-
         List<Peak> sortedList = getSortedPeaks(true);
         int totalPeaks = sortedList.size()-1;
         while(numPeaks > 0 && totalPeaks >= 0) {
@@ -731,6 +730,7 @@ public class PeakList {
         }
         return topPeaks;
     }
+
     public PointList [] calcQCorrs(int numPeaks, int accuracyFactor, double massWindow) {
         int massH = (int)(MassSpecConstants.MASSH*accuracyFactor + 0.5);
         PointList [] points = new PointList[getNumZlines()];
