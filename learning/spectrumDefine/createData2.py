@@ -69,6 +69,9 @@ for j in range(10,15):
     peptideCnt += 1;
     c.execute('SELECT *,rowid FROM SpectraTable WHERE peptideID=?', peptide)
     spectrums = c.fetchall()
+    c.execute('SELECT * FROM PeptideTable WHERE peptideID=?', peptide)
+    peptideRow = c.fetchone()
+    seq = peptideRow[14]
 
     #Make sure peptide has more than 50 spectrums for accurate training.
     if len(spectrums) >= 50:
@@ -101,9 +104,6 @@ for j in range(10,15):
 
             #Grab label corresponding peptide label from the peptide table and
             #append to the labelList
-            c.execute('SELECT * FROM PeptideTable WHERE peptideID=?', peptide)
-            peptideRow = c.fetchone()
-            seq = peptideRow[14]
             labelList.append(seq)
     else:
         peptideCnt -= 1

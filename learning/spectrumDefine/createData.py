@@ -32,11 +32,14 @@ start = time.time()
 #Connect to database
 conn = sqlite3.connect(databasePath)
 
+
 peptideCnt = 0 #Count of number of peptides for alter use
 specCnt = 0
 labelList = [] #List of label associated with peptide
 spectrumList = [] #Spectrum to hold arrays of coords
 idList = [] #List holds scan id associated with spectrum
+massList = []# List with mass of spectrum
+
 
 print ("Pulling Data from Database")
 c = conn.cursor()
@@ -65,7 +68,7 @@ for j in range(10,15):
 
             #append the scan id
             idList.append(element[4])
-
+            massList.append(float(element[3])/1000);
             #Grab mzArr and intArr from
             mzArr = convertFloat(element[1])
             intArr = convertFloat(element[2])
@@ -85,6 +88,8 @@ for j in range(10,15):
 
             #Grab label corresponding peptide label from the peptide table and
             #append to the labelList
+
+            ##############################CHANGE#############################
             c.execute('SELECT * FROM PeptideTable WHERE peptideID=?', peptide)
             peptideRow = c.fetchone()
             seq = peptideRow[14]
@@ -111,14 +116,14 @@ print ("Elapsed Time: " + str(round(pullData - start)) + "\n")
 '''--------------------------------------------------------------------------'''
 #Shuffle lists so that it is mised and same peptide specs are not adjacent
 
-shuffle = list(zip(spectrumList, labelList, indexList, idList))
+shuffle = list(zip(spectrumList, labelList, indexList, idList, massList))
 random.shuffle(shuffle)
-spectrumList, labelList, indexList, idList = list(zip(*shuffle))
+spectrumList, labelList, indexList, idList, massList = list(zip(*shuffle))
 spectrumList = list(spectrumList)
 labelList = list(labelList)
 indexList = list(indexList)
 idList = list(idList)
-
+massList = list(massList)
 '''--------------------------------------------------------------------------'''
 #Find max x and y
 MAX_X = 0
@@ -178,24 +183,28 @@ indexList = np.array(indexList)
 idList = np.array(idList)
 
 
+
 #Split array into test and training sets
 spectrumListSplit = np.split(spectrumList, [int(testNumber)])
 binArraySplit = np.split(binArray, [int(testNumber)])
 labelListSplit = np.split(labelList, [int(testNumber)])
 indexListSplit = np.split(indexList, [int(testNumber)])
 idListSplit = np.split(idList, [int(testNumber)])
+massListSplit = np.split(massList, [int(testNumber)])
 
 testSpec = spectrumListSplit[0]
 testBins = binArraySplit[0]
 testLab = labelListSplit[0]
 testInd = indexListSplit[0]
 testId = idListSplit[0]
+testMass = massListSplit[0]
 
 spectrumList = spectrumListSplit[1]
 binArray = binArraySplit[1]
 labelList = labelListSplit[1]
 indexList = indexListSplit[1]
 idList = idListSplit[1]
+massList = massListSplit[1]
 
 """
 for i, k in enumerate(noDuplicateLabels):
@@ -204,7 +213,6 @@ for i, k in enumerate(noDuplicateLabels):
 for i, k in enumerate(testLab):
     print(str(k) + " | " + str(testInd[i]))
 """
-
 
 #'''''''''''''''''''''''''''''''''''''''TEST Data
 print("Peptides: ", peptideCnt, " spectrumList: ", len(spectrumList))
@@ -227,6 +235,10 @@ sp.close()
 
 with open(outputPath +'binArray', 'wb') as sp:
     pickle.dump(binArray, sp, protocol=4)
+sp.close()
+
+with open(outputPath +'massList', 'wb') as sp:
+    pickle.dump(massList, sp, protocol=4)
 sp.close()
 ####################################################
 with open(outputPath +'testSpec', 'wb') as sp:
@@ -251,6 +263,10 @@ sp.close()
 
 with open(outputPath +'outputLabels', 'wb') as sp:
     pickle.dump(noDuplicateLabels, sp, protocol=4)
+sp.close()
+
+with open(outputPath +'testMass', 'wb') as sp:
+    pickle.dump(testMass, sp, protocol=4)
 sp.close()
 
 

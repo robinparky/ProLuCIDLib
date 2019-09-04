@@ -47,31 +47,28 @@ with tf.device('/cpu:0'):
     with open (save + 'binArray', 'rb') as lp:
         binArray = pickle.load(lp)
     sp.close()
+    with open (save + 'outputLabels', 'rb') as lp:
+        outputLabels = np.array(pickle.load(lp))
+    sp.close()
 '''--------------------------------------------------------------------------'''
 
-def tfdata_generator(bins, labels, is_training, batch_size=128):
+for i in np.sort(indexList):
+    print(i)
 
-    def preprocess_fn(bins, label):
-        return bins, label
+print(binArray.shape)
+def generator(batchSize):
+    while True:
+        for i in range(0, len(binArray), batchSize):
+            print(indexList[i:i + batchSize])
+            yield binArray[i:i + batchSize], indexList[i:i + batchSize]
 
-    dataset = tf.data.Dataset.from_tensor_slices((bins, labels))
 
-    # Transform and batch data at the same time
-    dataset = dataset.apply(tf.contrib.data.map_and_batch(
-        preprocess_fn, batch_size,
-        num_parallel_batches=4,  # cpu cores
-        drop_remainder=True if is_training else False))
-    dataset = dataset.repeat()
-    dataset = dataset.prefetch(tf.contrib.data.AUTOTUNE)
-
-    return dataset
 
 #Metrics for printing(mostly)
 inputs = len(spectrums)
 totalBins = len(binArray[0])
 inputLayers = len(binArray)
-output = np.unique(indexList)
-outputLayers = len(set(indexList))
+outputLayers = len(outputLabels)
 
 
 print("Inputs (spectrums): ",inputs)
@@ -80,8 +77,8 @@ print("\tType: ", binArray.dtype);
 print("\tInput Layers: ", inputLayers, "\n")
 
 print("Outputs:", )
-print("\tShapes: ", output.shape);
-print("\tType: ", output.dtype);
+print("\tNum: ", outputLabels);
+print("\tType: ", outputLabels.dtype);
 print("\tOutput Layers: ", outputLayers)
 
 """def create_model():
@@ -109,8 +106,10 @@ print("\tOutput Layers: ", outputLayers)
 def create_model():
     baseModel = keras.Sequential()
     baseModel.add(keras.layers.InputLayer(input_shape = (totalBins, )))
-    baseModel.add(keras.layers.Dense(outputLayers * 8, activation=tf.nn.relu))
-    baseModel.add(keras.layers.Dense(outputLayers * 8, activation=tf.nn.relu))
+    #baseModel.add(keras.layers.Dense(outputLayers * 8, activation=tf.nn.relu))
+    #baseModel.add(keras.layers.Dense(outputLayers * 8, activation=tf.nn.relu))
+    baseModel.add(keras.layers.Dense(outputLayers * 3, activation=tf.nn.relu))
+    baseModel.add(keras.layers.Dense(outputLayers * 3, activation=tf.nn.relu))
     baseModel.add(keras.layers.Dense(outputLayers, activation=tf.nn.softmax))
 
     return baseModel
@@ -124,15 +123,13 @@ model.compile(optimizer='adam',
 model.summary()
 '''--------------------------------------------------------------------------'''
 
-
-
 #Train the data
-training_set = tfdata_generator(binArray, indexList, is_training=True, batch_size=batchSize)
 
-model.fit(training_set.make_one_shot_iterator(), steps_per_epoch = len(binArray), epochs = numEpochs)
+#model.fit_generator(generator(batchSize), steps_per_epoch = np.ceil(len(binArray)/batchSize), epochs = numEpochs)
 
-model.save_weights(outputPath)
-#model.save(outputPath)
+model.fit(binArray, indexList, batch_size = batchSize, epochs = numEpochs)
+#model.save_weights(outputPath)
+model.save(outputPath)
 
 
 print ("Finished Training")
