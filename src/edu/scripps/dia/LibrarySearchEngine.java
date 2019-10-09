@@ -7,6 +7,7 @@ import edu.scripps.dia.util.MzxmlPeakList;
 import edu.scripps.dia.util.MzxmlSpectrumReader;
 import edu.scripps.dia.util.SpectrumReader;
 import edu.scripps.pms.mspid.*;
+import edu.scripps.pms.util.enzyme.Protease;
 import edu.scripps.pms.util.spectrum.Peak;
 import edu.scripps.pms.util.spectrum.PeakList;
 import edu.scripps.pms.util.spectrum.Zline;
@@ -809,8 +810,15 @@ public class LibrarySearchEngine {
     }
 
     public synchronized void write(String output, boolean isHeavy) throws IOException {
-        if(bw==null) bw = new BufferedWriter(new FileWriter(outputPath));
-        if(isHeavy && hbw == null ) hbw = new BufferedWriter(new FileWriter(hOutputPath));
+        if(bw==null)
+        {
+            bw = new BufferedWriter(new FileWriter(outputPath));
+            bw.append(getHeader());
+        }
+        if(isHeavy && hbw == null ){
+            hbw = new BufferedWriter(new FileWriter(hOutputPath));
+            hbw.append(getHeader());
+        }
         BufferedWriter tempBw = isHeavy ? hbw: bw;
         tempBw.write(output);
         tempBw.newLine();
@@ -835,4 +843,96 @@ public class LibrarySearchEngine {
             hOutputPath = outputPath.substring(0, indexOfLastFileSep) + "H"+outputPath.substring(indexOfLastFileSep+1,outputPath.length());
         }
     }
+
+
+
+    private String getHeader() {
+        StringBuffer HEADER = new StringBuffer(1200);
+        HEADER.append("H\tSQTGenerator\tProLuCID\n");
+        HEADER.append("H\tSQTGeneratorVersion\t1.4\n");
+        HEADER.append("H\tComment ProLuCID is developed in the Yates laboratory at The Scripps Research Institute, La Jolla, CA\n");
+        HEADER.append("H\tComment ProLuCID ref. Xu T, Venable JD, Park SK, Cociorva D, Lu B, Liao L, Wohlschlegel J, Hewel J, Yates JR 3rd\n");
+        HEADER.append("H\tComment ProLuCID ref. ProLuCID, a fast and sensitive tandem mass spectra-based protein identification program.\n");
+        HEADER.append("H\tComment ProLuCID ref. MOL CELL PROTEOMICS vol. 5(10): S174-S174 671 Suppl. S OCT 2006\n");
+        HEADER.append("H\tComment Paralellization Program using PBS is submit_prolucid\n");
+        HEADER.append("H\tComment Please send bug report or comments to Tao Xu by email taoxu@scripps.edu\n");
+
+
+        HEADER.append("H\tDatabase\t" + params.getDbName()+ "\n");
+
+        HEADER.append("H\tNumOutput\t" + params.getNumOutput() + "\n");
+        HEADER.append("H\tPrecursorMasses\t" + params.getPrecursorIsotope() + "\n");
+        HEADER.append("H\tFragmentMasses\t" + params.getFragmentIsotope() + "\n");
+        int numIsotopicPeaks = params.getNumIsotopicPeaks();
+        if(numIsotopicPeaks == 0) {
+            HEADER.append("H\tHighPrecursorMassTolerance\t" + params.getHighPrecursorTolerance() + "\n");
+            HEADER.append("H\tLowPrecursorMassTolerance\t" + params.getLowPrecursorTolerance() + "\n");
+        } else {
+            HEADER.append("H\tNumPrecursorIsotopicPeaks\t" + numIsotopicPeaks + "\n");
+            HEADER.append("H\tPrecursorMassTolerance\t" + params.getPrecursorTolerance() + "\n");
+        }
+        HEADER.append("H\tFragmentMassTolerance\t" + params.getFragmentTolerance() + "\n");
+        if(params.getStaticNTermMod() != 0) {
+            HEADER.append("H\tNTermStaticMod\t" + params.getStaticNTermMod() + "\n");
+        }
+        if(params.getStaticCTermMod() != 0) {
+            HEADER.append("H\tCTermStaticMod\t" + params.getStaticCTermMod() + "\n");
+        }
+        for(Iterator<Modification> it = params.getStaticMods(); it.hasNext();) {
+            Modification m = it.next();
+            HEADER.append("H\tStaticMod\t" + m.getResidue()+ "=" + mc.getPrecursorMass(m.getResidue()) + "\n");
+        }
+
+        if(params.getNumNTermDiffMods() > 0) {
+            HEADER.append("H\tNTermDiffMod");
+            for(Iterator<TerminalModification> it =  params.getNTermDiffMods(); it.hasNext();) {
+                TerminalModification m = it.next();
+                HEADER.append("\t" + m.getMassShift());
+            }
+            HEADER.append("\n");
+        }
+
+        if(params.getNumCTermDiffMods() > 0) {
+            HEADER.append("H\tCTermDiffMod");
+            for(Iterator<TerminalModification> it =  params.getCTermDiffMods(); it.hasNext();) {
+                TerminalModification m = it.next();
+                HEADER.append("\t" + m.getMassShift());
+            }
+            HEADER.append("\n");
+        }
+
+        HEADER.append("H\tMaxNumInternalDiffModsPerPeptide\t" + params.getMaxAlter() + "\n");
+        if(params.getMaxAlter() > 0) {
+            for(Iterator<DiffMod> it = params.getDiffMods(); it.hasNext();) {
+                DiffMod m = it.next();
+                //HEADER.append("H\tInternalDiffMod\t" + m.toString() + "\n");
+                HEADER.append("H\tDiffMod\t" + m.toString() + "\n");
+            }
+        }
+        int enzymespec = params.getEnzymeSpecificity();
+        if(enzymespec > 0) {
+            HEADER.append("H\tEnzymeSpecificity\t" + params.getEnzymeSpecificity() + "\n");
+            Protease p = params.getEnzyme();
+            boolean isC = p.getType();
+
+            HEADER.append("H\tEnzymeName\t" + p.getName() + "\n");
+            if(isC) {
+                HEADER.append("H\tEnzymeEnd\tCTerm\n");
+            } else {
+                HEADER.append("H\tEnzymeEnd\tNTerm\n");
+            }
+            HEADER.append("H\tEnzymeResidues\t");
+            for(int i = 0; i < MassSpecConstants.NUMCHARS; i++) {
+                if(p.isDigestable((char)i)) {
+                    HEADER.append((char)i);
+                }
+            }
+            HEADER.append("\n");
+
+        } else {
+            HEADER.append("H\tEnzymeSpecificity\tNo_Enzyme\n");
+        }
+        return HEADER.toString();
+    }
+
 }
