@@ -55,7 +55,11 @@ result = model.predict(testAttList)
 
 outputLabels =  [0,1]
 
-correctCnt = 0
+truePos = 0
+trueNeg = 0
+falseNeg = 0
+falsePos = 0
+
 cnt = 0
 
 sortedList = []
@@ -76,10 +80,3 @@ for i, ele in enumerate(result):
 sortedList = sorted(sortedList, key = lambda t: t[0], reverse=True)
 for i in sortedList:
     print(i)
-
-#Test Acccuracy
-"""
-np.array(testLabelList)
-test_loss, test_acc = model.evaluate(testAttList, testLabelList)
-print('Test accuracy:', test_acc)
-"""

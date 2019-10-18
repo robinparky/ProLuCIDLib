@@ -13,8 +13,6 @@ from tensorflow import keras
 import numpy as np
 import matplotlib.pyplot as plt
 
-ACCURACY_THRESHOLD = 0.99
-
 if len(sys.argv) != 5 :
     print(len(sys.argv))
     print("Error with command line inputs")
@@ -63,15 +61,7 @@ def generator(batchSize):
 
 
 
-#implement callback function to stop training
-# when accuracy reaches e.g. ACCURACY_THRESHOLD = 0.95
-class myCallback(tf.keras.callbacks.Callback): 
-    def on_epoch_end(self, epoch, logs={}): 
-        if(logs.get('acc') > ACCURACY_THRESHOLD):   
-        	print("\nReached %2.2f%% accuracy, so stopping training!!" %(ACCURACY_THRESHOLD*100))   
-        	self.model.stop_training = True#Metrics for printing(mostly)
-
-
+#Metrics for printing(mostly)
 inputs = len(spectrums)
 totalBins = len(binArray[0])
 inputLayers = len(binArray)
@@ -84,61 +74,50 @@ print("\tType: ", binArray.dtype);
 print("\tInput Layers: ", inputLayers, "\n")
 
 print("Outputs:", )
-print("\tNum: ", len(outputLabels));
+print("\tNum: ", outputLabels);
 print("\tType: ", outputLabels.dtype);
 print("\tOutput Layers: ", outputLayers)
 
-def create_model1():
+
+"""from keras.backend.tensorflow_backend import set_session
+config = tf.ConfigProto()
+# dynamically grow GPU memory
+config.gpu_options.allow_growth = True set_session(tf.Session(config=config))
+"""
+
+def create_model():
+    inputShape = binArray.shape
     model = keras.Sequential()
-    with tf.device('/gpu:0'):
-        model.add(keras.layers.InputLayer(input_shape = (totalBins, )))
-        model.add(keras.layers.Dense(1000, activation=tf.nn.relu))
-    with tf.device('/gpu:1'):
-        model.add(keras.layers.Dense(1000, activation=tf.nn.relu))
-        model.add(keras.layers.Dense(1000, activation=tf.nn.relu))
-    with tf.device('/gpu:2'):
-        model.add(keras.layers.Dense(1000, activation=tf.nn.relu))
-        model.add(keras.layers.Dense(1000, activation=tf.nn.relu))
-    with tf.device('/gpu:3'):
-        model.add(keras.layers.Dense(1000, activation=tf.nn.relu))
-        model.add(keras.layers.Dense(outputLayers, activation=tf.nn.softmax))
-    return model
+    model.add(tf.keras.layers.Conv2D(filters=64, kernel_size=2, padding='same', activation='relu', input_shape=inputShape))
+    model.add(tf.keras.layers.MaxPooling2D(pool_size=2))
+    model.add(tf.keras.layers.Dropout(0.3))
+
+    model.add(tf.keras.layers.Conv2D(filters=32, kernel_size=2, padding='same', activation='relu'))
+    model.add(tf.keras.layers.MaxPooling2D(pool_size=2))
+    model.add(tf.keras.layers.Dropout(0.3))
+
+    model.add(tf.keras.layers.Flatten())
+    model.add(tf.keras.layers.Dense(256, activation='relu'))
+    model.add(tf.keras.layers.Dropout(0.5))
+    model.add(tf.keras.layers.Dense(10, activation='softmax'))
+    return baseModel
 
 
 
-gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.333)
-
-sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
-
-def create_model2():
-    model = keras.Sequential()
-    model.add(keras.layers.InputLayer(input_shape = (totalBins, )))
-    #model.add(keras.layers.Dense(outputLayers * 8, activation=tf.nn.relu))
-    #model.add(keras.layers.Dense(outputLayers * 8, activation=tf.nn.relu))
-    model.add(keras.layers.Dense(outputLayers * .4, activation=tf.nn.relu))
-    model.add(keras.layers.Dense(outputLayers * .4, activation=tf.nn.relu))
-    model.add(keras.layers.Dense(outputLayers * .4, activation=tf.nn.relu))
-    model.add(keras.layers.Dense(outputLayers, activation=tf.nn.softmax))
-
-    return model
-
-
-
-model  = create_model1()
-model.summary()
-
-#model = tf.keras.utils.multi_gpu_model(model, 4)
+model  = create_model()
 model.compile(optimizer='adam',
               loss='sparse_categorical_crossentropy',
               metrics=['accuracy'])
+model.summary()
 '''--------------------------------------------------------------------------'''
+
 #Train the data
 
 #model.fit_generator(generator(batchSize), steps_per_epoch = np.ceil(len(binArray)/batchSize), epochs = numEpochs)
-callbacks = myCallback()
-model.fit(binArray, indexList, batch_size = batchSize, epochs = numEpochs, callbacks=[callbacks])
-model.save_weights(outputPath)
-#model.save(outputPath)
+
+model.fit(binArray, indexList, batch_size = batchSize, epochs = numEpochs)
+#model.save_weights(outputPath)
+model.save(outputPath)
 
 
 print ("Finished Training")

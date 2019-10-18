@@ -48,7 +48,7 @@ pepTable = c.fetchall()
 
 #Iterate through table and pull information about each peptide and its scans
 #for ind in pepTable:
-for j in range(10,15):
+for j in range(15):
 
     #Match peptide in table to peptide in Spectra Table
     #peptide = (str(ind[0]), )

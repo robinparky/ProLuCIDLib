@@ -9,14 +9,14 @@ import gc
 
 import numpy as np
 
-if len(sys.argv) != 4 :
+if len(sys.argv) != 5 :
     print("Error with command line inputs")
     sys.exit(0)
 else:
     databasePath = sys.argv[1] #Path to sqlite database
     outputPath = sys.argv[2] #Path to store created arrays
     testNumber = int(sys.argv[3]) #Number of test elements to create
-
+    minimum = int(sys.argv[4])
 
 #Healper Function, Converts bitstring to float
 def convertFloat(element):
@@ -59,7 +59,7 @@ for ind in pepTable:
     spectrums = c.fetchall()
 
     #Make sure peptide has more than 50 spectrums for accurate training.
-    if len(spectrums) >= 5:
+    if len(spectrums) >= minimum:
         specCnt += 1 #increment peptide count
 
         #Search returned list of matched spectrums for each peptide
@@ -97,6 +97,7 @@ for ind in pepTable:
     else:
         peptideCnt -= 1
 
+print("Number of Spectrums: ", len(spectrumList))
 #Convert list of labelList to list of indices. The indices will correspond to
 # each unique peptide
 indexList = []

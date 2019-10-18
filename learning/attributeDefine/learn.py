@@ -52,16 +52,14 @@ inputs = len(attList[0])
 print(attList[0])
 model = tf.keras.Sequential([
   tf.keras.layers.Dense(16, activation=tf.nn.relu, input_shape=(8,)),  # input shape required
+  tf.keras.layers.Dense(32, activation=tf.nn.relu),
+  tf.keras.layers.Dense(64, activation=tf.nn.relu),
+  tf.keras.layers.Dense(128, activation=tf.nn.relu),
+  tf.keras.layers.Dense(128, activation=tf.nn.relu),
+  tf.keras.layers.Dense(64, activation=tf.nn.relu),
+  tf.keras.layers.Dense(32, activation=tf.nn.relu),
   tf.keras.layers.Dense(16, activation=tf.nn.relu),
-  tf.keras.layers.Dense(32, activation=tf.nn.relu),
-  tf.keras.layers.Dense(32, activation=tf.nn.relu),
-  tf.keras.layers.Dense(32, activation=tf.nn.relu),
-  tf.keras.layers.Dense(32, activation=tf.nn.relu),
-  tf.keras.layers.Dense(32, activation=tf.nn.relu),
-  tf.keras.layers.Dense(32, activation=tf.nn.relu),
-  tf.keras.layers.Dense(32, activation=tf.nn.relu),
-  tf.keras.layers.Dense(32, activation=tf.nn.relu),
-  tf.keras.layers.Dense(32, activation=tf.nn.relu),
+  tf.keras.layers.Dense(8, activation=tf.nn.relu),
   tf.keras.layers.Dense(1, activation=tf.nn.sigmoid )
 ])
 

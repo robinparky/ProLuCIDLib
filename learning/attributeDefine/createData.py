@@ -102,6 +102,7 @@ for i in range(1, 10):
             normal = False
             mBool = False
             done = True
+
 """for i in range(len(attList)):
     attList[i][1] = (attList[i][1]-minIntensity)/(maxIntensity - minIntensity) * 1000
     attList[i][2]  = attList[i][2]
@@ -125,19 +126,21 @@ shuffle = list(zip(attList, labelList))
 random.shuffle(shuffle)
 attList, labelList = list(zip(*shuffle))
 attList = list(attList)
-labelList = list(labelList)
+labelList = np.array(list(labelList))
 
 attList = np.array(attList).astype(np.float)
 attList.reshape((len(attList), 8))
-print(attList)
 
-attList = attList/attList.max(axis = 0)
+print(attList.shape)
+print(labelList.shape)
+
+#attList = attList/attList.max(axis = 0)
 
 
 
 #attList.sort(key=lambda x: x[4])
-for i, ele in enumerate(attList):
-    print(str(ele))
+#for i, ele in enumerate(attList):
+    #print(str(ele))
 
 
 
@@ -227,7 +230,7 @@ if 1 == 0:
     plt.scatter(x2,y82,c = 'b', s=2)
     plt.show()
 
-if 1 ==0:
+if 1 ==1:
     df = pd.DataFrame(attList, columns = ['Charge State', 'Intensity', 'P True', 'numMatched', 'xCorr', 'Length of Peptide', 'Normalized', 'DeltaCn'])
     scatter_matrix(data, alpha=0.2, figsize=(6, 6), diagonal='kde')
 

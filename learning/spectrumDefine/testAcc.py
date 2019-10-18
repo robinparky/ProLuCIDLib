@@ -66,16 +66,24 @@ inputs = len(spectrums)
 totalBins = len(binArray[0])
 inputLayers = len(binArray)
 output = np.unique(indexList)
-outputLayers = len(set(indexList))
+outputLayers = len(outputLabels)
 
 def create_model():
-    model = keras.Sequential([
-        keras.layers.InputLayer(input_shape = (totalBins, )),
-        keras.layers.Dense(outputLayers * 8, activation=tf.nn.relu),
-        keras.layers.Dense(outputLayers * 8, activation=tf.nn.relu),
-        keras.layers.Dense(outputLayers, activation=tf.nn.softmax)
-    ])
+    model = keras.Sequential()
+    with tf.device('/gpu:0'):
+        model.add(keras.layers.InputLayer(input_shape = (totalBins, )))
+        model.add(keras.layers.Dense(1000, activation=tf.nn.relu))
+    with tf.device('/gpu:1'):
+        model.add(keras.layers.Dense(1000, activation=tf.nn.relu))
+        model.add(keras.layers.Dense(1000, activation=tf.nn.relu))
+    with tf.device('/gpu:2'):
+        model.add(keras.layers.Dense(1000, activation=tf.nn.relu))
+        model.add(keras.layers.Dense(1000, activation=tf.nn.relu))
+    with tf.device('/gpu:3'):
+        model.add(keras.layers.Dense(1000, activation=tf.nn.relu))
+        model.add(keras.layers.Dense(outputLayers, activation=tf.nn.softmax))
     return model
+
 model = create_model()
 
 model.compile(optimizer='adam',

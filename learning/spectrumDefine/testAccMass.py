@@ -68,24 +68,36 @@ inputs = len(spectrums)
 totalBins = len(binArray[0])
 inputLayers = len(binArray)
 output = np.unique(indexList)
-outputLayers = len(set(indexList))
+outputLayers = len(outputLabels)
+
+print("inputs", inputs)
+print("outputs", outputLayers)
+
 
 def create_model():
-    model = keras.Sequential([
-        keras.layers.InputLayer(input_shape = (totalBins, )),
-        keras.layers.Dense(outputLayers * 8, activation=tf.nn.relu),
-        keras.layers.Dense(outputLayers * 8, activation=tf.nn.relu),
-        keras.layers.Dense(outputLayers, activation=tf.nn.softmax)
-    ])
+    model = keras.Sequential()
+    with tf.device('/gpu:0'):
+        model.add(keras.layers.InputLayer(input_shape = (totalBins, )))
+        model.add(keras.layers.Dense(1000, activation=tf.nn.relu))
+    with tf.device('/gpu:1'):
+        model.add(keras.layers.Dense(1000, activation=tf.nn.relu))
+        model.add(keras.layers.Dense(1000, activation=tf.nn.relu))
+    with tf.device('/gpu:2'):
+        model.add(keras.layers.Dense(1000, activation=tf.nn.relu))
+        model.add(keras.layers.Dense(1000, activation=tf.nn.relu))
+    with tf.device('/gpu:3'):
+        model.add(keras.layers.Dense(1000, activation=tf.nn.relu))
+        model.add(keras.layers.Dense(outputLayers, activation=tf.nn.softmax))
     return model
-model = create_model()
+
+model = create_model()    
 
 model.compile(optimizer='adam',
               loss='sparse_categorical_crossentropy',
               metrics=['accuracy'])
 
-#model.load_weights(neuralPath)
-model = tf.keras.models.load_model('saved/model.h5')
+model.load_weights(neuralPath)
+#model = tf.keras.models.load_model(neuralPath)
 
 result = model.predict(testBins)
 
@@ -147,8 +159,8 @@ for i, ele in enumerate(result):
 
 
     actual = testLab[i]
-    actInd = list(labelList).index(actual)
-    predInd = list(labelList).index(predicted)
+    actInd = list(outputLabels).index(actual)
+    predInd = list(outputLabels).index(predicted)
     print("Test ", i + 1)
     print("Predicted: ", predicted)
     print("ActualVal: ", actual)
@@ -167,7 +179,7 @@ for i, ele in enumerate(result):
         correctCnt += 1
         print("---------------------------------------------")
     else:
-        input()
+        #input()
         print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
         print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
         print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")

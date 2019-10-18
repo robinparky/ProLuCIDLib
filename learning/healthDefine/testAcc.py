@@ -57,6 +57,10 @@ result = model.predict(testAttList)
 outputLabels =  [0,1]
 
 correctCnt = 0
+truePos = 0
+trueNeg = 0
+falseNeg = 0
+falsePos = 0
 cnt = 0
 
 resultList = []
@@ -70,17 +74,35 @@ for i, ele in enumerate(result):
     answer = 0
     if ele[0] > .5:
         answer = 1
-    print(i, "      ",answer, "  |   ", testLabelList[i], "   |    ", ele[0])
+    print(i+1, "      ",answer, "  |   ", testLabelList[i], "   |    ", ele[0])
 
-    if answer == testLabelList[i]:
+    #True Positive
+    if answer == 1  and testLabelList[i] == 1:
+        truePos += 1
         correctCnt += 1
-    else:
-        print(attList[i][0])
+    elif answer == 1 and testLabelList[i] == 0:
+        falseNeg += 1
+    elif answer == 0 and testLabelList[i] == 0:
+        trueNeg += 1
+        correctCnt += 1
+    elif answer == 0 and testLabelList[i] == 1:
+        falsePos += 1
+        #print(attList[i][0])
     cnt += 1
+
+sensitivity = truePos/(truePos + falseNeg)
+specificity = trueNeg/(trueNeg + falsePos)
+youden = sensitivity + specificity - 1
 
 print('\n')
 print("Tested", correctCnt, "correct out of", cnt)
 print("Accuracy:", str(correctCnt/cnt))
+
+print('\n')
+
+print("Sensitivity:", sensitivity)
+print("Specificity:", specificity)
+print("Youden's J Statistic:", youden)
 
 #Test Acccuracy
 """
