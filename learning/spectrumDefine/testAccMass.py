@@ -59,6 +59,10 @@ with open (inputPath + 'testMass', 'rb') as lp:
     testMass = pickle.load(lp)
 sp.close()
 
+with open (inputPath + 'testRt', 'rb') as lp:
+    testRt = pickle.load(lp)
+sp.close()
+
 with open (inputPath + 'outputLabels', 'rb') as lp:
     outputLabels = pickle.load(lp)
 sp.close()
@@ -90,7 +94,7 @@ def create_model():
         model.add(keras.layers.Dense(outputLayers, activation=tf.nn.softmax))
     return model
 
-model = create_model()    
+model = create_model()
 
 model.compile(optimizer='adam',
               loss='sparse_categorical_crossentropy',
@@ -121,6 +125,7 @@ for i, ele in enumerate(result):
     predicted = ""
     precursorMass = 0
     mass = testMass[i]
+    rt = testRt[i]
     found = False
 
     predictList = zip(ele, outputLabels)
@@ -132,19 +137,22 @@ for i, ele in enumerate(result):
         c.execute('SELECT * FROM PeptideTable WHERE sequenceCS = ?', (label,))
         peptide = c.fetchone()
         precursorMass =  peptide[3]
+        predRt = peptide[4]
 
-        delta =  abs(mass - precursorMass)
+        deltaRt = abs(rt - predRt)
+        deltaMass =  abs(mass - precursorMass)
         deltaDec = delta % 1
 
         print("#",delta, peptide[14])
-        if delta < 4:
+        if deltaMass < 4:
             for j in range(4):
                 print(" ----",abs(float(j)-deltaDec))
                 if abs(j - deltaDec) < .05:
-                    print("found")
-                    predicted = label
-                    found = True
-                    break
+                    if deltaMass < 5:
+                        print("found")
+                        predicted = label
+                        found = True
+                        break
             if found:
                 break
 

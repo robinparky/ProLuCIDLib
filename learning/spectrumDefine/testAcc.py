@@ -1,4 +1,5 @@
 from __future__ import division
+import sqlite3
 import sys
 import pickle
 import time
@@ -19,6 +20,7 @@ else:
     inputPath = sys.argv[1]
     neuralPath = sys.argv[2]
     showResults = sys.argv[3]
+    databasePath = sys.argv[3]
 
 '''--------------------------------------------------------------------------'''
 print("Gathering Data from Files")
@@ -68,6 +70,10 @@ inputLayers = len(binArray)
 output = np.unique(indexList)
 outputLayers = len(outputLabels)
 
+print("inputs", inputs)
+print("outputs", outputLayers)
+
+
 def create_model():
     model = keras.Sequential()
     with tf.device('/gpu:0'):
@@ -91,135 +97,93 @@ model.compile(optimizer='adam',
               metrics=['accuracy'])
 
 model.load_weights(neuralPath)
-#model = tf.keras.models.load_model('saved/model.h5')
+#model = tf.keras.models.load_model(neuralPath)
 
 result = model.predict(testBins)
 
 
-if showResults == "True" or showResults == "true" or showResults == "t" or showResults == "T":
-    for i, ele in enumerate(result):
-        #print(ele)
-        cnt=0; #Variables for keeping track of max values
-        maxVal = 0;
-        val2 = 0;
-        val3 = 0;
-        ind = 0
-        ind2 = 0
-        ind3 = 0
-        #Iterate through result, setting max values
-        for k, g in enumerate(ele):
-            if g > maxVal:
-                val3 = val2
-                ind3 = ind2
-                val2 = maxVal
-                ind2 = ind
-                maxVal = g
-                ind = k
-            elif g > val2:
-                val3 = val2
-                ind3 = ind2
-                val2 = g
-                ind2 = k
-            elif g > val3:
-                val3 = g
-                ind3 = k
 
-        predicted = outputLabels[ind]
-        actual = testLab[i]
-        print("Test ", i + 1)
-        print(ind, "  |  ", testInd[i])
-        print("Predicted: ", predicted)
-        print("ActualVal: ", actual, "\n")
-        print(ind,": ", maxVal, "|", end='')
-        print(ind2,": ", val2, "|", end='')
-        print(ind3,": ", val3, "|", end='')
-        print ("\n")
+conn = sqlite3.connect(databasePath)
+c = conn.cursor()
 
-        if predicted != actual or ind != testInd[i]:
-        #if 1 ==1:
 
-            ###################################################################
-            x1 = [x[0] for x in testSpec[i]]
-            y1 = [x[1] for x in testSpec[i]]
-            index = list(labelList).index(actual)
-            actualSpectrum = spectrums[index];
-            x2 = [x[0] for x in actualSpectrum]
-            y2 = [x[1] for x in actualSpectrum]
-            plt.style.use('ggplot')
-            plt.subplot(2,2,1)
-            plt.title("Spectrum Comparison")
-            plt.scatter(x1, y1, c='r', label = 'Predicted: ' + str(predicted) + " | " + str(testId[i]),s=1)
-            plt.scatter(x2, y2, c='b', label = 'Actual: ' + str(actual)+ " | " + str(idList[index]),s=1)
-            plt.legend(loc='upper left');
-            #######################################################################
-            plt.subplot(2,2,2)
-            xValueList1 = [];
-            yValueList1 = [];
-            xValueList2 = [];
-            yValueList2 = [];
-            predictedBins = testBins[i]
-            actualBins = binArray[index]
-            for j in range(0, totalBins):
-                if predictedBins[j] !=0:
-                    xValueList1.append(j);
-                    yValueList1.append(predictedBins[j])
-                if actualBins[j] !=0:
-                    xValueList2.append(j);
-                    yValueList2.append(actualBins[j])
+indexes = []
+for i in range(len(outputLabels)):
+    indexes.append(i)
 
-            plt.scatter(xValueList1, yValueList1, c='r', label = 'Predicted: ' + str(predicted)+ " | " + str(testId[i]),s=1)
-            plt.scatter(xValueList2, yValueList2, c='b', label = 'Actual: ' + str(actual) + " | " + str(idList[index]),s=1)
-            plt.legend(loc='upper left')
-            plt.title("Bin Comparison")
-            plt.xlabel("Bins")
-            plt.ylabel("Percentage(Normalized)")
-            #############################################################################
-            x1 = [x[0] for x in testSpec[i]]
-            y1 = [x[1] for x in testSpec[i]]
-            index = list(labelList).index(predicted)
-            actualSpectrum = spectrums[index];
-            x2 = [x[0] for x in actualSpectrum]
-            y2 = [x[1] for x in actualSpectrum]
 
-            plt.subplot(2,2,3)
-            plt.title("Spectrum Comparison")
-            plt.scatter(x1, y1, c='r', label = 'Predicted: ' + str(predicted)+ " | " + str(testId[i]),s=1)
-            plt.scatter(x2, y2, c='b', label = 'Actual: ' + str(labelList[index])+ " | " + str(idList[index]),s=1)
-            plt.legend(loc='upper left');
-            #######################################################################
-            plt.subplot(2,2,4)
-            xValueList1 = [];
-            yValueList1 = [];
-            xValueList2 = [];
-            yValueList2 = [];
-            predictedBins = testBins[i]
-            actualBins = binArray[index]
-            for j in range(0, totalBins):
-                if predictedBins[j] !=0:
-                    xValueList1.append(j);
-                    yValueList1.append(predictedBins[j])
-                if actualBins[j] !=0:
-                    xValueList2.append(j);
-                    yValueList2.append(actualBins[j])
-            plt.scatter(xValueList1, yValueList1, c='r', label = 'Predicted: ' + str(predicted)+ " | " + str(testId[i]),s=1)
-            plt.scatter(xValueList2, yValueList2, c='b', label = 'Actual: ' + str(labelList[index])+ " | " + str(idList[index]),s=1)
-            plt.legend(loc='upper left')
-            plt.title("Bin Comparison")
-            plt.xlabel("Bins")
-            plt.ylabel("Percentage(Normalized)")
+correctCnt = 0
+cnt = 0
 
-            """manager = plt.get_current_fig_manager()
-            manager.resize(*manager.window.maxsize())
-            path = str("falsePredict/"+ str(cnt) + ".png")
-            cnt +=1;
-            plt.savefig(path)"""
-            print("##############################################")
-            plt.show()
+for i, ele in enumerate(result):
+    if(len(testSpec[i]) < 50):
+        continue
+    predicted = ""
+    precursorMass = 0
+    mass = testMass[i]
+    found = False
 
-        else:
-            print("----------------------------------------------")
+    predictList = zip(ele, outputLabels)
+    predictList = sorted(predictList, key = lambda t: t[0], reverse=True)
 
-#Test Acccuracy
-np.array(testInd)
-test_loss, test_acc = model.evaluate(testBins, testInd)
-print('Test accuracy:', test_acc)
+    _, predictLabels =  list(zip(*predictList))
+
+    for label in predictLabels:
+        c.execute('SELECT * FROM PeptideTable WHERE sequenceCS = ?', (label,))
+        peptide = c.fetchone()
+        precursorMass =  peptide[3]
+
+        delta =  abs(mass - precursorMass)
+        deltaDec = delta % 1
+
+        print("#",delta, peptide[14])
+        if delta < 4:
+            for j in range(4):
+                print(" ----",abs(float(j)-deltaDec))
+                if abs(j - deltaDec) < .05:
+                    print("found")
+                    predicted = label
+                    found = True
+                    break
+            if found:
+                break
+
+        """
+        if delta < .05:
+            predicted = label
+            found = True
+            break
+        """
+    if not found:
+        predicted = predictList[0][1]
+
+
+    actual = testLab[i]
+    actInd = list(outputLabels).index(actual)
+    predInd = list(outputLabels).index(predicted)
+    print("Test ", i + 1)
+    print("Predicted: ", predicted)
+    print("ActualVal: ", actual)
+    print("Spectrum Mass: ", mass)
+    print("Actual PrecursorMass: ", precursorMass)
+    print("Predicted Spectrum ID ",testId[i])
+    print("Actual Spectrum ID", idList[actInd])
+    print("Sampel Predicted ID", idList[predInd],"\n")
+
+    #Ignore Charge State
+    predicted = predicted[:-1]
+    actual = actual[:-1]
+
+
+    if predicted == actual :
+        correctCnt += 1
+        print("---------------------------------------------")
+    else:
+        #input()
+        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+        print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+
+    cnt += 1
+
+print("Accuracy: ", str(correctCnt/cnt))

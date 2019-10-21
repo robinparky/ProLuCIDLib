@@ -39,7 +39,7 @@ labelList = [] #List of label associated with peptide
 spectrumList = [] #Spectrum to hold arrays of coords
 idList = [] #List holds scan id associated with spectrum
 massList = []# List with mass of spectrum
-rtList = [] #List with retention time.
+
 
 print ("Pulling Data from Database")
 c = conn.cursor()
@@ -93,8 +93,6 @@ for j in range(15):
             c.execute('SELECT * FROM PeptideTable WHERE peptideID=?', peptide)
             peptideRow = c.fetchone()
             seq = peptideRow[14]
-            rt = peptideRow[7]
-            rtList.append(rt)
             labelList.append(seq)
     else:
         peptideCnt -= 1
@@ -179,15 +177,10 @@ print(binArray.shape)
 #Create test set
 print("Creating Test Set")
 
-
-
 spectrumList = np.array(spectrumList)
 labelList = np.array(labelList)
 indexList = np.array(indexList)
 idList = np.array(idList)
-massList = np.array(massList)
-rtList = np.array(rtList)
-
 
 
 
@@ -198,7 +191,6 @@ labelListSplit = np.split(labelList, [int(testNumber)])
 indexListSplit = np.split(indexList, [int(testNumber)])
 idListSplit = np.split(idList, [int(testNumber)])
 massListSplit = np.split(massList, [int(testNumber)])
-rtListSplit = np.split(rtList,[int(testNumber)])
 
 testSpec = spectrumListSplit[0]
 testBins = binArraySplit[0]
@@ -206,7 +198,6 @@ testLab = labelListSplit[0]
 testInd = indexListSplit[0]
 testId = idListSplit[0]
 testMass = massListSplit[0]
-testRt = rtListSplit[0]
 
 spectrumList = spectrumListSplit[1]
 binArray = binArraySplit[1]
@@ -214,7 +205,6 @@ labelList = labelListSplit[1]
 indexList = indexListSplit[1]
 idList = idListSplit[1]
 massList = massListSplit[1]
-rtList = rtListSplit[1]
 
 """
 for i, k in enumerate(noDuplicateLabels):
@@ -250,10 +240,6 @@ sp.close()
 with open(outputPath +'massList', 'wb') as sp:
     pickle.dump(massList, sp, protocol=4)
 sp.close()
-
-with open(outputPath +'rtList', 'wb') as sp:
-    pickle.dump(rtList, sp, protocol=4)
-sp.close()
 ####################################################
 with open(outputPath +'testSpec', 'wb') as sp:
     pickle.dump(testSpec, sp, protocol=4)
@@ -283,10 +269,6 @@ with open(outputPath +'testMass', 'wb') as sp:
     pickle.dump(testMass, sp, protocol=4)
 sp.close()
 
-
-with open(outputPath +'testRt', 'wb') as sp:
-    pickle.dump(testRt, sp, protocol=4)
-sp.close()
 
 writeData = time.time()
 print ("Time for section: " + str(round(writeData - pullData)))
