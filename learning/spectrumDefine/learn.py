@@ -65,10 +65,10 @@ def generator(batchSize):
 
 #implement callback function to stop training
 # when accuracy reaches e.g. ACCURACY_THRESHOLD = 0.95
-class myCallback(tf.keras.callbacks.Callback): 
-    def on_epoch_end(self, epoch, logs={}): 
-        if(logs.get('acc') > ACCURACY_THRESHOLD):   
-        	print("\nReached %2.2f%% accuracy, so stopping training!!" %(ACCURACY_THRESHOLD*100))   
+class myCallback(tf.keras.callbacks.Callback):
+    def on_epoch_end(self, epoch, logs={}):
+        if(logs.get('acc') > ACCURACY_THRESHOLD):
+        	print("\nReached %2.2f%% accuracy, so stopping training!!" %(ACCURACY_THRESHOLD*100))
         	self.model.stop_training = True#Metrics for printing(mostly)
 
 
@@ -115,9 +115,15 @@ def create_model2():
     model.add(keras.layers.InputLayer(input_shape = (totalBins, )))
     #model.add(keras.layers.Dense(outputLayers * 8, activation=tf.nn.relu))
     #model.add(keras.layers.Dense(outputLayers * 8, activation=tf.nn.relu))
-    model.add(keras.layers.Dense(outputLayers * .4, activation=tf.nn.relu))
-    model.add(keras.layers.Dense(outputLayers * .4, activation=tf.nn.relu))
-    model.add(keras.layers.Dense(outputLayers * .4, activation=tf.nn.relu))
+    #model.add(keras.layers.Dense(outputLayers * .4, activation=tf.nn.relu))
+    #model.add(keras.layers.Dense(outputLayers * .4, activation=tf.nn.relu))
+    #model.add(keras.layers.Dense(outputLayers * .4, activation=tf.nn.relu))
+    #model.add(keras.layers.Dense(outputLayers * .4, activation=tf.nn.relu))
+    #model.add(keras.layers.Dense(outputLayers * .4, activation=tf.nn.relu))
+    model.add(keras.layers.Dense(outputLayers * 2, activation=tf.nn.relu))
+    model.add(keras.layers.Dense(outputLayers * 2, activation=tf.nn.relu))
+    model.add(keras.layers.Dense(outputLayers * 2, activation=tf.nn.relu))
+    model.add(keras.layers.Dense(outputLayers * 2, activation=tf.nn.relu))
     model.add(keras.layers.Dense(outputLayers, activation=tf.nn.softmax))
 
     return model

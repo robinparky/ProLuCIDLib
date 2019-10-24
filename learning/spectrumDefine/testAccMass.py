@@ -13,14 +13,14 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow import keras
 
-if len(sys.argv) != 4:
+if len(sys.argv) != 5:
     print("Error with command line inputs")
     sys.exit(0)
 else:
     inputPath = sys.argv[1]
     neuralPath = sys.argv[2]
     showResults = sys.argv[3]
-    databasePath = sys.argv[3]
+    databasePath = sys.argv[4]
 
 '''--------------------------------------------------------------------------'''
 print("Gathering Data from Files")
@@ -141,27 +141,27 @@ for i, ele in enumerate(result):
 
         deltaRt = abs(rt - predRt)
         deltaMass =  abs(mass - precursorMass)
-        deltaDec = delta % 1
+        deltaDec = deltaMass % 1
 
-        print("#",delta, peptide[14])
-        if deltaMass < 4:
-            for j in range(4):
-                print(" ----",abs(float(j)-deltaDec))
-                if abs(j - deltaDec) < .05:
-                    if deltaMass < 5:
+        print("#",deltaMass, peptide[14])
+        if deltaRt < 5:
+            if deltaMass < 4:
+                for j in range(4):
+                    print(" ----",abs(float(j)-deltaDec))
+                    if abs(j - deltaDec) < .05:
                         print("found")
                         predicted = label
                         found = True
                         break
-            if found:
-                break
+                if found:
+                    break
 
-        """
-        if delta < .05:
-            predicted = label
-            found = True
-            break
-        """
+            """
+            if delta < .05:
+                predicted = label
+                found = True
+                break
+            """
     if not found:
         predicted = predictList[0][1]
 
