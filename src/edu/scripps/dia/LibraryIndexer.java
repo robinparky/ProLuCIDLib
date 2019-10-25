@@ -285,7 +285,7 @@ public class LibraryIndexer {
 
         addEntryStatement
                 = con.prepareStatement("INSERT INTO " + getPeptideTableName() + peptideSchema
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?,?, ?,?, ?, ?,?,?,?,?,?,?);") ;
+                + " VALUES (?, ?, ?, ?, ?, ?, ?, ?,?, ?,?, ?, ?,?,?,?,?,?,?);") ;
 
         getEntryByMassRangeStatement = con.prepareStatement(
                 "SELECT * "
@@ -522,6 +522,7 @@ public class LibraryIndexer {
         addEntryStatement.setInt(16,scan);
         addEntryStatement.setInt(17,decoyCode);
         addEntryStatement.setInt(18,0);
+        addEntryStatement.setString(19,"");
 
         addEntryStatement.executeUpdate();
         return peptideID++;
@@ -2063,7 +2064,7 @@ public class LibraryIndexer {
         String listStr = rs.getString(1);
         List<Double> retentionTimeList = new ArrayList<>();
 
-        if(listStr!=null)
+        if(listStr!=null && listStr.length()>0)
         {
             String [] arr  = listStr.split(";");
             for(String s: arr)
