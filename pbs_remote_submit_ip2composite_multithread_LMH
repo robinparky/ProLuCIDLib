@@ -1,0 +1,243 @@
+#!/usr/bin/perl
+use strict;
+
+# The ProLuCID database search engine and this submit_prolucid script is developed 
+# in the Yates Laboratory at The Scripps Research Institue.
+# This script can be used to submit ProLuCID jobs to computer clusters using PBS.
+# ProLuCID requires two files, the search parameter file search.xml and the MS/MS
+# spectrum file (ms2 file).  The search results will be stored in a sqt file.
+# Although ProLuCID can handle both MS2 file format and mzXML file format, this script
+# can only work with MS2 file format(RAPID COMMUNICATIONS IN MASS SPECTROMETRY 18(18):2162-2168).  
+# The fasta database and other search parameters, such as peptide and fragment mass
+# tolerance, are specified in the search.xml file. Please note the fasta database file
+# has to be accessible on each node of the cluster.
+# Fragmentation method or activation type is specified in ms2 I line "I       ActivationType  ETD"
+# Please send bug reports and comments to taoxu@scripps.edu
+
+# This script will copy all the ms2 files on the file server to the cluster 
+# and send the result files and log files back to the file server.  So the
+# system has to be configured such that the user should be able to perform ssh
+# from any cluster node to the file server without typing password.
+# The values of $datafileserver, $LibrarySearchjarfile and $redundanthlineremover
+# shoud be modified according to your system condition.
+# If the architecture of your system is different, you may need to modify 
+# this script.
+# $datafileservre can be any computer that the cluster nodes can ssh without password
+
+# This script will split each ms2 file into multiple jobs and will concatenate all the 
+# output files to one final sqt file, and concatenate all the log files to one log file 
+# for each original ms2 file.
+# The default number of spectrum per job is 2000, however users can specify it at the command line 
+
+# The following is an example command line to run ProLuCID
+# java -Xmx1500M -jar ProLuCID.jar xxx.ms2 >> xxx.log 2>&1
+
+#my $LibrarySearchjarfile = "/opt/applications/yates/current/java/lib/ProLuCID1_3.jar";
+#my $redundanthlineremover = "/opt/applications/yates/current/bin/redundanthlineremover";
+my $LibrarySearchjarfile = "/gpfs/home/titusj/LibrarySearch.jar";
+my $redundanthlineremover = "/opt/applications/yates/current/bin/redundanthlineremover";
+
+my $numargs = $#ARGV + 1;
+print "Number of command line argument is: $numargs\n";
+my $numSpectraPerFile = shift;                                                                                
+$numSpectraPerFile = 1000 if($numSpectraPerFile < 1);
+                                                                                
+my $directory = shift; # remote temp directory for search
+
+my $datafilefolder = shift;
+my $clusteruser = shift;
+my $appuser = shift; # application user
+my $datafileserver = shift;
+`rm -rf  $directory`;
+`mkdir $directory`;
+chdir($directory) or die "Can't create $directory! Exiting...\n";
+
+my $counter = 0;
+my @file;
+my @temps = `ssh -o StrictHostKeyChecking=no -l $appuser $datafileserver ls $datafilefolder`;
+foreach (@temps) {
+    chomp;
+    if (/^(.*)\.ms2$/) {
+        #push(@file, $1);
+        push(@file, $1);
+        print "Adding $1.ms2\n";
+   
+    }
+    elsif (/^search\.xml$/) {
+        `scp -o StrictHostKeyChecking=no $appuser\@$datafileserver:$datafilefolder/search.xml .`;
+        $counter++;
+    }
+    elsif (/^Hsearch\.xml$/) {
+        `scp -o StrictHostKeyChecking=no $appuser\@$datafileserver:$datafilefolder/Hsearch.xml .`;
+        $counter++;
+    }
+    elsif (/^Msearch\.xml$/) {
+        `scp -o StrictHostKeyChecking=no $appuser\@$datafileserver:$datafilefolder/Msearch.xml .`;
+        $counter++;
+    }
+}
+
+die "No params file found! Exiting...\n" if ($counter == 0);
+
+my $ms2counter = 0;
+my $jobcounter = 0;
+foreach my $file (reverse(@file)) {
+    my $originalFile = $file; 
+    my $ms2file = "$originalFile.ms2"; 
+    my $hms2file = "H$originalFile.ms2"; 
+	my $mms2file = "M$originalFile.ms2";
+  
+    `scp -o StrictHostKeyChecking=no $appuser\@$datafileserver:$datafilefolder/$ms2file .`;
+    open (INPUTFILE, $ms2file) || die "couldn't open $ms2file!";
+    my $filenameprefix = "$originalFile";
+    my $line;
+
+    # reading header
+    while ( $line = <INPUTFILE>) {
+        last if($line =~ /^H/);
+    }
+
+    my $numProcessed = 0;
+    my $fileCounter = 0;
+    my @splittedFiles;
+    do {
+       if($numProcessed == 0) {
+            $fileCounter++;
+            #my $splittedfilename = "$filenameprefix"."_"."$fileCounter";
+            #my $filename = "$filenameprefix"."_"."$fileCounter".".ms2";
+            my $splittedfilename = "$filenameprefix"."_my_"."$fileCounter";
+            my $filename = "$filenameprefix"."_my_"."$fileCounter".".ms2";
+            #print "filename: $filename\n";
+            #print ">$datafilefolder"."/".$filename."\n" ;
+            open (OUTFILE, ">$filename") or die "Couldn't open $filename! Exiting...\n";
+            push(@splittedFiles, $splittedfilename);      
+       }
+
+       # output each spectrum including header (S, Z, I lines) and peaks
+        while ($line) {
+            print OUTFILE $line;
+            $line = <INPUTFILE>;
+            last if($line =~ /^S+/);
+        }
+
+       $numProcessed++;
+       if($numProcessed == $numSpectraPerFile or !$line) {
+            close(OUTFILE);
+            $numProcessed = 0;
+       }
+    } while($line);
+    close(INPUTFILE);
+    `rm $ms2file`;
+
+    foreach my $tempfile (@splittedFiles) {
+        my $htempfile = "H$tempfile";
+	my $mtempfile = "M$tempfile";
+        my $horiginalFile = "H$originalFile";
+	my $moriginalFile = "M$originalFile";
+        &outputJobFile($originalFile, $tempfile, $directory, "search.xml");
+        $jobcounter++;
+	if($numargs > 6) {
+            # output job file for heavy search
+            `cp $tempfile.ms2 $htempfile.ms2`;
+            &outputJobFile($horiginalFile, $htempfile, $directory, "Hsearch.xml"); 
+            $jobcounter++;
+	}
+        if($numargs > 7) { #H and M
+            # output job file for heavy search
+		`cp $tempfile.ms2 $mtempfile.ms2`;
+#		&outputJobFile($horiginalFile, $htempfile, $directory, "Hsearch.xml"); 
+#		$jobcounter++;
+		&outputJobFile($moriginalFile, $mtempfile, $directory, "Msearch.xml"); 
+		$jobcounter++;
+        } 
+    }   
+ 
+    print "$fileCounter jobs submitted for $originalFile.ms2!\n";
+    #$jobcounter = $jobcounter + $fileCounter;
+    $ms2counter++;
+}
+
+# to keep track of number of spectra per file and number of spectrum files
+my $prolucidstatus = "prolucid_search_stat.txt";
+open (STATUSFILE, ">$prolucidstatus") or die "Couldn't open $prolucidstatus! Exiting...\n";
+print STATUSFILE "$numSpectraPerFile:$jobcounter\n";
+close STATUSFILE;
+
+print "\n\n\n$jobcounter jobs submitted for $ms2counter ms2 files. Check out the queue status\n";
+print "by typing \'qstat\'.\n\n";
+print "The search results (sqt files and log files) will be returned to your\n";
+print "directory $datafilefolder.\n";
+
+sub outputJobFile {
+    my $originalFile = $_[0];
+    my $splittedFile = $_[1];
+    my $remotedir = $_[2];
+    my $searchxml = $_[3];
+    my $jobfile = "$_[1].job";
+    my $qsublogfile = "$originalFile.sub"; 
+    my $lockfilename = "$originalFile.lock"; 
+    
+    my $qsubfinishedfile = "$originalFile.fin"; 
+    my $tempjobfile = $jobfile;
+    #print "tempjobfile: $tempjobfile\n";
+    open (JOBFILE, ">$tempjobfile") or die "Couldn't open $tempjobfile! Exiting...\n";
+    print "Writing $splittedFile.job...\n";
+    print JOBFILE "#!/bin/sh\n";
+    print JOBFILE "#PBS -l nodes=1:ppn=4\n";
+    print JOBFILE "#PBS -l walltime=240:00:00\n";
+    print JOBFILE "#PBS -l cput=360:00:00\n";
+    print JOBFILE "#PBS -j oe\n";
+    print JOBFILE "#PBS -l mem=7000mb\n";
+
+    print JOBFILE "\ncd \$PBS_O_WORKDIR\n";
+
+    print JOBFILE "\ncp \$libFile\ni .";
+    #print JOBFILE "java -Xmx7000M -jar $LibrarySearchjarfile $splittedFile.ms2 $searchxml 4 >> $splittedFile.log 2>&1\n\n";
+    print JOBFILE "/gpfs/home/rpark/jdk1.8/bin/java -Xmx20G -jar $LibrarySearchjarfile $splittedFile.ms2 $searchxml 4 >> $splittedFile.log 2>&1\n\n";
+
+
+    print JOBFILE "rm -rf $splittedFile.ms2 \n";
+    
+    print JOBFILE "lockfile -r-1 $lockfilename\n";
+
+    
+    print JOBFILE "cat $splittedFile.log >> $originalFile.log\n";
+    print JOBFILE "cat $splittedFile.job >> $originalFile.job\n";
+    
+
+
+    print JOBFILE "echo finished >> $qsubfinishedfile\n";
+
+    print JOBFILE "numJobsFinished=`cat $qsubfinishedfile | wc -l`\n";
+    print JOBFILE "numJobsSubmitted=`cat $qsublogfile | wc -l`\n";
+
+
+    print JOBFILE "echo numJobsFinished \$numJobsFinished >> $originalFile.log\n";
+    print JOBFILE "echo numJobsSubmitted \$numJobsSubmitted >> $originalFile.log\n";
+    
+    print JOBFILE "rm -rf $lockfilename\n";
+
+    print JOBFILE "if \[ \$numJobsSubmitted = \$numJobsFinished \]\; then\n";
+    print JOBFILE "$redundanthlineremover $originalFile.sqt\n";
+
+    print JOBFILE "for i in 1 2 3 4 5\ndo\n"; 
+    print JOBFILE "scp -o StrictHostKeyChecking=no $originalFile.sqt $appuser\@$datafileserver:$datafilefolder\n";
+    print JOBFILE "scp -o StrictHostKeyChecking=no $originalFile.log $appuser\@$datafileserver:$datafilefolder\n";
+    print JOBFILE "scp -o StrictHostKeyChecking=no $originalFile.job $appuser\@$datafileserver:$datafilefolder\n";
+    print JOBFILE "if [ \"\$?\" -eq \"0\" ]; then\nbreak\nfi\ndone\n";
+
+         
+#    print JOBFILE "rm -rf $originalFile.log\n";
+#    print JOBFILE "rm -rf $originalFile.job\n";
+#    print JOBFILE "rm -rf $qsubfinishedfile\n";
+#    print JOBFILE "rm -rf $qsublogfile\n";
+
+    print JOBFILE "fi\n";
+    #print JOBFILE "cd \$PBS_O_WORKDIR\n";
+
+    print JOBFILE "exit\n";
+    close JOBFILE;
+    #`qsub -q newworkq $splittedFile.job >> $qsublogfile`;
+    `qsub $splittedFile.job >> $qsublogfile`;
+
+}
