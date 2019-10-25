@@ -137,31 +137,40 @@ for i, ele in enumerate(result):
         c.execute('SELECT * FROM PeptideTable WHERE sequenceCS = ?', (label,))
         peptide = c.fetchone()
         precursorMass =  peptide[3]
-        predRt = peptide[4]
+        predRt = peptide[7]
 
         deltaRt = abs(rt - predRt)
         deltaMass =  abs(mass - precursorMass)
         deltaDec = deltaMass % 1
 
-        print("#",deltaMass, peptide[14])
+        """
         if deltaRt < 5:
             if deltaMass < 4:
                 for j in range(4):
                     print(" ----",abs(float(j)-deltaDec))
                     if abs(j - deltaDec) < .05:
+                        print("#",deltaMass,deltaRt, peptide[14])
                         print("found")
                         predicted = label
                         found = True
                         break
                 if found:
                     break
+        """
 
-            """
-            if delta < .05:
-                predicted = label
-                found = True
+        if deltaMass < 4:
+            for j in range(4):
+                print(" ----",abs(float(j)-deltaDec))
+                if abs(j - deltaDec) < .05:
+                    if deltaRt < 5:
+                        print("#",deltaMass,deltaRt, peptide[14])
+                        print("found")
+                        predicted = label
+                        found = True
+                        break
+            if found:
                 break
-            """
+
     if not found:
         predicted = predictList[0][1]
 
@@ -174,6 +183,8 @@ for i, ele in enumerate(result):
     print("ActualVal: ", actual)
     print("Spectrum Mass: ", mass)
     print("Actual PrecursorMass: ", precursorMass)
+    print("Spectrum RT: ", rt)
+    print("Actual Retention: ", predRt)
     print("Predicted Spectrum ID ",testId[i])
     print("Actual Spectrum ID", idList[actInd])
     print("Sampel Predicted ID", idList[predInd],"\n")

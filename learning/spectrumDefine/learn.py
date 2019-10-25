@@ -92,16 +92,19 @@ def create_model1():
     model = keras.Sequential()
     with tf.device('/gpu:0'):
         model.add(keras.layers.InputLayer(input_shape = (totalBins, )))
-        model.add(keras.layers.Dense(1000, activation=tf.nn.relu))
+        model.add(keras.layers.Dense(outputLayers, activation=tf.nn.relu))
     with tf.device('/gpu:1'):
-        model.add(keras.layers.Dense(1000, activation=tf.nn.relu))
-        model.add(keras.layers.Dense(1000, activation=tf.nn.relu))
+        model.add(keras.layers.Dense(outputLayers, activation=tf.nn.relu))
+        model.add(keras.layers.Dense(outputLayers, activation=tf.nn.relu))
+        model.add(keras.layers.Dense(outputLayers, activation=tf.nn.softmax))
+    """
     with tf.device('/gpu:2'):
         model.add(keras.layers.Dense(1000, activation=tf.nn.relu))
         model.add(keras.layers.Dense(1000, activation=tf.nn.relu))
     with tf.device('/gpu:3'):
         model.add(keras.layers.Dense(1000, activation=tf.nn.relu))
         model.add(keras.layers.Dense(outputLayers, activation=tf.nn.softmax))
+    """
     return model
 
 

@@ -94,6 +94,7 @@ for ind in pepTable:
             peptideRow = c.fetchone()
             seq = peptideRow[14]
             rt = peptideRow[7]
+            #print(seq, rt)
             rtList.append(rt)
             labelList.append(seq)
     else:
@@ -118,14 +119,15 @@ print ("Elapsed Time: " + str(round(pullData - start)) + "\n")
 '''--------------------------------------------------------------------------'''
 #Shuffle lists so that it is mised and same peptide specs are not adjacent
 
-shuffle = list(zip(spectrumList, labelList, indexList, idList, massList))
+shuffle = list(zip(spectrumList, labelList, indexList, idList, massList, rtList))
 random.shuffle(shuffle)
-spectrumList, labelList, indexList, idList, massList = list(zip(*shuffle))
+spectrumList, labelList, indexList, idList, massList, rtList = list(zip(*shuffle))
 spectrumList = list(spectrumList)
 labelList = list(labelList)
 indexList = list(indexList)
 idList = list(idList)
 massList = list(massList)
+rtList = list(rtList)
 '''--------------------------------------------------------------------------'''
 #Find max x and y
 MAX_X = 0
