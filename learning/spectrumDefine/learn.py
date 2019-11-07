@@ -113,24 +113,6 @@ gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.333)
 
 sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options))
 
-def create_model2():
-    model = keras.Sequential()
-    model.add(keras.layers.InputLayer(input_shape = (totalBins, )))
-    #model.add(keras.layers.Dense(outputLayers * 8, activation=tf.nn.relu))
-    #model.add(keras.layers.Dense(outputLayers * 8, activation=tf.nn.relu))
-    #model.add(keras.layers.Dense(outputLayers * .4, activation=tf.nn.relu))
-    #model.add(keras.layers.Dense(outputLayers * .4, activation=tf.nn.relu))
-    #model.add(keras.layers.Dense(outputLayers * .4, activation=tf.nn.relu))
-    #model.add(keras.layers.Dense(outputLayers * .4, activation=tf.nn.relu))
-    #model.add(keras.layers.Dense(outputLayers * .4, activation=tf.nn.relu))
-    model.add(keras.layers.Dense(outputLayers * 2, activation=tf.nn.relu))
-    model.add(keras.layers.Dense(outputLayers * 2, activation=tf.nn.relu))
-    model.add(keras.layers.Dense(outputLayers * 2, activation=tf.nn.relu))
-    model.add(keras.layers.Dense(outputLayers * 2, activation=tf.nn.relu))
-    model.add(keras.layers.Dense(outputLayers, activation=tf.nn.softmax))
-
-    return model
-
 
 
 model  = create_model1()
