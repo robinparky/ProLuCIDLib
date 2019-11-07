@@ -13,14 +13,14 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow import keras
 
-if len(sys.argv) != 4:
+if len(sys.argv) != 5:
     print("Error with command line inputs")
     sys.exit(0)
 else:
     inputPath = sys.argv[1]
     neuralPath = sys.argv[2]
     showResults = sys.argv[3]
-    databasePath = sys.argv[3]
+    databasePath = sys.argv[4]
 
 '''--------------------------------------------------------------------------'''
 print("Gathering Data from Files")
@@ -57,6 +57,10 @@ sp.close()
 
 with open (inputPath + 'testMass', 'rb') as lp:
     testMass = pickle.load(lp)
+sp.close()
+
+with open (inputPath + 'testRt', 'rb') as lp:
+    testRt = pickle.load(lp)
 sp.close()
 
 with open (inputPath + 'outputLabels', 'rb') as lp:
@@ -121,6 +125,7 @@ for i, ele in enumerate(result):
     predicted = ""
     precursorMass = 0
     mass = testMass[i]
+    rt = testRt[i]
     found = False
 
     predictList = zip(ele, outputLabels)
@@ -132,28 +137,40 @@ for i, ele in enumerate(result):
         c.execute('SELECT * FROM PeptideTable WHERE sequenceCS = ?', (label,))
         peptide = c.fetchone()
         precursorMass =  peptide[3]
+        predRt = peptide[7]
 
-        delta =  abs(mass - precursorMass)
-        deltaDec = delta % 1
+        deltaRt = abs(rt - predRt)
+        deltaMass =  abs(mass - precursorMass)
+        deltaDec = deltaMass % 1
 
-        print("#",delta, peptide[14])
-        if delta < 4:
+        """
+        if deltaRt < 5:
+            if deltaMass < 4:
+                for j in range(4):
+                    print(" ----",abs(float(j)-deltaDec))
+                    if abs(j - deltaDec) < .05:
+                        print("#",deltaMass,deltaRt, peptide[14])
+                        print("found")
+                        predicted = label
+                        found = True
+                        break
+                if found:
+                    break
+        """
+
+        if deltaMass < 4:
             for j in range(4):
                 print(" ----",abs(float(j)-deltaDec))
                 if abs(j - deltaDec) < .05:
-                    print("found")
-                    predicted = label
-                    found = True
-                    break
+                    if deltaRt < 5:
+                        print("#",deltaMass,deltaRt, peptide[14])
+                        print("found")
+                        predicted = label
+                        found = True
+                        break
             if found:
                 break
 
-        """
-        if delta < .05:
-            predicted = label
-            found = True
-            break
-        """
     if not found:
         predicted = predictList[0][1]
 
@@ -166,6 +183,8 @@ for i, ele in enumerate(result):
     print("ActualVal: ", actual)
     print("Spectrum Mass: ", mass)
     print("Actual PrecursorMass: ", precursorMass)
+    print("Spectrum RT: ", rt)
+    print("Actual Retention: ", predRt)
     print("Predicted Spectrum ID ",testId[i])
     print("Actual Spectrum ID", idList[actInd])
     print("Sampel Predicted ID", idList[predInd],"\n")
