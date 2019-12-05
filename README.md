@@ -1,9 +1,10 @@
 # libsearch
 
 Current version 0.9b
-## To build consensus library(sqlite):
+## To build  library(sqlite):
 
-java -cp /path/to/classpath/ edu.scripps.dia.ConsensusLibraryBuilder /path/to/DTASelect-filter.txt /path/to//search.xml /path/to//test.db
+java -cp ProluCIDLib.jar edu.scripps.dia.LibraryIndexer db_name.db /path_1/DTASelect-filter.txt /path_2/DTASelect-filter.txt
+
 
 DTASelect-filter.txt: DTASelect output file
 
