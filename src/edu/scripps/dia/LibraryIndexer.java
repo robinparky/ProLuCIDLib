@@ -1540,10 +1540,17 @@ public class LibraryIndexer {
         else if(!uploadBestScoringXcorr)
         {
             String key = fileString.trim();
-            if(!fileStringSet.contains(key) )
+
+            String fpath = fileName;
+            if(isHeavyFile(fpath,path))
+            {
+                fpath = fileName.substring(1,fileName.length());
+            }
+
+            if(!fileStringSet.contains(key) && new File(path+File.separator+fileName).exists())
             {
                 fileStringSet.add(key);
-                String fpath = fileName;
+
                 IndexedFile ifile = indexedMap.get(fpath);
                 List<Float> mzList = new ArrayList<>();
                 List<Float> intList = new ArrayList<>();
@@ -1556,7 +1563,7 @@ public class LibraryIndexer {
 
         }
         /*
-                Check if accession exists in local memory
+               Check if accession exists in local memory
                     if not check if exists in library
                         if not add protein to protein table
                             flag to add to peptide
@@ -1596,6 +1603,8 @@ public class LibraryIndexer {
 
     private double readSpectraFromMS2(IndexedFile ifile, int scan,List<Float> mzList, List<Float> intList)
             throws IOException {
+        if(ifile== null )
+            System.out.println("WHOOPS!");
         //System.out.println(">>>>"+ifile.getFileName()+"\t"+scan);
         long pos = ifile.getPositionByScan(scan);
         RandomAccessFile rfile = new RandomAccessFile(ifile.getFileName(),"r");
