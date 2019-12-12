@@ -857,4 +857,9 @@ System.out.println("FirstMass: " + firstMass + "\tnoShiftMass: " + noShiftMass+ 
 
         return bin_spec_al;
     }
+
+    public List<Peak> getPeaksList()
+    {
+        return peaks;
+    }
 }
