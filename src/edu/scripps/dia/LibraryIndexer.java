@@ -3,6 +3,10 @@ package edu.scripps.dia;
 import com.google.common.collect.TreeMultimap;
 import edu.scripps.dia.util.IndexUtil;
 import edu.scripps.dia.util.IndexedFile;
+import edu.scripps.dia.util.SpectrumReader;
+import edu.scripps.pms.util.spectrum.Peak;
+import edu.scripps.pms.util.spectrum.PeakList;
+import edu.scripps.pms.util.spectrum.Zline;
 import gnu.trove.TFloatArrayList;
 import gnu.trove.TLongHashSet;
 import org.jdom.JDOMException;
@@ -58,7 +62,7 @@ public class LibraryIndexer {
     private PreparedStatement fillMetaTable;
     private PreparedStatement getNMetaForwardSpectraStatement;
     private PreparedStatement getNMetaAllSpectraStatement;
-    private PreparedStatement getRetentetionTimesForPeptide =null;
+    private PreparedStatement getRetentionTimesForPeptide =null;
     private PreparedStatement setRetTimeRangeForPeptideID =null;
     private PreparedStatement setRetentionTimeList = null;
     private PreparedStatement getRetentionTimeList = null;
@@ -66,6 +70,11 @@ public class LibraryIndexer {
 
 
     private boolean uploadBestScoringXcorr = true;
+    private boolean uploadAllSpectra = false;
+    private boolean appendAllSpectra = false;
+
+
+    private Set<String> fileNameScanNumSet = new HashSet<>();
     private String dbAddress="";
     private int descriptiveIndex=-1;
     private int locusIndex=-1;
@@ -215,7 +224,7 @@ public class LibraryIndexer {
     private PreparedStatement getAllSpectraInformation;
     public static final String GET_ALL_SPECTRA_INFO_STATMENT =
             "SELECT SpectraTable.rowId, SpectraTable.massKey, PeptideTable.chargestate FROM SpectraTable, peptideTable " +
-                    "WHERE SpectraTable.peptideId = peptideTable.peptideId;";
+                    "WHERE SpectraTable.peptideId = peptideTable.peptideId and SpectraTable.peptideId >=0;";
 
     private PreparedStatement clearSpectraMetaTable;
     public static final String CLEAR_SPECTRA_META_TABLE = "DELETE FROM "+SPECTRA_META_TABLE_NAME;
@@ -294,7 +303,7 @@ public class LibraryIndexer {
                         + " ON " +PEPTIDE_TABLE_NAME+".peptideID="+PEPTIDE_PROTEIN_INDEX_TABLE+".peptideID "
                         + "INNER JOIN "+PROTEIN_TABLE_NAME
                         +" ON "+PEPTIDE_PROTEIN_INDEX_TABLE+".proteinID ="+PROTEIN_TABLE_NAME+".proteinID "
-                        + "WHERE massKey BETWEEN ? AND ?" +
+                        + "WHERE massKey BETWEEN ? AND ? AND isDecoy = 0" +
                         " ORDER BY peptideID;")
         ;
 
@@ -332,9 +341,11 @@ public class LibraryIndexer {
                 "SELECT proteinID FROM "+PROTEIN_TABLE_NAME
                 +" WHERE Accession = ?;"
         );
+
         getProteinCountStatement = con.prepareStatement(
                 "SELECT count(*) FROM "+PROTEIN_TABLE_NAME+";"
         );
+
         getSpectraCountStatement = con.prepareStatement(
                 "SELECT count(*) FROM "+SPECTRA_TABLE_NAME+";"
         );
@@ -372,7 +383,7 @@ public class LibraryIndexer {
         getSpectraMassStatement = con.prepareStatement(
                 "SELECT * "
                         + "FROM " + SPECTRA_TABLE_NAME + " "
-                        + "WHERE massKey BETWEEN ? AND ?" +
+                        + "WHERE massKey BETWEEN ? AND ? AND peptideID >= 0" +
                         " ORDER BY peptideID;")
         ;
         getProteinIDStatement = con.prepareStatement(
@@ -466,7 +477,7 @@ public class LibraryIndexer {
         return -1L;
     }
 
-    private long uploadProtein(String locus, String description) throws SQLException {
+    private long insertProtein(String locus, String description) throws SQLException {
         addProteinEntryStatement.setLong(1,proteinID);
         addProteinEntryStatement.setString(2,locus);
         addProteinEntryStatement.setString(3,description);
@@ -541,10 +552,13 @@ public class LibraryIndexer {
         return bous.toByteArray();
     }
 
-
-
     public void insertSpectra(long id, float mass, List<Float> mzList, List<Float> intensityList, float retTime,
                               String fileName, int scanNumber) throws IOException, SQLException {
+        insertSpectra(id,mass,mzList,intensityList,retTime,fileName,scanNumber,false);
+    }
+
+    public void insertSpectra(long id, float mass, List<Float> mzList, List<Float> intensityList, float retTime,
+                              String fileName, int scanNumber, boolean isDecoy) throws IOException, SQLException {
         List<Long> mzBinList = new ArrayList<>();
         int massKey = (int)(mass*MZ_KEY_SHIFT);
         byte[] mzByteArr = convertToByteArr(mzList);
@@ -562,10 +576,12 @@ public class LibraryIndexer {
         addSpectraStatement.setFloat(5,retTime);
         addSpectraStatement.setString(6,fileName);
         addSpectraStatement.setInt(7,scanNumber);
+       // addSpectraStatement.setBoolean(8, isDecoy);
         //addSpectraStatement.setInt(8,1);
         spectraID++;
         addSpectraStatement.executeUpdate();
     }
+
     private void incrementCopies(int id) throws SQLException {
         incrementCopies.setInt(1,id);
         incrementCopies.executeUpdate();
@@ -868,10 +884,11 @@ public class LibraryIndexer {
         updateEntry.executeUpdate();
     }
 
-    private void updateSpectra(long id, List<Float> mzList, List<Float>  intList,float mass, float retTime, String filename, int scanNumber) throws IOException, SQLException {
+    private void updateSpectra(long id, List<Float> mzList, List<Float>  intList, float mass, float retTime,
+                               String filename, int scanNumber) throws IOException, SQLException {
         List<Long> mzBinList = new ArrayList<>();
 
-        byte[] mzByteArr = convertToByteArr(mzList);
+        byte[] mzByteArr = convertToByteArr( mzList);
         byte[] intByteArr = convertToByteArr(intList);
         int massKey = (int)(mass*MZ_KEY_SHIFT);
 
@@ -965,13 +982,13 @@ public class LibraryIndexer {
 
     public List<Double> getAllRetentionTimesForPeptide(int id) throws SQLException {
         List<Double> retTimeList =new ArrayList<>();
-        if(getRetentetionTimesForPeptide == null)
+        if(getRetentionTimesForPeptide == null)
         {
-            getRetentetionTimesForPeptide = con.prepareStatement("SELECT retTime FROM " +SPECTRA_TABLE_NAME+
+            getRetentionTimesForPeptide = con.prepareStatement("SELECT retTime FROM " +SPECTRA_TABLE_NAME+
                     " where peptideID = ?");
         }
-        getRetentetionTimesForPeptide.setInt(1,id);
-        final ResultSet rs = getRetentetionTimesForPeptide.executeQuery();
+        getRetentionTimesForPeptide.setInt(1,id);
+        final ResultSet rs = getRetentionTimesForPeptide.executeQuery();
         while(rs.next())
         {
             double retTime = rs.getDouble(1);
@@ -1030,7 +1047,7 @@ public class LibraryIndexer {
         }
     }
 
-    public void generateSpectraForUniqueSpectraLibrary() throws SQLException {
+    public void generateRetTimeRangeForUniqueSpectraLibrary() throws SQLException {
         for(Map.Entry<String,List<Double>> entry: seqKeyRetTimeMap.entrySet())
         {
             String seqKey = entry.getKey();
@@ -1159,6 +1176,10 @@ public class LibraryIndexer {
     public void readDTASelect(String dtaSelectFile) throws JDOMException, SQLException, IOException {
         String path = dtaSelectFile.substring(0,dtaSelectFile.lastIndexOf(File.separatorChar));
         readDTASelect(dtaSelectFile,path);
+        if(isUploadAllSpectra())
+        {
+            uploadAllSpectraToDB(path);
+        }
     }
 
     public void readDTASelectCreateCSV(String dtaSelectFile, String workingDirectory,
@@ -1246,17 +1267,16 @@ public class LibraryIndexer {
         return devMap;
     }
 
-
     public void readDTASelect(String dtaSelectFile,String path) throws IOException, JDOMException, SQLException {
         boolean start = false;
-         indexedMap = IndexUtil.createIndexedHt(path,"ms2");
-         seqKeyScoreMap = new HashMap<>();
-         seqKeyIDMap = new HashMap<>();
-         peptideID = queryPeptideCount();
+        indexedMap = IndexUtil.createIndexedHt(path,"ms2");
+        seqKeyScoreMap = new HashMap<>();
+        seqKeyIDMap = new HashMap<>();
+        peptideID = queryPeptideCount();
         proteinID = queryProteinCount();
         spectraID = querySpectraCount();
        // initializeLocalMaps();
-         int peptideRowLength=0;
+        int peptideRowLength=0;
         int proteinRowLength =0;
         BufferedReader br = new BufferedReader(new FileReader(dtaSelectFile));
         String line;
@@ -1269,6 +1289,7 @@ public class LibraryIndexer {
 
         DTASelectParser parser = new DTASelectParser(dtaSelectFile);
         boolean emptyDevList = false;
+        fileNameScanNumSet = new HashSet<>();
 
         while((line=br.readLine())!=null)
         {
@@ -1305,7 +1326,12 @@ public class LibraryIndexer {
                 }
                 if(arr.length ==peptideRowLength)
                 {
-                    if(devList.size()>0)
+                    if(uploadAllSpectra)
+                    {
+                        String fileNameScanCS = arr[fileNameIndex];
+                        fileNameScanNumSet.add(fileNameScanCS);
+                    }
+                    if(devList.size()>0 && !appendAllSpectra)
                     {
                         processPeptideLine(arr,path,accessionList,devList);
                     }
@@ -1334,6 +1360,8 @@ public class LibraryIndexer {
         }
         br.close();
     }
+
+
     private long readAndUpdateSpectra(String seqKey, String filename, String path, float score,
                                       float mass, float deltacn, int scan, long id) throws SQLException, IOException {
         //seqKeyScoreMap.put(seqKey,score);
@@ -1343,7 +1371,10 @@ public class LibraryIndexer {
         {
             tempName = filename.substring(1,filename.length());
         }
-        IndexedFile ifile = indexedMap.get(tempName);
+        String spectraKey = path+ tempName + scan;
+
+
+            IndexedFile ifile = indexedMap.get(tempName);
         List<Float> mzList = new ArrayList<>();
         List<Float> intList = new ArrayList<>();
         //long id = seqKeyIDMap.get(seqKey);
@@ -1354,7 +1385,13 @@ public class LibraryIndexer {
 
         updateEntry(seqKey,mass,mzList.size(),0,(float)retTime,0,0,filename,
                 score,0,deltacn,scan);
-        updateSpectra(id,mzList,intList,mass,(float)retTime, filename,scan);
+
+       // if(!fileNameScanNumSet.contains(spectraKey))
+        {
+            updateSpectra(id,mzList,intList,mass,(float)retTime, filename,scan);
+          //  fileNameScanNumSet.add(spectraKey);
+        }
+
         return id;
     }
 
@@ -1422,6 +1459,56 @@ public class LibraryIndexer {
 
     }
 
+    public void uploadAllSpectraToDB(String path) throws IOException, SQLException {
+        File dir = new File(path);
+        File [] ms2Arr = dir.listFiles(file -> file.getName().endsWith(".ms2"));
+        for(File ms2 : ms2Arr)
+        {
+            SpectrumReader reader = new SpectrumReader(ms2.getAbsolutePath(), "ms2");
+            String fileName = ms2.getName();
+            for(Iterator<PeakList> itr = reader.getSpectra(); itr.hasNext(); )
+            {
+                PeakList peakList = itr.next();
+                float retTime =(float) peakList.getRetentionTime();
+
+                int scan = peakList.getLoscan();
+                List<Zline> zlineToUpload = new ArrayList<>();
+
+                String fileNameScan = fileName+"."+scan+"."+scan+".";
+                for(Iterator<Zline> ztr = peakList.getZlines(); ztr.hasNext();)
+                {
+                    Zline zline = ztr.next();
+                    int cs  = zline.getChargeState();
+                    String fileNameScanCS = fileNameScan + cs;
+                    if(!fileNameScanNumSet.contains(fileNameScanCS))
+                    {
+                        zlineToUpload.add(zline);
+                    }
+
+                }
+
+                if(zlineToUpload.size()>0)
+                {
+                    List<Float> massList = new ArrayList<>();
+                    List<Float> intList =  new ArrayList<>();
+                    for(Peak peak: peakList.getPeaksList())
+                    {
+                        massList.add((float) peak.getM2z());
+                        intList.add((float)peak.getIntensity());
+                    }
+                    for(Zline zline: zlineToUpload)
+                    {
+                        float prcMass = (float) zline.getM2z();
+                        int cs = zline.getChargeState();
+                        uploadSpectraWithoutPeptide(scan,cs,prcMass,retTime,fileName, massList, intList);
+                    }
+                }
+
+            }
+
+            reader.closeDataFile();
+        }
+    }
 
     public static String getWeightCode(String fileName, String filePath)
     {
@@ -1467,7 +1554,7 @@ public class LibraryIndexer {
 
         if(!seqKeyScoreMap.containsKey(seqKey))
         {
-            long [] idarr = new  long[1];
+             long [] idarr = new  long[1];
              libraryScore = queryScore(seqKey,idarr);
 
              if((idarr[0]!=-1))
@@ -1515,6 +1602,7 @@ public class LibraryIndexer {
                 seqKeyScoreMap.put(seqKey,xcorr);
 
                 insertSpectra(peptideID,mass,mzList,intList, (float)retTime, fileName, scan);
+
             }
             else
             {
@@ -1547,7 +1635,7 @@ public class LibraryIndexer {
                 fpath = fileName.substring(1,fileName.length());
             }
 
-            if(!fileStringSet.contains(key) && new File(path+File.separator+fileName).exists())
+            if(!fileStringSet.contains(key) && new File(path+File.separator+fpath).exists())
             {
                 fileStringSet.add(key);
 
@@ -1556,9 +1644,11 @@ public class LibraryIndexer {
                 List<Float> intList = new ArrayList<>();
                 float retTime = (float)readSpectraFromMS2(ifile,scan,mzList,intList);
 
-
-
-                insertSpectra(peptideID,mass,mzList,intList,retTime, fileName, scan);
+                String spectraKey = path+ fileName + scan;
+                //if(!fileNameScanNumSet.contains(spectraKey))
+                {
+                    insertSpectra(peptideID,mass,mzList,intList,retTime, fileName, scan);
+                }
             }
 
         }
@@ -1586,7 +1676,7 @@ public class LibraryIndexer {
                 else
                 {
                     addProteinToPeptide = true;
-                    proteinID = uploadProtein(accession,description);
+                    proteinID = insertProtein(accession,description);
                 }
             }
             else proteinID = locusProteinIDMap.get(seqKey);
@@ -1705,6 +1795,8 @@ public class LibraryIndexer {
         boolean justGenerateDecoys =false;
         boolean uniqueSpectra = true;
         boolean keepOldDatabase  = false;
+        boolean uploadAllSpectra = false;
+        boolean appendAllSpectra = false;
         for(String s: args  )
         {
             String slower = s.toLowerCase();
@@ -1720,11 +1812,23 @@ public class LibraryIndexer {
             {
                 keepOldDatabase = true;
             }
+            else if(slower.equals("--upload-all-spectra"))
+            {
+                uploadAllSpectra = true;
+            }
+            else if(slower.endsWith("--append-all-spectra"))
+            {
+                appendAllSpectra = true;
+                uploadAllSpectra = true;
+                keepOldDatabase = true;
+            }
         }
         if(!justGenerateDecoys && !keepOldDatabase && f.exists()) f.delete();
 
         LibraryIndexer libraryIndexer = new LibraryIndexer(libAddress);
+        libraryIndexer.setUploadAllSpectra(uploadAllSpectra);
         libraryIndexer.setUploadBestScoringXcorr(uniqueSpectra);
+        libraryIndexer.setAppendAllSpectra(appendAllSpectra);
         if(!justGenerateDecoys)
         {
             for(int i=1; i<args.length; i++)
@@ -1733,13 +1837,14 @@ public class LibraryIndexer {
                 {
                     System.out.println("reading "+args[i]);
                     libraryIndexer.readDTASelect(args[i]);
+
                 }
 
             }
         }
         if(uniqueSpectra)
         {
-           libraryIndexer.generateSpectraForUniqueSpectraLibrary();
+           libraryIndexer.generateRetTimeRangeForUniqueSpectraLibrary();
         }
         else
         {
@@ -2028,6 +2133,8 @@ public class LibraryIndexer {
             return false;
 
     }
+
+
     public static boolean isMediumFile(String file, String path) {
 
         if(!file.startsWith("M"))
@@ -2086,7 +2193,26 @@ public class LibraryIndexer {
         return  retentionTimeList;
     }
 
+    public void setUploadAllSpectra(boolean uploadAllSpectra) {
+        this.uploadAllSpectra = uploadAllSpectra;
+    }
 
+    public boolean isUploadAllSpectra() {
+        return uploadAllSpectra;
+    }
 
+    public void setAppendAllSpectra(boolean appendAllSpectra) {
+        this.appendAllSpectra = appendAllSpectra;
+    }
+
+    public void uploadSpectraWithoutPeptide(int scanNumber, int cs, float prcMass, float retTime, String fileName,
+                                            List<Float> mzList, List<Float> intList) throws IOException, SQLException {
+        String sequence = "N.OTAPEPTID.E"+(peptideID+1);
+        String seqKey = sequence+cs;
+         /*peptideID = insertEntry(sequence,prcMass,cs,mzList.size(),(float) retTime,0,0,fileName,
+                0,0,0,scanNumber,seqKey);*/
+        insertSpectra(-peptideID, prcMass, mzList, intList, retTime, fileName, scanNumber, true);
+
+    }
 
 }
