@@ -1,5 +1,8 @@
-import sys
-import pickle
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[1]:
+
 
 import sqlite3
 from pyteomics import mass as massC
@@ -15,33 +18,6 @@ from keras.layers.wrappers import Bidirectional, TimeDistributed
 from keras.models import load_model as keras_load_model
 from keras.models import Sequential
 
-from keras.callbacks import Callback
-
-if len(sys.argv) != 4 :
-    print("Error with command line inputs")
-    sys.exit(0)
-else:
-    databasePath = sys.argv[1] #Path to sqlite database
-    outputPath = sys.argv[2] #Path to store created arrays
-    testNumber = int(sys.argv[3]) #Number of test elements to create
-
-
-
-class TerminateOnBaseline(Callback):
-    """Callback that terminates training when either acc or val_acc reaches a specified baseline
-    """
-    def __init__(self, monitor='acc', baseline=0.9):
-        super(TerminateOnBaseline, self).__init__()
-        self.monitor = monitor
-        self.baseline = baseline
-
-    def on_epoch_end(self, epoch, logs=None):
-        logs = logs or {}
-        acc = logs.get(self.monitor)
-        if acc is not None:
-            if acc >= self.baseline:
-                print('Epoch %d: Reached baseline, terminating training' % (epoch))
-                self.model.stop_training = True
 
 # In[2]:
 
@@ -113,8 +89,7 @@ def getIonMasses(peptide, types=('b', 'y'), maxcharge=2):
 
 
 #Connect to database
-print(sys.argv)
-conn = sqlite3.connect(databasePath)
+conn = sqlite3.connect('testLibDuplicateSpectra.db')
 xtrainc2 = []
 xtrainc3 = []
 ytrainc2 = []
@@ -137,21 +112,21 @@ pepTable = c.fetchall()
 cnt = 0
 
 #Iterate through table and pull information about each peptide and its scans
-for ind in pepTable:
-#for j in range(15):
+#for ind in pepTable:
+for j in range(15):
 
     #Match peptide in table to peptide in Spectra Table
-    pepID = (str(ind[0]), )
-    #pepID = (str(pepTable[j][0]), )
+    #pepID = (str(ind[0]), )
+    pepID = (str(pepTable[j][0]), )
 
-    peptide = ind[1].split('.')[1]
-    #peptide = pepTable[j][1].split('.')[1]
+    #peptide = ind[1].split('.')[1]
+    peptide = pepTable[j][1].split('.')[1]
 
     if '(' in peptide or 'Z' in peptide or 'B' in peptide or 'U' in peptide:
         continue
 
-    charge = int(ind[4])
-    #charge = pepTable[j][4]
+    #charge = int(ind[4])
+    charge = pepTable[j][4]
 
     #print(pepID, ":" ,peptide)
 
@@ -213,69 +188,41 @@ for ind in pepTable:
 print("Done")
 
 
-# In[6]:
+# In[35]:
 
 
 df = pd.DataFrame(c2Arr)
 df = df.sample(frac=1)
 df.head()
+print(df.shape)
+for i in df["ions"]:
+    for key, value in i.items():
+        print(value)
 
-
-#
-# #Encode Sequence
-#
-# #read the matrix a csv file on github
-# nlf = pd.read_csv('https://raw.githubusercontent.com/dmnfarrell/epitopepredict/master/epitopepredict/mhcdata/NLF.csv',index_col=0)
-#
-# def show_matrix(m):
-#     #display a matrix
-#     cm = sns.light_palette("seagreen", as_cmap=True)
-#     display(m.style.background_gradient(cmap=cm))
-#
-# def nlf_encode(seq):
-#     x = pd.DataFrame([nlf[i] for i in seq]).reset_index(drop=True)
-#     #show_matrix(x)
-#     e = x.values.flatten()
-#     return e
-#
-# modPeptides = df['peptide'].copy()
-# for i, pep in enumerate(modPeptides):
-#     modPeptides.iloc[i] = nlf_encode(pep)
-#
-# """
-# for i in modPeptides:
-#     print(i.shape)
-# """
-#
-# modPeptides.head()
-# print(modPeptides.iloc[0])
 
 # In[7]:
 
-print("Encoding Sequences")
-import seaborn as sns
-codes = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L',
-         'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
+
+
 #Encode Sequence
+
+#read the matrix a csv file on github
+nlf = pd.read_csv('https://raw.githubusercontent.com/dmnfarrell/epitopepredict/master/epitopepredict/mhcdata/NLF.csv',index_col=0)
+
 def show_matrix(m):
     #display a matrix
     cm = sns.light_palette("seagreen", as_cmap=True)
     display(m.style.background_gradient(cmap=cm))
 
-def one_hot_encode(seq):
-    o = list(set(codes) - set(seq))
-    s = pd.DataFrame(list(seq))
-    x = pd.DataFrame(np.zeros((len(seq),len(o)),dtype=int),columns=o)
-    a = s[0].str.get_dummies(sep=',')
-    a = a.join(x)
-    a = a.sort_index(axis=1)
-    #show_matrix(a)
-    e = a.values.flatten()
+def nlf_encode(seq):    
+    x = pd.DataFrame([nlf[i] for i in seq]).reset_index(drop=True)  
+    #show_matrix(x)
+    e = x.values.flatten()
     return e
 
 modPeptides = df['peptide'].copy()
 for i, pep in enumerate(modPeptides):
-    modPeptides.iloc[i] = one_hot_encode(pep)
+    modPeptides.iloc[i] = nlf_encode(pep)
 
 """
 for i in modPeptides:
@@ -286,6 +233,38 @@ modPeptides.head()
 #print(modPeptides.iloc[0])
 
 
+# import seaborn as sns
+# codes = ['A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L',
+#          'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y']
+# #Encode Sequence
+# def show_matrix(m):
+#     #display a matrix
+#     cm = sns.light_palette("seagreen", as_cmap=True)
+#     display(m.style.background_gradient(cmap=cm))
+# 
+# def one_hot_encode(seq):
+#     o = list(set(codes) - set(seq))
+#     s = pd.DataFrame(list(seq))    
+#     x = pd.DataFrame(np.zeros((len(seq),len(o)),dtype=int),columns=o)    
+#     a = s[0].str.get_dummies(sep=',')
+#     a = a.join(x)
+#     a = a.sort_index(axis=1)
+#     #show_matrix(a)
+#     e = a.values.flatten()
+#     return e
+# 
+# modPeptides = df['peptide'].copy()
+# for i, pep in enumerate(modPeptides):
+#     modPeptides.iloc[i] = one_hot_encode(pep)
+# 
+# """
+# for i in modPeptides:
+#     print(i.shape)
+# """
+# 
+# modPeptides.head()
+# print(modPeptides.iloc[0])
+
 # In[8]:
 
 
@@ -293,12 +272,12 @@ df = pd.concat([df, modPeptides], axis = 1)
 df.columns = ['sequence', 'ions', 'encodedSequence']
 df = df[['sequence', 'encodedSequence', 'ions']]
 df.head()
-#print(np.array(df['encodedSequence'].iloc[0]).shape)
+print(np.array(df['encodedSequence'].iloc[0]).shape)
 
 
 # In[9]:
 
-print("Modifying Ions for input to Model")
+
 ionsProcessed = df['ions'].copy()
 for i, ionDict in enumerate(ionsProcessed):
     container  = []
@@ -316,9 +295,9 @@ df.columns = ['sequence', 'encodedSequence', 'ions', 'ionsProcessed']
 df.head()
 
 
-# In[13]:
+# In[10]:
 
-print("Creating train/test sets")
+
 inputArr = np.array(df['encodedSequence'])
 inputArr = np.array([np.array(i) for i in inputArr])
 outputArr = np.array([np.array(i) for i in df['ionsProcessed']])
@@ -326,39 +305,18 @@ outputArr = np.array([np.array(i) for i in df['ionsProcessed']])
 inputArr = np.reshape(inputArr, (inputArr.shape[0], 1, inputArr.shape[1]))
 outputArr = np.reshape(outputArr, (outputArr.shape[0], 240))
 
-splitIndex = len(inputArr) - testNumber
+xTrain = inputArr[:650]
+xTest = inputArr[650:]
 
-xTrain = inputArr[:splitIndex]
-xTest = inputArr[splitIndex:]
-
-yTrain = outputArr[:splitIndex]
-yTest = outputArr[splitIndex:]
-
-print("xTrain: ", xTrain.shape)
-print("yTrain: ", yTrain.shape)
-print("xTest: ", xTest.shape)
-print("yTest: ", yTest.shape)
-
-with open(outputPath +'xTrain', 'wb') as sp:
-    pickle.dump(xTrain, sp, protocol=4)
-sp.close()
-
-with open(outputPath +'xTest', 'wb') as sp:
-    pickle.dump(xTest, sp, protocol=4)
-sp.close()
-
-with open(outputPath +'yTrain', 'wb') as sp:
-    pickle.dump(yTrain, sp, protocol=4)
-sp.close()
-
-with open(outputPath +'yTest', 'wb') as sp:
-    pickle.dump(yTest, sp, protocol=4)
-sp.close()
+yTrain = outputArr[:650]
+yTest = outputArr[650:]
+print(inputArr.shape)
+print(outputArr.shape)
 
 
-# In[14]:
+# In[29]:
 
-print("Creating and Printing Model")
+
 model = Sequential()
 
 model.add(Bidirectional(LSTM(3, input_shape = xTrain.shape)))
@@ -370,5 +328,38 @@ model.add(Dense(240, activation='relu'))
 model.compile(
     loss="mean_squared_error",
     optimizer="adam")
-model.fit(xTrain, yTrain, epochs = 10000, callbacks = [TerminateOnBaseline(monitor='acc', baseline=0.95)])
-model.save(outputPath)
+model.fit(xTrain, yTrain, epochs = 1000)
+
+
+# In[30]:
+
+
+predictions = model.predict(xTrain)
+"""
+for i in predictions:
+    ionContainer
+    while """
+
+
+# In[31]:
+
+
+def printResults(dictionary, array):
+    print("--------------------")
+    j = 0
+    for key, value in dictionary.items():
+        for i in value:
+            print(i, " | ", array[j])
+            j += 1
+
+for i, val in enumerate(predictions):
+    dictionary = df.iloc[i]["ions"]
+    printResults(dictionary, val)
+        
+
+
+# In[ ]:
+
+
+
+
