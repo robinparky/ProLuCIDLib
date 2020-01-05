@@ -89,6 +89,7 @@ def getIonMasses(peptide, types=('b', 'y'), maxcharge=2):
 
 
 #Connect to database
+#conn = sqlite3.connect('/data/tyrande/data/MudPit/projects2012_01_05_20_21166.db')
 conn = sqlite3.connect('testLibDuplicateSpectra.db')
 xtrainc2 = []
 xtrainc3 = []
@@ -188,16 +189,19 @@ for j in range(15):
 print("Done")
 
 
-# In[35]:
+# In[6]:
 
 
 df = pd.DataFrame(c2Arr)
 df = df.sample(frac=1)
 df.head()
 print(df.shape)
+
+"""
 for i in df["ions"]:
     for key, value in i.items():
         print(value)
+"""
 
 
 # In[7]:
@@ -229,7 +233,7 @@ for i in modPeptides:
     print(i.shape)
 """
 
-modPeptides.head()
+#m odPeptides.head()
 #print(modPeptides.iloc[0])
 
 
@@ -303,6 +307,7 @@ inputArr = np.array(df['encodedSequence'])
 inputArr = np.array([np.array(i) for i in inputArr])
 outputArr = np.array([np.array(i) for i in df['ionsProcessed']])
 
+print(outputArr.shape)
 inputArr = np.reshape(inputArr, (inputArr.shape[0], 1, inputArr.shape[1]))
 outputArr = np.reshape(outputArr, (outputArr.shape[0], 240))
 
@@ -317,7 +322,7 @@ print(inputArr.shape)
 print(outputArr.shape)
 
 
-# In[29]:
+# In[11]:
 
 
 model = Sequential()
@@ -334,7 +339,7 @@ model.compile(
 model.fit(xTrain, yTrain, epochs = 1000)
 
 
-# In[30]:
+# In[12]:
 
 
 predictions = model.predict(xTrain)
@@ -344,7 +349,7 @@ for i in predictions:
     while """
 
 
-# In[31]:
+# In[13]:
 
 
 def printResults(dictionary, array):
