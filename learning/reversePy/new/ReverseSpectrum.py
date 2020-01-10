@@ -89,7 +89,6 @@ def getIonMasses(peptide, types=('b', 'y'), maxcharge=2):
 
 
 #Connect to database
-#conn = sqlite3.connect('/data/tyrande/data/MudPit/projects2012_01_05_20_21166.db')
 conn = sqlite3.connect('testLibDuplicateSpectra.db')
 xtrainc2 = []
 xtrainc3 = []
@@ -189,19 +188,16 @@ for j in range(15):
 print("Done")
 
 
-# In[6]:
+# In[35]:
 
 
 df = pd.DataFrame(c2Arr)
 df = df.sample(frac=1)
 df.head()
 print(df.shape)
-
-"""
 for i in df["ions"]:
     for key, value in i.items():
         print(value)
-"""
 
 
 # In[7]:
@@ -233,7 +229,7 @@ for i in modPeptides:
     print(i.shape)
 """
 
-#m odPeptides.head()
+modPeptides.head()
 #print(modPeptides.iloc[0])
 
 
@@ -302,27 +298,23 @@ df.head()
 # In[10]:
 
 
-
 inputArr = np.array(df['encodedSequence'])
 inputArr = np.array([np.array(i) for i in inputArr])
 outputArr = np.array([np.array(i) for i in df['ionsProcessed']])
 
-print(outputArr.shape)
 inputArr = np.reshape(inputArr, (inputArr.shape[0], 1, inputArr.shape[1]))
 outputArr = np.reshape(outputArr, (outputArr.shape[0], 240))
 
-splitIdx = int(len(inputArr) * .1)
+xTrain = inputArr[:650]
+xTest = inputArr[650:]
 
-xTrain = inputArr[:splitIdx]
-xTest = inputArr[splitIdx:]
-
-yTrain = outputArr[:splitIdx]
-yTest = outputArr[splitIdx:]
+yTrain = outputArr[:650]
+yTest = outputArr[650:]
 print(inputArr.shape)
 print(outputArr.shape)
 
 
-# In[11]:
+# In[29]:
 
 
 model = Sequential()
@@ -339,7 +331,7 @@ model.compile(
 model.fit(xTrain, yTrain, epochs = 1000)
 
 
-# In[12]:
+# In[30]:
 
 
 predictions = model.predict(xTrain)
@@ -349,7 +341,7 @@ for i in predictions:
     while """
 
 
-# In[13]:
+# In[31]:
 
 
 def printResults(dictionary, array):
