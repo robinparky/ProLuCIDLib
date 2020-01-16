@@ -90,7 +90,12 @@ def getIonMasses(peptide, types=('b', 'y'), maxcharge=2):
 
 #Connect to database
 #conn = sqlite3.connect('/data/tyrande/data/MudPit/projects2012_01_05_20_21166.db')
-conn = sqlite3.connect('testLibDuplicateSpectra.db')
+#conn = sqlite3.connect('projects2012_01_05_20_21166.db')
+conn = sqlite3.connect('MudpitFull.db')
+#conn = sqlite3.connect('testLibDuplicateSpectra.db')
+
+print(conn)
+
 xtrainc2 = []
 xtrainc3 = []
 ytrainc2 = []
@@ -114,7 +119,7 @@ cnt = 0
 
 #Iterate through table and pull information about each peptide and its scans
 #for ind in pepTable:
-for j in range(15):
+for j in range(5000):
 
     #Match peptide in table to peptide in Spectra Table
     #pepID = (str(ind[0]), )
@@ -123,7 +128,7 @@ for j in range(15):
     #peptide = ind[1].split('.')[1]
     peptide = pepTable[j][1].split('.')[1]
 
-    if '(' in peptide or 'Z' in peptide or 'B' in peptide or 'U' in peptide:
+    if '(' in peptide or 'Z' in peptide or 'B' in peptide or 'U' in peptide or 'X' in peptide:
         continue
 
     #charge = int(ind[4])
@@ -194,7 +199,7 @@ print("Done")
 
 df = pd.DataFrame(c2Arr)
 df = df.sample(frac=1)
-df.head()
+print(df.head())
 print(df.shape)
 
 """
@@ -218,8 +223,8 @@ def show_matrix(m):
     cm = sns.light_palette("seagreen", as_cmap=True)
     display(m.style.background_gradient(cmap=cm))
 
-def nlf_encode(seq):    
-    x = pd.DataFrame([nlf[i] for i in seq]).reset_index(drop=True)  
+def nlf_encode(seq):
+    x = pd.DataFrame([nlf[i] for i in seq]).reset_index(drop=True)
     #show_matrix(x)
     e = x.values.flatten()
     return e
@@ -245,27 +250,27 @@ for i in modPeptides:
 #     #display a matrix
 #     cm = sns.light_palette("seagreen", as_cmap=True)
 #     display(m.style.background_gradient(cmap=cm))
-# 
+#
 # def one_hot_encode(seq):
 #     o = list(set(codes) - set(seq))
-#     s = pd.DataFrame(list(seq))    
-#     x = pd.DataFrame(np.zeros((len(seq),len(o)),dtype=int),columns=o)    
+#     s = pd.DataFrame(list(seq))
+#     x = pd.DataFrame(np.zeros((len(seq),len(o)),dtype=int),columns=o)
 #     a = s[0].str.get_dummies(sep=',')
 #     a = a.join(x)
 #     a = a.sort_index(axis=1)
 #     #show_matrix(a)
 #     e = a.values.flatten()
 #     return e
-# 
+#
 # modPeptides = df['peptide'].copy()
 # for i, pep in enumerate(modPeptides):
 #     modPeptides.iloc[i] = one_hot_encode(pep)
-# 
+#
 # """
 # for i in modPeptides:
 #     print(i.shape)
 # """
-# 
+#
 # modPeptides.head()
 # print(modPeptides.iloc[0])
 
@@ -296,7 +301,7 @@ for i, ionDict in enumerate(ionsProcessed):
 
 df = pd.concat([df, ionsProcessed], axis = 1)
 df.columns = ['sequence', 'encodedSequence', 'ions', 'ionsProcessed']
-df.head()
+print(df.head())
 
 
 # In[10]:
@@ -306,10 +311,11 @@ df.head()
 inputArr = np.array(df['encodedSequence'])
 inputArr = np.array([np.array(i) for i in inputArr])
 outputArr = np.array([np.array(i) for i in df['ionsProcessed']])
+fragmentShape =  outputArr.shape[1]*outputArr.shape[2]
 
 print(outputArr.shape)
 inputArr = np.reshape(inputArr, (inputArr.shape[0], 1, inputArr.shape[1]))
-outputArr = np.reshape(outputArr, (outputArr.shape[0], 240))
+outputArr = np.reshape(outputArr, (outputArr.shape[0],fragmentShape))
 
 splitIdx = int(len(inputArr) * .1)
 
@@ -331,12 +337,12 @@ model.add(Bidirectional(LSTM(3, input_shape = xTrain.shape)))
 #model.add(Dense(20))
 #model.add(Dropout(0.5))
 #model.add(TimeDistributed(Dense(240, activation='relu')))
-model.add(Dense(240, activation='relu'))
+model.add(Dense(fragmentShape, activation='relu'))
 
 model.compile(
     loss="mean_squared_error",
     optimizer="adam")
-model.fit(xTrain, yTrain, epochs = 1000)
+model.fit(xTrain, yTrain, epochs = 5000)
 
 
 # In[12]:
@@ -363,7 +369,7 @@ def printResults(dictionary, array):
 for i, val in enumerate(predictions):
     dictionary = df.iloc[i]["ions"]
     printResults(dictionary, val)
-        
+
 
 
 # In[ ]:
