@@ -32,6 +32,7 @@ public class LibrarySearchEngine {
     private Map<Integer,List<LibrarySpectra>> [] spectraCSMap = new Map[tempMaxCS];
     private List<LibrarySpectra>[] indexedSpectraListTable = new List[tempMaxCS];
 
+
     private int [][] massIndex = new int[tempMaxCS][];
     private int [][] highMassIndex = new int[tempMaxCS][];
     private List<String> [] fileIndex = new List[6_500_000
@@ -54,6 +55,7 @@ public class LibrarySearchEngine {
     private String outputPath;
     private String hOutputPath;
     private double retTimeTolerance = 5;
+    private boolean queryUnIdentifiedSpectra = true;
     public static void main(String[] args) throws Exception {
         String ms2Path = args[0];
         String paramsPath = args[1];
@@ -682,7 +684,13 @@ public class LibrarySearchEngine {
 
         List<LibrarySpectra> spectraList = libraryIndexer.querySpectra(startRange,endRange);
         List<LibrarySpectra> decoyList = libraryIndexer.queryDecoySpectra(startRange,endRange);
+
         spectraList.addAll(decoyList);
+        if(queryUnIdentifiedSpectra)
+        {
+            List<LibrarySpectra> unidentifiedSpectraList = libraryIndexer.queryUnIdentifiedSpectra(startRange,endRange,decoyList);
+            spectraList.addAll(unidentifiedSpectraList);
+        }
         for(LibrarySpectra spectra : spectraList)
         {
 
