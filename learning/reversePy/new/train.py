@@ -16,6 +16,7 @@ from keras.models import Sequential
 
 if len(sys.argv) != 4:
     print("Error with command line inputs")
+    sys.exit(0)
 else:
     INPUT_PATH = sys.argv[1]
     BATCH_SIZE = sys.argv[2]

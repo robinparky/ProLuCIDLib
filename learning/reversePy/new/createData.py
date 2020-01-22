@@ -8,6 +8,7 @@ import pandas as pd
 
 if len(sys.argv) != 3:
     print("Error with command line inputs")
+    sys.exit(0)
 else:
     DATABASE_PATH = sys.argv[1]
     OUTPUT_PATH = sys.argv[2]
@@ -76,13 +77,6 @@ def getIonMasses(peptide, types=('b', 'y'), maxcharge=2):
 #conn = sqlite3.connect('testLibDuplicateSpectra.db')
 conn = sqlite3.connect(DATABASE_PATH)
 
-print(conn)
-
-xtrainc2 = []
-xtrainc3 = []
-ytrainc2 = []
-ytrainc3 = []
-
 c2Arr = []
 c3Arr = []
 
@@ -100,21 +94,21 @@ pepTable = c.fetchall()
 cnt = 0
 
 #Iterate through table and pull information about each peptide and its scans
-for ind in pepTable:
-#for j in range(1000):
+#for ind in pepTable:
+for j in range(1000):
 
     #Match peptide in table to peptide in Spectra Table
-    pepID = (str(ind[0]), )
-    #pepID = (str(pepTable[j][0]), )
+    #pepID = (str(ind[0]), )
+    pepID = (str(pepTable[j][0]), )
 
-    peptide = ind[1].split('.')[1]
-    #peptide = pepTable[j][1].split('.')[1]
+    #peptide = ind[1].split('.')[1]
+    peptide = pepTable[j][1].split('.')[1]
 
     if '(' in peptide or 'Z' in peptide or 'B' in peptide or 'U' in peptide or 'X' in peptide:
         continue
 
-    charge = int(ind[4])
-    #charge = pepTable[j][4]
+    #charge = int(ind[4])
+    charge = pepTable[j][4]
 
     #print(pepID, ":" ,peptide)
 
@@ -163,12 +157,8 @@ for ind in pepTable:
 
 
         if charge == 2:
-            #xtrainc2.append(peptide)
-            #ytrainc2.append(ions)
             c2Arr.append(tmp)
         elif charge == 3:
-            #xtrainc3.append(peptide)
-            #ytrainc3.append(ions)
             c3Arr.append(tmp)
         else:
             cnt += 1
@@ -178,10 +168,10 @@ print("Done Pulling from Database, Saving Dataframes")
 
 
 c2DF = pd.DataFrame(c2Arr)
-c2DF = df.sample(frac=1)
+c2DF = c2DF.sample(frac=1)
 
 c3DF = pd.DataFrame(c3Arr)
-c3DF = df.sample(fract=1)
+c3DF = c2DF.sample(frac=1)
 
 
 

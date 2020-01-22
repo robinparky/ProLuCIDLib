@@ -21,8 +21,9 @@ def printResults(dictionary, array):
             j += 1
 
 
-if len(sys.argv) != 5:
+if len(sys.argv) != 2:
     print("Error with command line inputs")
+    sys.exit(0)
 else:
     INPUT_PATH = sys.argv[1]
 
