@@ -118,21 +118,21 @@ pepTable = c.fetchall()
 cnt = 0
 
 #Iterate through table and pull information about each peptide and its scans
-#for ind in pepTable:
-for j in range(5000):
+for ind in pepTable:
+#for j in range(1000):
 
     #Match peptide in table to peptide in Spectra Table
-    #pepID = (str(ind[0]), )
-    pepID = (str(pepTable[j][0]), )
+    pepID = (str(ind[0]), )
+    #pepID = (str(pepTable[j][0]), )
 
-    #peptide = ind[1].split('.')[1]
-    peptide = pepTable[j][1].split('.')[1]
+    peptide = ind[1].split('.')[1]
+    #peptide = pepTable[j][1].split('.')[1]
 
     if '(' in peptide or 'Z' in peptide or 'B' in peptide or 'U' in peptide or 'X' in peptide:
         continue
 
-    #charge = int(ind[4])
-    charge = pepTable[j][4]
+    charge = int(ind[4])
+    #charge = pepTable[j][4]
 
     #print(pepID, ":" ,peptide)
 
@@ -334,9 +334,9 @@ print(outputArr.shape)
 model = Sequential()
 
 model.add(Bidirectional(LSTM(3, input_shape = xTrain.shape)))
-#model.add(Dense(20))
-#model.add(Dropout(0.5))
-#model.add(TimeDistributed(Dense(240, activation='relu')))
+model.add(Dense(100))
+model.add(Dropout(0.5))
+#model.add(TimeDistributed(Dense(fragmentShape, activation='relu')))
 model.add(Dense(fragmentShape, activation='relu'))
 
 model.compile(
@@ -348,7 +348,7 @@ model.fit(xTrain, yTrain, epochs = 5000)
 # In[12]:
 
 
-predictions = model.predict(xTrain)
+predictions = model.predict(xTest)
 """
 for i in predictions:
     ionContainer
