@@ -6,12 +6,11 @@ import numpy as np
 import pandas as pd
 
 
-if len(sys.argv) != 4:
+if len(sys.argv) != 3:
     print("Error with command line inputs")
 else:
     DATABASE_PATH = sys.argv[1]
-    CHARGE2_PATH = sys.argv[2]
-    CHARGE3_PATH = sys.argv[3]
+    OUTPUT_PATH = sys.argv[2]
 
 #Binary Search for elements in mass Spectra within Certain Tolerance
 def binarySearch (arr, l, r, x, tol):
@@ -192,5 +191,5 @@ for i in df["ions"]:
         print(value)
 """
 
-c2DF.to_pickle(CHARGE2_PATH)
-c3DF.to_pickle(CHARGE3_PATH)
+c2DF.to_pickle(OUTPUT_PATH + "c2DF.pkl")
+c3DF.to_pickle(OUTPUT_PATH + "c3DF.pkl")
