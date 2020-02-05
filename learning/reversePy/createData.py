@@ -4,7 +4,10 @@ from pyteomics import mass as massC
 import struct
 import numpy as np
 import pandas as pd
-#t
+import time
+import psutil
+import copy
+
 
 if len(sys.argv) != 3:
     print("Error with command line inputs")
@@ -92,23 +95,28 @@ c.execute("SELECT * FROM PeptideTable")
 pepTable = c.fetchall()
 
 cnt = 0
+pepCnt = 0
+
+startTime = time.time()
 
 #Iterate through table and pull information about each peptide and its scans
-for ind in pepTable:
-#for j in range(1000):
+#for ind in pepTable:
+for j in range(1000):
 
     #Match peptide in table to peptide in Spectra Table
-    pepID = (str(ind[0]), )
-    #pepID = (str(pepTable[j][0]), )
+    #pepID = (str(ind[0]), )
+    pepID = (str(pepTable[j][0]), )
 
-    peptide = ind[1].split('.')[1]
-    #peptide = pepTable[j][1].split('.')[1]
+    #peptide = ind[1].split('.')[1]
+    peptide = pepTable[j][1].split('.')[1]
+
+    #print(len(peptide))
 
     if '(' in peptide or 'Z' in peptide or 'B' in peptide or 'U' in peptide or 'X' in peptide:
         continue
 
-    charge = int(ind[4])
-    #charge = pepTable[j][4]
+    #charge = int(ind[4])
+    charge = pepTable[j][4]
 
     #print(pepID, ":" ,peptide)
 
@@ -157,15 +165,16 @@ for ind in pepTable:
 
 
         if charge == 2:
-            c2Arr.append(tmp)
+            c2Arr.append(copy.copy(tmp))
         elif charge == 3:
-            c3Arr.append(tmp)
+            c3Arr.append(copy.copy(tmp))
         else:
             cnt += 1
             #print("Charge:", charge, "invalid")
-
+    pepCnt += 1
+    if pepCnt % 1000 == 0:
+        print(int(pepCnt /1000), "---", time.time() - startTime, "---", psutil.virtual_memory())
 print("Done Pulling from Database, Saving Dataframes")
-
 
 c2DF = pd.DataFrame(c2Arr)
 c2DF = c2DF.sample(frac=1)
@@ -173,8 +182,12 @@ c2DF = c2DF.sample(frac=1)
 c3DF = pd.DataFrame(c3Arr)
 c3DF = c2DF.sample(frac=1)
 
+print(c2DF.head())
 
-
+"""
+for i in c2DF['peptide']:
+    print(i)
+"""
 """
 for i in df["ions"]:
     for key, value in i.items():

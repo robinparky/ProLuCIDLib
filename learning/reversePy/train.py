@@ -4,6 +4,7 @@ import struct
 import sys
 import numpy as np
 import pandas as pd
+import time
 
 import keras.backend as K
 from keras.layers.core import Dense, Dropout, Masking
@@ -22,10 +23,12 @@ else:
     BATCH_SIZE = int(sys.argv[2])
     EPOCHS = int(sys.argv[3])
 
-es = EarlyStopping(monitor='val_loss',
+es = EarlyStopping(monitor='loss',
                                    min_delta=0,
                                    patience = 2,
                                    verbose = 0, mode="auto")
+
+start = time.time()
 
 xTrain = np.load(INPUT_PATH + "XTrain.npy")
 yTrain = np.load(INPUT_PATH + "YTrain.npy")
@@ -51,4 +54,8 @@ model.fit(xTrain, yTrain,
           epochs = EPOCHS,
           callbacks=[es])
 
+print("Saving Model")
 model.save(INPUT_PATH + "model.h5")
+
+print("Done")
+print("Total Time: ", time.time() - start)
