@@ -109,7 +109,7 @@ for j in range(1000):
 
     #peptide = ind[1].split('.')[1]
     peptide = pepTable[j][1].split('.')[1]
-
+    peptideFull = pepTable[j][1]
     #print(len(peptide))
 
     if '(' in peptide or 'Z' in peptide or 'B' in peptide or 'U' in peptide or 'X' in peptide:
@@ -129,7 +129,8 @@ for j in range(1000):
 
     #Search returned list of matched spectrums for each peptide
     for element in spectrums:
-        ions = getIonMasses(peptide)
+        ionList = getIonMasses(peptide)
+        ions = {}
 
         spectrum = [] #Holder variable for spectrum
 
@@ -140,7 +141,7 @@ for j in range(1000):
         mzArr = list(convertFloat(element[1]))
         intArr = list(convertFloat(element[2]))
 
-        for key, massList in ions.items():
+        for key, massList in ionList.items():
             intensities = []
             for mass in massList:
                 #print(key,":" ,mass)
@@ -157,10 +158,14 @@ for j in range(1000):
                     intensities.append(0)
             ions[key] = intensities
 
-
         tmp = peptideTemp
+        #tmp['peptideFull'] = peptideFull
         tmp['peptide'] = peptide
+        #tmp['massList'] = ionList
         tmp['ions'] = ions
+        #tmp['retentionTime'] = element[4]
+        #tmp['scan'] = element[6]
+        #tmp['fileName'] = element[5]
         #print(tmp)
 
 
@@ -178,11 +183,29 @@ print("Done Pulling from Database, Saving Dataframes")
 
 c2DF = pd.DataFrame(c2Arr)
 c2DF = c2DF.sample(frac=1)
+"""
+for i in range(1000):
+    obj = c2DF.iloc[i]
+    print("----------------------------")
+    print(i, obj.peptideFull)
+    print("b1: ", obj.ions['b1'])
+    print(obj['massList']['b1'])
+    print("b2:" , obj.ions['b2'])
+    print(obj['massList']['b2'])
+    print("y1: ",obj.ions['y1'])
+    print(obj['massList']['y1'])
+    print("y2: ",obj.ions['y2'])
+    print(obj['massList']['y2'])
 
+    print("RT: ", obj.retentionTime)
+
+    print("Scan: ", obj['scan'])
+    print("FileName: ", obj['fileName'])
+    print("\n")
+
+"""
 c3DF = pd.DataFrame(c3Arr)
 c3DF = c2DF.sample(frac=1)
-
-print(c2DF.head())
 
 """
 for i in c2DF['peptide']:

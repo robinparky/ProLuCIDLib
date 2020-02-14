@@ -52,7 +52,7 @@ model.compile(
 model.fit(xTrain, yTrain,
           batch_size = BATCH_SIZE,
           epochs = EPOCHS,
-          callbacks=[es])
+          )#callbacks=[es])
 
 print("Saving Model")
 model.save(INPUT_PATH + "model.h5")

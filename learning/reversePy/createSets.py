@@ -44,18 +44,25 @@ def nlf_encode(seq):
     return e
 
 modPeptides = df['peptide'].copy()
+print(modPeptides.head())
 
 max_len = 0
 for i, pep in enumerate(modPeptides):
     if len(pep) > max_len:
         max_len = len(pep)
+print("Max Length Peptide: ", max_len)
+
+if max_len % 2 == 1:
+    max_len += 1
 
 for i, pep in enumerate(modPeptides):
+    #tmpCnt = max_len - len(pep)
     while len(pep) < max_len:
-        pep = pep + "0"
+        pep =pep + "0"
     modPeptides.iloc[i] = nlf_encode(pep)
 
-
+print(modPeptides.head())
+print(df.head())
 
 df = pd.concat([df, modPeptides], axis = 1)
 df.columns = ['sequence', 'ions', 'encodedSequence']
@@ -92,6 +99,7 @@ for i, ionDict in enumerate(ionsProcessed):
 
 df = pd.concat([df, ionsProcessed], axis = 1)
 df.columns = ['sequence', 'encodedSequence', 'ions', 'ionsProcessed']
+
 print(df.iloc[0]['sequence'])
 print(df.iloc[0]['encodedSequence'])
 print(df.iloc[0]['ions'])
