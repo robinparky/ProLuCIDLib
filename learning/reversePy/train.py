@@ -14,6 +14,7 @@ from keras.models import load_model as keras_load_model
 from keras.models import Sequential
 from keras.callbacks import EarlyStopping
 from keras.utils import multi_gpu_model
+start = time.time()
 
 if len(sys.argv) != 4:
     print("Error with command line inputs")
@@ -23,12 +24,15 @@ else:
     BATCH_SIZE = int(sys.argv[2])
     EPOCHS = int(sys.argv[3])
 
-es = EarlyStopping(monitor='loss',
-                                   min_delta=0,
-                                   patience = 2,
-                                   verbose = 0, mode="auto")
-
-start = time.time()
+def cosine_similarity(y_true, y_pred):
+    length = K.int_shape(y_pred)[1]
+    y_true = K.batch_flatten(y_true)
+    y_pred = K.batch_flatten(y_pred)
+    y_true = K.l2_normalize(y_true, axis=-1)
+    y_pred = K.l2_normalize(y_pred, axis=-1)
+    cos = K.sum(y_true * y_pred, axis=-1, keepdims=True)
+    result = -K.repeat_elements(cos, rep=length, axis=1)
+    return result
 
 xTrain = np.load(INPUT_PATH + "XTrain.npy")
 yTrain = np.load(INPUT_PATH + "YTrain.npy")
@@ -36,10 +40,11 @@ yTrain = np.load(INPUT_PATH + "YTrain.npy")
 fragmentShape =  yTrain.shape[1]
 
 model = Sequential()
-
 model.add(Bidirectional(LSTM(3, input_shape = xTrain.shape)))
-model.add(Dense(100))
+model.add(Dense(300))
+model.add(Dense(300))
 model.add(Dropout(0.5))
+model.add(Dense(300))
 #model.add(TimeDistributed(Dense(fragmentShape, activation='relu')))
 model.add(Dense(fragmentShape, activation='relu'))
 
@@ -47,12 +52,12 @@ model.add(Dense(fragmentShape, activation='relu'))
 
 model.compile(
     loss="mean_squared_error",
+    #optimizer="adam", metrics=[cosine_similarity])
     optimizer="adam")
 
 model.fit(xTrain, yTrain,
           batch_size = BATCH_SIZE,
-          epochs = EPOCHS,
-          )#callbacks=[es])
+          epochs = EPOCHS)
 
 print("Saving Model")
 model.save(INPUT_PATH + "model.h5")

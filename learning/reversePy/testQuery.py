@@ -14,7 +14,6 @@ if len(sys.argv) != 3:
     sys.exit(0)
 else:
     DATABASE_PATH = sys.argv[1]
-    OUTPUT_PATH = sys.argv[2]
 
 #Binary Search for elements in mass Spectra within Certain Tolerance
 def binarySearch (arr, l, r, x, tol):
@@ -92,140 +91,102 @@ specCnt = 0
 
 print ("Pulling Data from Database")
 c = conn.cursor()
-c.execute("SELECT * FROM PeptideTable")
-pepTable = c.fetchall()
+c.execute("select * from peptidetable")
+peptable = c.fetchall()
 
 cnt = 0
-pepCnt = 0
+pepcnt = 0
 
-startTime = time.time()
+starttime = time.time()
 
-#Iterate through table and pull information about each peptide and its scans
-for ind in pepTable:
-#for j in range(1000):
+#iterate through table and pull information about each peptide and its scans
+#for ind in peptable:
+for j in range(1000):
 
-    #Match peptide in table to peptide in Spectra Table
-    pepID = (str(ind[0]), )
-    #pepID = (str(pepTable[j][0]), )
+    #match peptide in table to peptide in spectra table
+    #pepid = (str(ind[0]), )
+    pepid = (str(peptable[j][0]), )
 
-    peptide = ind[1].split('.')[1]
-    #peptide = pepTable[j][1].split('.')[1]
+    #peptide = ind[1].split('.')[1]
+    peptide = peptable[j][1].split('.')[1]
 
-    peptideFull = ind[1]
-    #peptideFull = pepTable[j][1]
+    #peptidefull = ind[1]
+    peptidefull = peptable[j][1]
     #print(len(peptide))
 
-    if '(' in peptide or 'Z' in peptide or 'B' in peptide or 'U' in peptide or 'X' in peptide:
+    if '(' in peptide or 'z' in peptide or 'b' in peptide or 'u' in peptide or 'x' in peptide:
         continue
 
-    charge = int(ind[4])
-    #charge = pepTable[j][4]
+    #charge = int(ind[4])
+    charge = peptable[j][4]
 
-    #print(pepID, ":" ,peptide)
+    #print(pepid, ":" ,peptide)
 
-    peptideCnt += 1;
-    c.execute('SELECT *,rowid FROM SpectraTable WHERE peptideID=?', pepID)
+    peptidecnt += 1;
+    c.execute('select *,rowid from spectratable where peptideid=?', pepid)
     spectrums = c.fetchall()
 
-    #Make sure peptide has more than 50 spectrums for accurate training.
-    specCnt += 1 #increment peptide count
+    #make sure peptide has more than 50 spectrums for accurate training.
+    speccnt += 1 #increment peptide count
 
-    #Search returned list of matched spectrums for each peptide
+    #search returned list of matched spectrums for each peptide
     for element in spectrums:
-        ionList = getIonMasses(peptide)
+        ionlist = getionmasses(peptide)
 
         """
-        if peptide == "SLDGDLAGR":
-            print(ionList)
+        if peptide == "sldgdlagr":
+            print(ionlist)
             sys.exit()
         """
 
         ions = {}
 
-        spectrum = [] #Holder variable for spectrum
+        spectrum = [] #holder variable for spectrum
 
         #append the scan id
-        #idList.append(element[4])
-        #massList.append(float(element[3])/1000);
-        #Grab mzArr and intArr from
-        mzArr = list(convertFloat(element[1]))
-        intArr = list(convertFloat(element[2]))
+        #idlist.append(element[4])
+        #masslist.append(float(element[3])/1000);
+        #grab mzarr and intarr from
+        mzarr = list(convertfloat(element[1]))
+        intarr = list(convertfloat(element[2]))
 
-        for key, massList in ionList.items():
+        for key, masslist in ionlist.items():
             intensities = []
-            for mass in massList:
+            for mass in masslist:
                 #print(key,":" ,mass)
-                found = False
+                found = false
                 mass = mass
                 tolerance = 400 * mass/1000000
                 #cdistance = 10000
-                #cValue = 0
+                #cvalue = 0
 
-                result = binarySearch(mzArr, 0, len(mzArr) - 1, mass, tolerance)
+                result = binarysearch(mzarr, 0, len(mzarr) - 1, mass, tolerance)
                 if result != -1:
-                    intensities.append(intArr[result][0])
+                    intensities.append(intarr[result][0])
                 else:
                     intensities.append(0)
             ions[key] = intensities
 
-        tmp = peptideTemp
-        tmp['peptideFull'] = peptideFull
+        tmp = peptidetemp
+        tmp['peptidefull'] = peptidefull
         tmp['peptide'] = peptide
-        tmp['massList'] = ionList
+        tmp['masslist'] = ionlist
         tmp['ions'] = ions
-        tmp['retentionTime'] = element[4]
+        tmp['retentiontime'] = element[4]
         tmp['scan'] = element[6]
-        tmp['fileName'] = element[5]
+        tmp['filename'] = element[5]
         #print(tmp)
 
 
         if charge == 2:
-            c2Arr.append(copy.copy(tmp))
+            c2arr.append(copy.copy(tmp))
         elif charge == 3:
-            c3Arr.append(copy.copy(tmp))
+            c3arr.append(copy.copy(tmp))
         else:
             cnt += 1
-            #print("Charge:", charge, "invalid")
-    pepCnt += 1
-    if pepCnt % 1000 == 0:
-        print(int(pepCnt /1000), "---", time.time() - startTime, "---", psutil.virtual_memory())
-print("Done Pulling from Database, Saving Dataframes")
+            #print("charge:", charge, "invalid")
+    pepcnt += 1
+print("Done Binary Search Creation")
+print("Time Taken: ", time.time() - startTime)
 
-c2DF = pd.DataFrame(c2Arr)
-c2DF = c2DF.sample(frac=1)
-"""
-for i in range(1000):
-    obj = c2DF.iloc[i]
-    print("----------------------------")
-    print(i, obj.peptideFull)
-    print("b1: ", obj.ions['b1'])
-    print(obj['massList']['b1'])
-    print("b2:" , obj.ions['b2'])
-    print(obj['massList']['b2'])
-    print("y1: ",obj.ions['y1'])
-    print(obj['massList']['y1'])
-    print("y2: ",obj.ions['y2'])
-    print(obj['massList']['y2'])
 
-    print("RT: ", obj.retentionTime)
-
-    print("Scan: ", obj['scan'])
-    print("FileName: ", obj['fileName'])
-    print("\n")
-
-"""
-c3DF = pd.DataFrame(c3Arr)
-c3DF = c2DF.sample(frac=1)
-
-"""
-for i in c2DF['peptide']:
-    print(i)
-"""
-"""
-for i in df["ions"]:
-    for key, value in i.items():
-        print(value)
-"""
-
-c2DF.to_pickle(OUTPUT_PATH + "c2DF.pkl")
-c3DF.to_pickle(OUTPUT_PATH + "c3DF.pkl")

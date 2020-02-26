@@ -6,15 +6,6 @@ import numpy as np
 import pandas as pd
 import time
 
-import keras.backend as K
-from keras.layers.convolutional import Conv1D
-from keras.layers.core import Dense, Dropout, Masking
-from keras.layers.recurrent import LSTM
-from keras.layers.wrappers import Bidirectional, TimeDistributed
-from keras.models import load_model as keras_load_model
-from keras.models import Sequential
-
-
 
 if len(sys.argv) != 4:
     print("Error with command line inputs")
@@ -27,8 +18,9 @@ else:
 
 start = time.time()
 print("Encoding Sequences")
+
 #Encode Sequence
-df = pd.read_pickle(INPUT_PATH)
+df = pd.read_pickle(INPUT_PATH).reindex()
 #read the matrix a csv file on github
 nlf = pd.read_csv('NLF.csv',index_col=0)
 
@@ -44,8 +36,10 @@ def nlf_encode(seq):
     return e
 
 modPeptides = df['peptide'].copy()
-print(modPeptides.head())
+#print(modPeptides.head())
 
+
+"""
 max_len = 0
 for i, pep in enumerate(modPeptides):
     if len(pep) > max_len:
@@ -54,35 +48,61 @@ print("Max Length Peptide: ", max_len)
 
 if max_len % 2 == 1:
     max_len += 1
+"""
+
+MAX_LEN = 50
+
+keyDict = {}
 
 for i, pep in enumerate(modPeptides):
+    original = pep;
     #tmpCnt = max_len - len(pep)
-    while len(pep) < max_len:
-        pep =pep + "0"
-    modPeptides.iloc[i] = nlf_encode(pep)
+    if pep not in keyDict:
+        if len(pep) > MAX_LEN:
+            df = df.drop[i]
+            modPeptides = modPeptides.drop[i]
+            continue
+        while len(pep) < MAX_LEN:
+            pep =pep + "0"
+        encodedPeptide = nlf_encode(pep)
+        modPeptides.iloc[i] = encodedPeptide
+        keyDict[original] = encodedPeptide
+    else:
+        modPeptides.iloc[i] = keyDict[pep]
 
-print(modPeptides.head())
-print(df.head())
+
+    """
+    if i%100 == 0:
+        print(i)
+    """
+#print(modPeptides.head())
+#print(df.columns)
 
 df = pd.concat([df, modPeptides], axis = 1)
-df.columns = ['sequence', 'ions', 'encodedSequence']
-df = df[['sequence', 'encodedSequence', 'ions']]
-df.head()
+
+#print(df.head())
+df.columns = ['peptide', 'ions', 'peptideFull', 'massList', 'retentionTime', 'scan',
+               'fileName', 'encodedSequence']
+df = df[['peptide','encodedSequence', 'ions', 'peptideFull', 'massList', 'retentionTime', 'scan',
+               'fileName']]
+#print(df.head())
 #print(np.array(df['encodedSequence'].iloc[0]).shape)
 
 
 # In[9]:
-
+print("Done")
+print("Elapsed Time: ", time.time() - start)
 print("Processing Ions")
 ionsProcessed = df['ions'].copy()
 
-
+"""
 maxCnt = 0
 for i, ionDict in enumerate(ionsProcessed):
     for key,value in ionDict.items():
         if len(value) > maxCnt:
             maxCnt = len(value)
-print(maxCnt)
+"""
+#print(maxCnt)
 
 for i, ionDict in enumerate(ionsProcessed):
     container  = []
@@ -90,7 +110,7 @@ for i, ionDict in enumerate(ionsProcessed):
         ionList = []
         for j in value:
             ionList.append(j)
-        while len(ionList) < maxCnt:
+        while len(ionList) < MAX_LEN:
             ionList.append(0)
         container.append(np.array(ionList))
     ionsProcessed.iloc[i] = np.array(container)
@@ -98,15 +118,23 @@ for i, ionDict in enumerate(ionsProcessed):
 #ionsProcessed.head()
 
 df = pd.concat([df, ionsProcessed], axis = 1)
-df.columns = ['sequence', 'encodedSequence', 'ions', 'ionsProcessed']
 
-print(df.iloc[0]['sequence'])
-print(df.iloc[0]['encodedSequence'])
-print(df.iloc[0]['ions'])
-print(df.iloc[0]['ionsProcessed'])
+df.columns = ['peptide','encodedSequence', 'ions', 'peptideFull', 'massList', 'retentionTime', 'scan',
+               'fileName', 'ionsProcessed']
+df = df[['peptide','encodedSequence', 'ions','ionsProcessed', 'peptideFull', 'massList', 'retentionTime', 'scan',
+               'fileName']]
+"""
+print("Printing")
+print(df.iloc[len(df)-1]['peptide'])
+print(df.iloc[len(df)-1]['encodedSequence'])
+print(df.iloc[len(df)-1]['ions'])
+print(df.iloc[len(df)-1]['ionsProcessed'])
+"""
 
-
+print("Done")
+print("Elapsed Time: ", time.time() - start)
 print("Creating Training/Testing Sets")
+
 
 
 
@@ -118,6 +146,7 @@ fragmentShape =  outputArr.shape[1]*outputArr.shape[2]
 
 print("Sequence Array Shape: ", inputArr.shape)
 print("ION Array  Shape: ", outputArr.shape)
+
 
 inputArr = np.reshape(inputArr, (inputArr.shape[0], 1, inputArr.shape[1]))
 outputArr = np.reshape(outputArr, (outputArr.shape[0],fragmentShape))
@@ -136,6 +165,13 @@ print("XTest Shape: ", xTest.shape)
 print("YTest Shape: ", yTest.shape)
 print("\nDone ")
 print("Time Taken: ", time.time() - start)
+
+
+dfTrain = df.iloc[:splitIdx]
+dfTest = df.iloc[splitIdx:]
+
+dfTrain.to_pickle(OUTPUT_PATH + "dfTrain.pkl")
+dfTest.to_pickle(OUTPUT_PATH + "dfTest.pkl")
 
 np.save(OUTPUT_PATH + "XTrain.npy", xTrain)
 np.save(OUTPUT_PATH + "YTrain.npy", yTrain)
