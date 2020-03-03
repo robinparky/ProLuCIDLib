@@ -5,6 +5,7 @@ import sqlite3
 import numpy as np
 import pandas as pd
 import copy
+import os
 
 import keras.backend as K
 from keras.layers.convolutional import Conv1D
@@ -14,7 +15,10 @@ from keras.layers.wrappers import Bidirectional, TimeDistributed
 from keras.models import load_model as keras_load_model
 from keras.models import Sequential
 
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 BUFFERSIZE = 10000
+MAX_LEN = 50
 
 def nlf_encode(seq):
     x = pd.DataFrame([nlf[i] for i in seq]).reset_index(drop=True)
@@ -43,19 +47,25 @@ for i in range(1, len(sys.argv)):
         print(sys.argv[i] + fname)
 """
 
-if len(sys.argv) != 4:
+if len(sys.argv) != 3:
     print("Error with command line inputs")
     sys.exit(0)
 else:
-    INPUT_PATH = sys.argv[1]
-    MODEL_PATH = sys.argv[2]
-    OUTPUT_PATH = sys.argv[3]
+    MODEL_PATH = sys.argv[1]
+    OUTPUT_PATH = sys.argv[2]
 
-fileList = ["/data/tyrande/data/1.txt" ,"/data/tyrande/data/2.txt" ,"/data/tyrande/data/3.txt" ,"/data/tyrande/data/4.txt" ]
+#fileList = ["/data/tyrande/data/1.txt" ,"/data/tyrande/data/3.txt" ]
+fileList = ["/data/tyrande/data/testPeptideListNotFullAtts.txt"]
+
+model = keras_load_model(MODEL_PATH)
+nlf = pd.read_csv('../NLF.csv',index_col=0)
 
 conn = sqlite3.connect(OUTPUT_PATH)
 c = conn.cursor()
 c.execute("CREATE TABLE IF NOT EXISTS predictions(Sequence TEXT,\
+                                                  Protein_ID TEXT,\
+                                                  Offset TEXT,\
+                                                  Length TEXT,\
                                                   PrecursorMZ float,\
                                                   Retention_Time float,\
                                                   Charge integer,\
@@ -72,99 +82,99 @@ c.execute("CREATE TABLE IF NOT EXISTS predictions(Sequence TEXT,\
                                                   yo1 TEXT,\
                                                   yo2 TEXT\
                                                   )")
-
 peptideList = []
+itemArray = []
 lineCounter = 0
+
+#peptideSeqString, proteinId, offset, length
 
 for fname in fileList:
     with open(fname) as f:
-        content = f.readlines()
-
         for line in f:
-            peptideList.append(line.split()[0])
+            split = line.split()
+            sequence = split[0]
+            proteinId = split[1]
+            offset = split[2]
+            length = split[3]
+
+            peptideList.append(sequence)
+            itemArray.append([proteinId, offset, length])
+
+            lineCounter += 1
+
             if lineCounter % BUFFERSIZE == 0:
-    peptideList = peptideList + [x.split()[0] for x in content]
+                #read the matrix a csv file on github
 
-df = pd.DataFrame(peptideList,columns=['peptide'])
+                keyDict = {}
 
-#read the matrix a csv file on github
-nlf = pd.read_csv('../NLF.csv',index_col=0)
+                peptideOrignalList = []
+                npArray = []
 
+                for i, pep in enumerate(peptideList):
+                    original = pep;
+                    if len(pep) >= MAX_LEN:
+                        continue
+                    while len(pep) < MAX_LEN:
+                        pep =pep + "0"
+                    try:
+                        encodedPeptide = nlf_encode(pep)
+                    except:
+                        continue
+                    npArray.append(encodedPeptide)
 
-modPeptides = df['peptide'].copy()
+                npArray = np.array(npArray)
+                npArray = np.reshape(npArray, (npArray.shape[0], 1, npArray.shape[1]))
 
-MAX_LEN = 50
+                predictions = model.predict(npArray)
 
-keyDict = {}
+                ionList = ["b1", "b2", "bn1","bn2", "bo1", "bo2", "y1", "y2", "yn1", "yn2", "yo1", "yo2" ]
 
-peptideList = []
-npArray = []
+                for i in range(len(npArray)):
+                    peptide = peptideList[i]
 
+                    #Size of predictionArray split into the 12 sections
+                    split = len(predictions[0]) / 12
 
-for i, pep in enumerate(modPeptides):
-    original = pep;
-    if len(pep) >= MAX_LEN:
-        continue
-    while len(pep) < MAX_LEN:
-        pep =pep + "0"
-    encodedPeptide = nlf_encode(pep)
+                    #The size of the partition without padding.
+                    splitEnd = len(peptideList[0]) - 1
 
-    peptideList.append(original)
-    npArray.append(encodedPeptide)
+                    ionObj = {}
 
-peptideList = np.array(peptideList)
-npArray = np.array(npArray)
+                    splitCnt = 0
+                    cnt = 0
+                    while splitCnt <12:
+                        done = False
+                        ionArray = []
+                        while True:
+                            if done == False:
+                                ionArray.append(str(predictions[i][cnt]))
+                            cnt += 1
+                            if cnt % split == 0:
+                                break
+                            elif cnt % split > splitEnd:
+                                done = True
+                        ionObj[ionList[splitCnt]] = ','.join(copy.copy(ionArray))
+                        splitCnt += 1
 
-npArray = np.reshape(npArray, (npArray.shape[0], 1, npArray.shape[1]))
-
-
-
-
-model = keras_load_model(MODEL_PATH)
-
-
-predictions = model.predict(predictArray)
-
-ionList = ["b1", "b2", "bn1","bn2", "bo1", "bo2", "y1", "y2", "yn1", "yn2", "yo1", "yo2" ]
-
-for i in range(len(predictArray)):
-    peptide = peptideList[i]
-
-    #Size of predictionArray split into the 12 sections
-    split = len(predictions[0]) / 12
-
-    #The size of the partition without padding.
-    splitEnd = len(peptideList[0]) - 1
-
-    ionObj = {}
-
-    splitCnt = 0
-    cnt = 0
-    while splitCnt <12:
-        done = False
-        ionArray = []
-        while True:
-            if done == False:
-                ionArray.append(str(predictions[i][cnt]))
-            cnt += 1
-            if cnt % split == 0:
-                break
-            elif cnt % split > splitEnd:
-                done = True
-        ionObj[ionList[splitCnt]] = ','.join(copy.copy(ionArray))
-        splitCnt += 1
-
-    c.execute("INSERT INTO predictions(Sequence, PrecursorMZ, Charge, Retention_Time,\
-                                       b1,b2,bn1,bn2,bo1,bo2,y1,y2,yn1,yn2,yo1,yo2)\
-                                       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", \
-                                       (peptide, 0, 2, 0, \
-                                       ionObj["b1"], ionObj["b2"],\
-                                       ionObj["bn1"], ionObj["bn2"],\
-                                       ionObj["bo1"], ionObj["bo2"],\
-                                       ionObj["y1"], ionObj["y2"],\
-                                       ionObj["yn1"], ionObj["yn2"],\
-                                       ionObj["yo1"], ionObj["yo2"]))
-    conn.commit()
+                    c.execute("INSERT INTO predictions(Sequence, Protein_ID, Offset, Length,\
+                                                       PrecursorMZ, Charge, Retention_Time,\
+                                                       b1,b2,bn1,bn2,bo1,bo2,y1,y2,yn1,yn2,yo1,yo2)\
+                                                       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", \
+                                                       (peptide, itemArray[0][0], itemArray[0][1],\
+                                                       itemArray[0][2], 0, 2, 0, \
+                                                       ionObj["b1"], ionObj["b2"],\
+                                                       ionObj["bn1"], ionObj["bn2"],\
+                                                       ionObj["bo1"], ionObj["bo2"],\
+                                                       ionObj["y1"], ionObj["y2"],\
+                                                       ionObj["yn1"], ionObj["yn2"],\
+                                                       ionObj["yo1"], ionObj["yo2"]))
+                    conn.commit()
+                    """
+                    if lineCounter > 25000:
+                        print("Done, Elapsed Time:", time.time() - start)
+                        sys.exit()
+                    """
+        peptideList = []
 
 conn.close()
 print("Done, Elapsed Time:", time.time() - start)
