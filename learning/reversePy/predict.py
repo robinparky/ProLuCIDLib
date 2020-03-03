@@ -43,15 +43,20 @@ yTest = np.load(INPUT_PATH + "YTest.npy")
 #model = keras_load_model(INPUT_PATH + "model.h5", custom_objects={'cosine_similarity': cosine_similarity})
 model = keras_load_model(INPUT_PATH + "model.h5")
 
-print(xTest.shape)
-print(yTest.shape)
-print(df.shape)
 
-sys.exit()
 
 predictions = model.predict(xTest)
 
 ionList = ["b1", "b2", "bn1","bn2", "bo1", "bo2", "y1", "y2", "yn1", "yn2", "yo1", "yo2" ]
+
+"""
+for i, val in enumerate(predictions):
+    printResults(yTest[i], val)
+"""
+
+print(xTest.shape)
+print(yTest.shape)
+print(df.shape)
 
 jsonArray = []
 tmpPred = {}
