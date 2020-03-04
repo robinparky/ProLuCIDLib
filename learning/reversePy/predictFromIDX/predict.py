@@ -92,6 +92,7 @@ for fname in fileList:
     with open(fname) as f:
         for line in f:
             split = line.split()
+            #print(split)
             sequence = split[0]
             proteinId = split[1]
             offset = split[2]
@@ -154,7 +155,7 @@ for fname in fileList:
                     c.execute("INSERT INTO predictions(Sequence, Protein_ID, Offset, Length,\
                                                        PrecursorMZ, Charge, Retention_Time,\
                                                        b1,b2,bn1,bn2,bo1,bo2,y1,y2,yn1,yn2,yo1,yo2)\
-                                                       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", \
+                                                       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", \
                                                        (peptide, itemArray[0][0], itemArray[0][1],\
                                                        itemArray[0][2], 0, 2, 0, \
                                                        ionObj["b1"], ionObj["b2"],\
@@ -164,21 +165,13 @@ for fname in fileList:
                                                        ionObj["yn1"], ionObj["yn2"],\
                                                        ionObj["yo1"], ionObj["yo2"]))
                     conn.commit()
-                    """
-                    if lineCounter > 25000:
-                        print("Done, Elapsed Time:", time.time() - start)
-                        sys.exit()
-                    """
-        peptideList = []
-        itemArray = []
+                print(lineCounter)
+                if lineCounter > 25000:
+                    print("Done, Elapsed Time:", time.time() - start)
+                    sys.exit()
+
+                peptideList = []
+                itemArray = []
 
 conn.close()
 print("Done, Elapsed Time:", time.time() - start)
-
-"""
-print("Saving Arrays")
-
-np.save("peptideList.npy", peptideList)
-np.save("encodedPeptideList.npy", npArray)
-print("Done, Elapsed Time:", time.time() - start)
-"""
