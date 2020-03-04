@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import copy
 import os
+from multiprocessing.dummy import Pool as ThreadPool
 
 import keras.backend as K
 from keras.layers.convolutional import Conv1D
@@ -16,9 +17,9 @@ from keras.models import load_model as keras_load_model
 from keras.models import Sequential
 
 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 BUFFERSIZE = 10000
 MAX_LEN = 50
+THREADS = 5
 
 def nlf_encode(seq):
     x = pd.DataFrame([nlf[i] for i in seq]).reset_index(drop=True)
@@ -36,16 +37,71 @@ def cosine_similarity(y_true, y_pred):
     result = -K.repeat_elements(cos, rep=length, axis=1)
     return result
 
-start = time.time()
+def encodeSequences(peptide):
 
-"""
-fileList = []
-for i in range(1, len(sys.argv)):
-    os.chdir(sys.argv[i])
-    for fname in glob.glob("*.idx"):
-        fileList.append(sys.argv[i] + fname)
-        print(sys.argv[i] + fname)
-"""
+    original = pep;
+    if len(pep) >= MAX_LEN:
+        continue
+    while len(pep) < MAX_LEN:
+        pep =pep + "0"
+    try:
+        encodedPeptide = nlf_encode(pep)
+    except:
+        continue
+
+    return encodedPeptide
+
+zip(peptideList, predictions, npArray, itemArray)
+def parsePredictions(peptideArray):
+
+    peptide = peptideArray[0]
+    prediction = peptideArray[1]
+    npArray = peptideArray[2]
+    itemArray = peptideArray[3]
+
+    ionList = ["b1", "b2", "bn1","bn2", "bo1", "bo2", "y1", "y2", "yn1", "yn2", "yo1", "yo2" ]
+
+    #Size of predictionArray split into the 12 sections
+    split = len(prediction) / 12
+
+    #The size of the partition without padding.
+    splitEnd = len(peptide) - 1
+
+    ionObj = {}
+
+    splitCnt = 0
+    cnt = 0
+    while splitCnt <12:
+        done = False
+        ionArray = []
+        while True:
+            if done == False:
+                ionArray.append(str(predictions[i][cnt]))
+            cnt += 1
+            if cnt % split == 0:
+                break
+            elif cnt % split > splitEnd:
+                done = True
+        ionObj[ionList[splitCnt]] = ','.join(copy.copy(ionArray))
+        splitCnt += 1
+
+    commandString = str("INSERT INTO predictions(Sequence, Protein_ID, Offset, Length,\
+                                       PrecursorMZ, Charge, Retention_Time,\
+                                       b1,b2,bn1,bn2,bo1,bo2,y1,y2,yn1,yn2,yo1,yo2)\
+                                       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+
+    commandVals =  (peptide, itemArray[0], itemArray[1],\
+                       itemArray[2], 0, 2, 0, \
+                       ionObj["b1"], ionObj["b2"],\
+                       ionObj["bn1"], ionObj["bn2"],\
+                       ionObj["bo1"], ionObj["bo2"],\
+                       ionObj["y1"], ionObj["y2"],\
+                       ionObj["yn1"], ionObj["yn2"],\
+                       ionObj["yo1"], ionObj["yo2"]))
+
+    return (commandString,commandVals)
+
+start = time.time()
 
 if len(sys.argv) != 3:
     print("Error with command line inputs")
@@ -55,7 +111,7 @@ else:
     OUTPUT_PATH = sys.argv[2]
 
 #fileList = ["/data/tyrande/data/1.txt" ,"/data/tyrande/data/3.txt" ]
-fileList = ["/data/tyrande/data/test.txt"]
+fileList = ["/data/tyrande/data/testPeptideListNotFullAtts.txt"]
 
 model = keras_load_model(MODEL_PATH)
 nlf = pd.read_csv('../NLF.csv',index_col=0)
@@ -86,8 +142,12 @@ peptideList = []
 itemArray = []
 lineCounter = 0
 
-#peptideSeqString, proteinId, offset, length
 
+EncodePool = ThreadPool(THREADS)
+PredictPool = ThreadPool(THREADS)
+CommandPool = ThreadPool(THREADS)
+
+#peptideSeqString, proteinId, offset, length
 for fname in fileList:
     with open(fname) as f:
         for line in f:
@@ -103,74 +163,23 @@ for fname in fileList:
             lineCounter += 1
 
             if lineCounter % BUFFERSIZE == 0:
-
-                npArray = []
-                for i, pep in enumerate(peptideList):
-                    original = pep;
-                    if len(pep) >= MAX_LEN:
-                        continue
-                    while len(pep) < MAX_LEN:
-                        pep =pep + "0"
-                    try:
-                        encodedPeptide = nlf_encode(pep)
-                    except:
-                        continue
-                    npArray.append(encodedPeptide)
-
+                npArray = EncodePool.map(encodeSequences, peptideList)
                 npArray = np.array(npArray)
                 npArray = np.reshape(npArray, (npArray.shape[0], 1, npArray.shape[1]))
+                predictions = PredictPool.map(model.predict, npArray)
 
-                predictions = model.predict(npArray)
+                sqlCommands = CommandPool.map(parsePredictions, zip(peptideList, predictions, npArray, itemArray))
 
-                ionList = ["b1", "b2", "bn1","bn2", "bo1", "bo2", "y1", "y2", "yn1", "yn2", "yo1", "yo2" ]
-
-                for i in range(len(npArray)):
-                    peptide = peptideList[i]
-
-                    #Size of predictionArray split into the 12 sections
-                    split = len(predictions[0]) / 12
-
-                    #The size of the partition without padding.
-                    splitEnd = len(peptideList[0]) - 1
-
-                    ionObj = {}
-
-                    splitCnt = 0
-                    cnt = 0
-                    while splitCnt <12:
-                        done = False
-                        ionArray = []
-                        while True:
-                            if done == False:
-                                ionArray.append(str(predictions[i][cnt]))
-                            cnt += 1
-                            if cnt % split == 0:
-                                break
-                            elif cnt % split > splitEnd:
-                                done = True
-                        ionObj[ionList[splitCnt]] = ','.join(copy.copy(ionArray))
-                        splitCnt += 1
-
-                    c.execute("INSERT INTO predictions(Sequence, Protein_ID, Offset, Length,\
-                                                       PrecursorMZ, Charge, Retention_Time,\
-                                                       b1,b2,bn1,bn2,bo1,bo2,y1,y2,yn1,yn2,yo1,yo2)\
-                                                       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", \
-                                                       (peptide, itemArray[0][0], itemArray[0][1],\
-                                                       itemArray[0][2], 0, 2, 0, \
-                                                       ionObj["b1"], ionObj["b2"],\
-                                                       ionObj["bn1"], ionObj["bn2"],\
-                                                       ionObj["bo1"], ionObj["bo2"],\
-                                                       ionObj["y1"], ionObj["y2"],\
-                                                       ionObj["yn1"], ionObj["yn2"],\
-                                                       ionObj["yo1"], ionObj["yo2"]))
+                for cmd in sqlCommands:
+                    c.execute(cmd[0], cmd[1])
                     conn.commit()
-                    """
-                    if lineCounter > 25000:
-                        print("Done, Elapsed Time:", time.time() - start)
-                        sys.exit()
-                    """
-        peptideList = []
-        itemArray = []
+
+        if lineCounter > 25000:
+            print("Done, Elapsed Time:", time.time() - start)
+            sys.exit()
+
+    peptideList = []
+    itemArray = []
 
 conn.close()
 print("Done, Elapsed Time:", time.time() - start)
