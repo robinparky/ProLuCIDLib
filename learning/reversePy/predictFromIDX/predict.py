@@ -17,7 +17,7 @@ from keras.models import Sequential
 
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-BUFFERSIZE = 10000
+BUFFERSIZE = 100000
 MAX_LEN = 50
 
 def nlf_encode(seq):
@@ -166,6 +166,9 @@ for fname in fileList:
                                                        ionObj["yo1"], ionObj["yo2"]))
                     conn.commit()
                 print(lineCounter)
+                print("Done, Elapsed Time:", time.time() - start)
+                sys.exit()
+
                 if lineCounter > 25000:
                     print("Done, Elapsed Time:", time.time() - start)
                     sys.exit()

@@ -18,9 +18,9 @@ from keras.models import Sequential
 
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-BUFFERSIZE = 1000
+BUFFERSIZE = 100000
 MAX_LEN = 50
-THREADS = 5
+THREADS = 20
 
 def nlf_encode(seq):
     x = pd.DataFrame([nlf[i] for i in seq]).reset_index(drop=True)
@@ -40,13 +40,13 @@ def cosine_similarity(y_true, y_pred):
 
 def encodeSequences(pep):
     if len(pep) >= MAX_LEN:
-        return
+        return [-1]
     while len(pep) < MAX_LEN:
         pep =pep + "0"
     try:
         encodedPeptide = nlf_encode(pep)
     except:
-        return
+        return [-1]
 
     return encodedPeptide
 
@@ -109,7 +109,7 @@ else:
     OUTPUT_PATH = sys.argv[2]
 
 #fileList = ["/data/tyrande/data/1.txt" ,"/data/tyrande/data/3.txt" ]
-fileList = ["/data/tyrande/data/test.txt"]
+fileList = ["/data/tyrande/data/1.txt"]
 
 model = keras_load_model(MODEL_PATH)
 nlf = pd.read_csv('../NLF.csv',index_col=0)
@@ -149,6 +149,8 @@ for fname in fileList:
     with open(fname) as f:
         for line in f:
             split = line.split()
+            if len(split) != 4:
+                continue
             sequence = split[0]
             proteinId = split[1]
             offset = split[2]
@@ -161,11 +163,20 @@ for fname in fileList:
 
             if lineCounter % BUFFERSIZE == 0:
                 npArray = EncodePool.map(encodeSequences, peptideList)
-                npArray = np.array(npArray)
-                for i in npArray:
-                    print(len(i))
-                print(npArray.shape)
+
+                npArray = np.array([np.array(i) for i in npArray])
+
+                deleteList = []
+                for i, ele in enumerate(npArray):
+                    if ele[0] == -1:
+                        deleteList.append(i)
+
+                if len(deleteList) > 0:
+                    npArray = np.delete(npArray, deleteList)
+                    peptideList = np.delete(peptideList, deleteList)
+                npArray = np.array([np.array(i) for i in npArray])
                 npArray = np.reshape(npArray, (npArray.shape[0], 1, npArray.shape[1]))
+
                 predictions = model.predict(npArray)
 
                 sqlCommands = CommandPool.map(parsePredictions, zip(peptideList, predictions, npArray, itemArray))
@@ -177,7 +188,10 @@ for fname in fileList:
                 peptideList = []
                 itemArray = []
                 print(lineCounter)
-                if lineCounter > 2500:
+                print("Done, Elapsed Time:", time.time() - start)
+                sys.exit()
+
+                if lineCounter > 25000:
                     print("Done, Elapsed Time:", time.time() - start)
                     sys.exit()
 
