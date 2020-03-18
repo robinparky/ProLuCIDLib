@@ -133,36 +133,49 @@ print(df.iloc[len(df)-1]['ionsProcessed'])
 
 print("Done")
 print("Elapsed Time: ", time.time() - start)
+print("\n")
+
 print("Creating Training/Testing Sets")
-
-
-
 
 inputArr = np.array(df['encodedSequence'])
 inputArr = np.array([np.array(i) for i in inputArr])
-outputArr = np.array(df['ionsProcessed'])
-outputArr = np.array([np.array(i) for i in outputArr])
-fragmentShape =  outputArr.shape[1]*outputArr.shape[2]
+
+outputArrMs2 = np.array(df['ionsProcessed'])
+outputArrMs2 = np.array([np.array(i) for i in outputArrMs2])
+
+outputArrRt = np.array(df['retentionTime'])
+
+fragmentShape =  outputArrMs2.shape[1]*outputArrMs2.shape[2]
 
 print("Sequence Array Shape: ", inputArr.shape)
-print("ION Array  Shape: ", outputArr.shape)
-
+print("ION Array  Shape: ", outputArrMs2.shape)
+print("Retention Array Shape: ", outputArrRt.shape)
+print("\n")
 
 inputArr = np.reshape(inputArr, (inputArr.shape[0], 1, inputArr.shape[1]))
-outputArr = np.reshape(outputArr, (outputArr.shape[0],fragmentShape))
+outputArrMs2 = np.reshape(outputArrMs2, (outputArrMs2.shape[0],fragmentShape))
 
 splitIdx = int(len(inputArr) * TRAIN_SET_PERCENTAGE)
 
 xTrain = inputArr[:splitIdx]
 xTest = inputArr[splitIdx:]
 
-yTrain = outputArr[:splitIdx]
-yTest = outputArr[splitIdx:]
+yTrainMs2 = outputArrMs2[:splitIdx]
+yTestMs2 = outputArrMs2[splitIdx:]
+
+yTrainRt = outputArrRt[:splitIdx]
+yTestRt = outputArrRt[splitIdx:]
+
 
 print("XTrain Shape: ", xTrain.shape)
-print("YTrain Shape: ", yTrain.shape)
+print("YTrainMs2 Shape: ", yTrainMs2.shape)
+print("YTrainRt Shape: ", yTrainRt.shape)
+print("\n")
+
 print("XTest Shape: ", xTest.shape)
-print("YTest Shape: ", yTest.shape)
+print("YTestMs2 Shape: ", yTestMs2.shape)
+print("YTestRt Shape: ", yTestRt.shape)
+
 print("\nDone ")
 print("Time Taken: ", time.time() - start)
 
@@ -174,6 +187,10 @@ dfTrain.to_pickle(OUTPUT_PATH + "dfTrain.pkl")
 dfTest.to_pickle(OUTPUT_PATH + "dfTest.pkl")
 
 np.save(OUTPUT_PATH + "XTrain.npy", xTrain)
-np.save(OUTPUT_PATH + "YTrain.npy", yTrain)
+np.save(OUTPUT_PATH + "YTrainMS2.npy", yTrainMs2)
+np.save(OUTPUT_PATH + "YTrainRt.npy", yTrainRt)
+
 np.save(OUTPUT_PATH + "XTest.npy", xTest)
-np.save(OUTPUT_PATH + "YTest.npy", yTest)
+np.save(OUTPUT_PATH + "YTestMs2.npy", yTestMs2)
+np.save(OUTPUT_PATH + "YTestRt.npy", yTestRt)
+

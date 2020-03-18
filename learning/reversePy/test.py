@@ -35,77 +35,139 @@ if len(sys.argv) != 2:
     sys.exit(0)
 else:
     INPUT_PATH = sys.argv[1]
+    #PRED_TYPE = 0 #Ms2
+    PRED_TYPE = 1 #Retention Time
 
 df = pd.read_pickle(INPUT_PATH + "dfTest.pkl").reindex()
 
 xTest = np.load(INPUT_PATH + "XTest.npy")
-yTest = np.load(INPUT_PATH + "YTest.npy")
-#model = keras_load_model(INPUT_PATH + "model.h5", custom_objects={'cosine_similarity': cosine_similarity})
-model = keras_load_model(INPUT_PATH + "model.h5")
+if PRED_TYPE = 0:
+    yTest = np.load(INPUT_PATH + "YTestMs2.npy")
+    #model = keras_load_model(INPUT_PATH + "model.h5", custom_objects={'cosine_similarity': cosine_similarity})
 
-print(xTest.shape)
-print(yTest.shape)
-print(df.shape)
+    predictions = model.predict(xTest)
 
-sys.exit()
+    ionList = ["b1", "b2", "bn1","bn2", "bo1", "bo2", "y1", "y2", "yn1", "yn2", "yo1", "yo2" ]
 
-predictions = model.predict(xTest)
+    jsonArray = []
+    tmpPred = {}
 
-ionList = ["b1", "b2", "bn1","bn2", "bo1", "bo2", "y1", "y2", "yn1", "yn2", "yo1", "yo2" ]
+    jsonArrayExp = []
+    tmpPredExp = {}
 
-jsonArray = []
-tmpPred = {}
+    for i in range(len(yTest)):
+        target = df.iloc[i]
+        print(target["peptideFull"], target["scan"], target["fileName"])
+        print(target["ions"])
+        split = len(yTest[0]) / 12
+        splitEnd = len(target["ions"]["b1"]) - 1
+        #print(split)
 
-jsonArrayExp = []
-tmpPredExp = {}
+        tmpPred['peptide'] = target["peptideFull"].split('.')[1]
 
-for i in range(len(yTest)):
-    target = df.iloc[i]
-    print(target["peptideFull"], target["scan"], target["fileName"])
-    print(target["ions"])
-    split = len(yTest[0]) / 12
-    splitEnd = len(target["ions"]["b1"]) - 1
-    #print(split)
+        ionObj = {}
+        ionObjExp = {}
 
-    tmpPred['peptide'] = target["peptideFull"].split('.')[1]
+        splitCnt = 0
+        cnt = 0
+        while splitCnt <12:
+            print(ionList[splitCnt], "----------------")
+            done = False
+            ionArray = []
+            ionArrayExp = []
+            while True:
+                if done == False:
+                    print(yTest[i][cnt], "\t" ,predictions[i][cnt])
 
-    ionObj = {}
-    ionObjExp = {}
+                    ionArray.append(float(predictions[i][cnt]))
+                    ionArrayExp.append(float(yTest[i][cnt]))
+                cnt += 1
+                if cnt % split == 0:
+                    break
+                elif cnt % split > splitEnd:
+                    done = True
+            ionObj[ionList[splitCnt]] = copy.copy(ionArray)
+            ionObjExp[ionList[splitCnt]] = copy.copy(ionArrayExp)
 
-    splitCnt = 0
-    cnt = 0
-    while splitCnt <12:
-        print(ionList[splitCnt], "----------------")
-        done = False
-        ionArray = []
-        ionArrayExp = []
-        while True:
-            if done == False:
-                print(yTest[i][cnt], "\t" ,predictions[i][cnt])
+            splitCnt += 1
+        tmpPred['ions'] = copy.copy(ionObj)
+        tmpPredExp['ions'] = copy.copy(ionObjExp)
+        jsonArray.append(copy.copy(tmpPred))
+        jsonArrayExp.append(copy.copy(tmpPredExp))
 
-                ionArray.append(float(predictions[i][cnt]))
-                ionArrayExp.append(float(yTest[i][cnt]))
-            cnt += 1
-            if cnt % split == 0:
-                break
-            elif cnt % split > splitEnd:
-                done = True
-        ionObj[ionList[splitCnt]] = copy.copy(ionArray)
-        ionObjExp[ionList[splitCnt]] = copy.copy(ionArrayExp)
+    print("Done")
 
-        splitCnt += 1
-    tmpPred['ions'] = copy.copy(ionObj)
-    tmpPredExp['ions'] = copy.copy(ionObjExp)
-    jsonArray.append(copy.copy(tmpPred))
-    jsonArrayExp.append(copy.copy(tmpPredExp))
+    print(jsonArray[0], jsonArray[1])
+    print(jsonArrayExp[0], jsonArrayExp[1])
 
-print("Done")
+    with open('predictions.json', 'w', encoding='utf-8') as f:
+        json.dump(jsonArray, f, ensure_ascii=False, indent=4)
 
-print(jsonArray[0], jsonArray[1])
-print(jsonArrayExp[0], jsonArrayExp[1])
+    with open('experimental.json', 'w', encoding='utf-8') as g:
+        json.dump(jsonArrayExp, g, ensure_ascii=False, indent=4)   model = keras_load_model(INPUT_PATH + "modelMs2.h5")
 
-with open('predictions.json', 'w', encoding='utf-8') as f:
-    json.dump(jsonArray, f, ensure_ascii=False, indent=4)
 
-with open('experimental.json', 'w', encoding='utf-8') as g:
-    json.dump(jsonArrayExp, g, ensure_ascii=False, indent=4)
+#RETENTION TIME PREDICTION #########################################################################
+
+else:
+    yTest = np.load(INPUT_PATH + "YTestRt.npy")
+    model = keras_load_model(INPUT_PATH + "modelRt.h5")
+
+    predictions = model.predict(xTest)
+
+    jsonArray = []
+    tmpPred = {}
+
+    jsonArrayExp = []
+    tmpPredExp = {}
+
+    for i in range(len(yTest)):
+        target = df.iloc[i]
+        print(target["peptideFull"], target["scan"], target["fileName"])
+        print(target["ions"])
+        split = len(yTest[0]) / 12
+        splitEnd = len(target["ions"]["b1"]) - 1
+        #print(split)
+
+        tmpPred['peptide'] = target["peptideFull"].split('.')[1]
+
+        ionObj = {}
+        ionObjExp = {}
+
+        splitCnt = 0
+        cnt = 0
+        while splitCnt <12:
+            print(ionList[splitCnt], "----------------")
+            done = False
+            ionArray = []
+            ionArrayExp = []
+            while True:
+                if done == False:
+                    print(yTest[i][cnt], "\t" ,predictions[i][cnt])
+
+                    ionArray.append(float(predictions[i][cnt]))
+                    ionArrayExp.append(float(yTest[i][cnt]))
+                cnt += 1
+                if cnt % split == 0:
+                    break
+                elif cnt % split > splitEnd:
+                    done = True
+            ionObj[ionList[splitCnt]] = copy.copy(ionArray)
+            ionObjExp[ionList[splitCnt]] = copy.copy(ionArrayExp)
+
+            splitCnt += 1
+        tmpPred['ions'] = copy.copy(ionObj)
+        tmpPredExp['ions'] = copy.copy(ionObjExp)
+        jsonArray.append(copy.copy(tmpPred))
+        jsonArrayExp.append(copy.copy(tmpPredExp))
+
+    print("Done")
+
+    print(jsonArray[0], jsonArray[1])
+    print(jsonArrayExp[0], jsonArrayExp[1])
+
+    with open('predictions.json', 'w', encoding='utf-8') as f:
+        json.dump(jsonArray, f, ensure_ascii=False, indent=4)
+
+    with open('experimental.json', 'w', encoding='utf-8') as g:
+        json.dump(jsonArrayExp, g, ensure_ascii=False, indent=4)
