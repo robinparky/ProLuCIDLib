@@ -83,13 +83,14 @@ def parsePredictions(peptideArray):
         ionObj[ionList[splitCnt]] = ','.join(copy.copy(ionArray))
         splitCnt += 1
 
-    commandString = str("INSERT INTO predictions(Sequence, Protein_ID, Offset, Length,\
+    commandString = str("INSERT INTO predictions(Sequence, Offset, Length,  Protein_ID,\
                                        PrecursorMZ, Charge, Retention_Time,\
                                        b1,b2,bn1,bn2,bo1,bo2,y1,y2,yn1,yn2,yo1,yo2)\
                                        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
 
-    commandVals =  (peptide, itemArray[0], itemArray[1],\
-                       itemArray[2], 0, 2, 0, \
+    #print(len(itemArray))
+    commandVals =  (peptide, itemArray[1],itemArray[2],itemArray[3],\
+                       itemArray[4], 2, 0, \
                        ionObj["b1"], ionObj["b2"],\
                        ionObj["bn1"], ionObj["bn2"],\
                        ionObj["bo1"], ionObj["bo2"],\
@@ -109,7 +110,7 @@ else:
     OUTPUT_PATH = sys.argv[2]
 
 #fileList = ["/data/tyrande/data/1.txt" ,"/data/tyrande/data/3.txt" ]
-fileList = ["/data/tyrande/data/1.txt"]
+fileList = ["/home/bernard/peptideList.txt"]
 
 model = keras_load_model(MODEL_PATH)
 nlf = pd.read_csv('../NLF.csv',index_col=0)
@@ -117,9 +118,9 @@ nlf = pd.read_csv('../NLF.csv',index_col=0)
 conn = sqlite3.connect(OUTPUT_PATH)
 c = conn.cursor()
 c.execute("CREATE TABLE IF NOT EXISTS predictions(Sequence TEXT,\
-                                                  Protein_ID TEXT,\
                                                   Offset TEXT,\
                                                   Length TEXT,\
+                                                  Protein_ID TEXT,\
                                                   PrecursorMZ float,\
                                                   Retention_Time float,\
                                                   Charge integer,\
@@ -149,18 +150,18 @@ for fname in fileList:
     with open(fname) as f:
         for line in f:
             split = line.split()
-            if len(split) != 4:
+            if len(split) != 5:
                 continue
             sequence = split[0]
-            proteinId = split[1]
-            offset = split[2]
-            length = split[3]
+            offset = split[1]
+            length = split[2]
+            proteinId = split[3]
+            mass = split[4]
 
             peptideList.append(sequence)
-            itemArray.append([proteinId, offset, length])
+            itemArray.append([sequence, proteinId, offset, length, mass])
 
             lineCounter += 1
-
             if lineCounter % BUFFERSIZE == 0:
                 npArray = EncodePool.map(encodeSequences, peptideList)
 
@@ -187,13 +188,10 @@ for fname in fileList:
 
                 peptideList = []
                 itemArray = []
-                print(lineCounter)
-                print("Done, Elapsed Time:", time.time() - start)
-                sys.exit()
-
-                if lineCounter > 25000:
-                    print("Done, Elapsed Time:", time.time() - start)
-                    sys.exit()
+                print("Peptides Processed: ", lineCounter)
+                print("Elapsed Time:", time.time() - start)
+                    #print("Done, Elapsed Time:", time.time() - start)
+                    #sys.exit()
 
 
 conn.close()

@@ -55,7 +55,7 @@ else:
     OUTPUT_PATH = sys.argv[2]
 
 #fileList = ["/data/tyrande/data/1.txt" ,"/data/tyrande/data/3.txt" ]
-fileList = ["/data/tyrande/data/test.txt"]
+fileList = ["/home/bernard/peptideList.txt"]
 
 model = keras_load_model(MODEL_PATH)
 nlf = pd.read_csv('../NLF.csv',index_col=0)
