@@ -47,7 +47,7 @@ model.fit(xTrain, yTrain,
           epochs = EPOCHS)
 
 print("Saving Model")
-model.save(INPUT_PATH + "model.h5")
+model.save(INPUT_PATH + "modelRt.h5")
 
 print("Done")
 print("Total Time: ", time.time() - start)

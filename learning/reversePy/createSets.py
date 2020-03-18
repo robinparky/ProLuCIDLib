@@ -187,7 +187,7 @@ dfTrain.to_pickle(OUTPUT_PATH + "dfTrain.pkl")
 dfTest.to_pickle(OUTPUT_PATH + "dfTest.pkl")
 
 np.save(OUTPUT_PATH + "XTrain.npy", xTrain)
-np.save(OUTPUT_PATH + "YTrainMS2.npy", yTrainMs2)
+np.save(OUTPUT_PATH + "YTrainMs2.npy", yTrainMs2)
 np.save(OUTPUT_PATH + "YTrainRt.npy", yTrainRt)
 
 np.save(OUTPUT_PATH + "XTest.npy", xTest)
