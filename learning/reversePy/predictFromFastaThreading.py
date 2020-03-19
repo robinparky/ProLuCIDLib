@@ -18,7 +18,7 @@ from keras.models import Sequential
 
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-BUFFERSIZE = 10000
+BUFFERSIZE = 100000
 MAX_LEN = 50
 THREADS = 50
 
@@ -198,7 +198,7 @@ with open(FILE_NAME) as f:
             sqlCommands = CommandPool.map(parsePredictions, zip(peptideList, predictions, npArray, itemArray))
 
             sqlTime = time.time()
-            print("Creating Sql Commands Finished: ", sqlTime - predictionTime)
+            print("Creating Sql Commands: ", sqlTime - predictionTime)
 
             c.executemany("INSERT INTO predictions(Sequence, Protein_ID, Offset, Length,\
                                                    PrecursorMZ, Charge, Retention_Time,\
@@ -209,15 +209,19 @@ with open(FILE_NAME) as f:
 
             peptideList = []
             itemArray = []
-            print("Time to execute Commands: ", time.time() - sqlTime)
-            print("Finished Appending to DB: ", time.time() - predictionTime)
+
+            loopTime = time.time()
+            print("Finished Appending to DB: ", loopTime - predictionTime)
             print("\tTotal Time for buffer: ", time.time() - loopTime)
             print("\tPeptides Processed: ", lineCounter)
             print("\tElapsed Time:", time.time() - start)
             print("\n")
-            if lineCounter > 25000:
+            if lineCounter > 250000:
                 print("Exiting")
                 sys.exit()
+
+            if lineCounter % 10 * BUFFERSIZE == 0:
+                print(lineCounter, "peptides processed in", time.time() - start, "seconds.")
 
 conn.close()
 print("Done, Elapsed Time:", time.time() - start)

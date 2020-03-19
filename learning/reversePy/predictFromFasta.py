@@ -15,7 +15,6 @@ from keras.layers.wrappers import Bidirectional, TimeDistributed
 from keras.models import load_model as keras_load_model
 from keras.models import Sequential
 
-
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 BUFFERSIZE = 10000
 MAX_LEN = 50
@@ -83,8 +82,9 @@ loopTime = start
 with open(FILE_NAME) as f:
     for line in f:
         if lineCounter < LOWER_BOUND:
+            lineCounter += 1
             continue
-        elif lineCounter > UPPER_BOUND:
+        elif lineCounter >= UPPER_BOUND:
             break
 
         split = line.split()
@@ -111,7 +111,7 @@ with open(FILE_NAME) as f:
                 if len(pep) >= MAX_LEN:
                     continue
                 while len(pep) < MAX_LEN:
-                    pep =pep + "0"
+                    pep = pep + "0"
                 try:
                     encodedPeptide = nlf_encode(pep)
                 except:
@@ -167,6 +167,10 @@ with open(FILE_NAME) as f:
                                     ionObj["y1"], ionObj["y2"],\
                                     ionObj["yn1"], ionObj["yn2"],\
                                     ionObj["yo1"], ionObj["yo2"]))
+
+            sqlTime = time.time()
+            print("Creating Sql Commands: ", sqlTime - predictionTime)
+
             c.executemany("INSERT INTO predictions(Sequence, Protein_ID, Offset, Length,\
                                                    PrecursorMZ, Charge, Retention_Time,\
                                                    b1,b2,bn1,bn2,bo1,bo2,y1,y2,yn1,yn2,yo1,yo2)\
@@ -185,10 +189,12 @@ with open(FILE_NAME) as f:
             print("\n")
 
             loopTime = time.time()
-            if lineCounter > 25000:
+            if lineCounter > 250000:
                 print("Exiting")
                 sys.exit()
 
+            if lineCounter % 10 * BUFFERSIZE == 0:
+                print(lineCounter, "peptides processed in", time.time() - start, "seconds.")
 
 conn.close()
 print("Done, Elapsed Time:", time.time() - start)
