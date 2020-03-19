@@ -18,9 +18,9 @@ from keras.models import Sequential
 
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-BUFFERSIZE = 100000
+BUFFERSIZE = 10000
 MAX_LEN = 50
-THREADS = 20
+THREADS = 50
 
 def nlf_encode(seq):
     x = pd.DataFrame([nlf[i] for i in seq]).reset_index(drop=True)
@@ -98,22 +98,22 @@ def parsePredictions(peptideArray):
                        ionObj["yn1"], ionObj["yn2"],\
                        ionObj["yo1"], ionObj["yo2"])
 
-    return (commandString,commandVals)
+    #return (commandString,commandVals)
+    return (commandVals)
 
-start = time.time()
-
-if len(sys.argv) != 3:
+if len(sys.argv) != 7:
     print("Error with command line inputs")
     sys.exit(0)
 else:
-    MODEL_PATH = sys.argv[1]
-    OUTPUT_PATH = sys.argv[2]
-
-#fileList = ["/data/tyrande/data/1.txt" ,"/data/tyrande/data/3.txt" ]
-fileList = ["/home/bernard/peptideList.txt"]
+    FILE_NAME = sys.argv[1]
+    MODEL_PATH = sys.argv[2]
+    OUTPUT_PATH = sys.argv[3]
+    LOWER_BOUND = int(sys.argv[4])
+    UPPER_BOUND = int(sys.argv[5])
+    THREADS = int(sys.argv[6])
 
 model = keras_load_model(MODEL_PATH)
-nlf = pd.read_csv('../NLF.csv',index_col=0)
+nlf = pd.read_csv('NLF.csv',index_col=0)
 
 conn = sqlite3.connect(OUTPUT_PATH)
 c = conn.cursor()
@@ -145,54 +145,79 @@ lineCounter = 0
 EncodePool = ThreadPool(THREADS)
 CommandPool = ThreadPool(THREADS)
 
-#peptideSeqString, proteinId, offset, length
-for fname in fileList:
-    with open(fname) as f:
-        for line in f:
-            split = line.split()
-            if len(split) != 5:
-                continue
-            sequence = split[0]
-            offset = split[1]
-            length = split[2]
-            proteinId = split[3]
-            mass = split[4]
+start = time.time()
+loopTime = start
 
-            peptideList.append(sequence)
-            itemArray.append([sequence, proteinId, offset, length, mass])
+with open(FILE_NAME) as f:
+    for line in f:
+        if lineCounter < LOWER_BOUND:
+            continue
+        elif lineCounter > UPPER_BOUND:
+            break
 
-            lineCounter += 1
-            if lineCounter % BUFFERSIZE == 0:
-                npArray = EncodePool.map(encodeSequences, peptideList)
+        split = line.split()
 
-                npArray = np.array([np.array(i) for i in npArray])
+        sequence = split[0]
+        offset = split[1]
+        length = split[2]
+        proteinId = split[3]
+        mass = split[4]
 
-                deleteList = []
-                for i, ele in enumerate(npArray):
-                    if ele[0] == -1:
-                        deleteList.append(i)
+        peptideList.append(sequence)
+        itemArray.append([sequence, proteinId, offset, length, mass])
 
-                if len(deleteList) > 0:
-                    npArray = np.delete(npArray, deleteList)
-                    peptideList = np.delete(peptideList, deleteList)
-                npArray = np.array([np.array(i) for i in npArray])
-                npArray = np.reshape(npArray, (npArray.shape[0], 1, npArray.shape[1]))
+        lineCounter += 1
+        if lineCounter % BUFFERSIZE == 0:
 
-                predictions = model.predict(npArray)
+            bufferTime = time.time()
+            print(lineCounter, "Buffersize Reached: ", bufferTime - loopTime)
 
-                sqlCommands = CommandPool.map(parsePredictions, zip(peptideList, predictions, npArray, itemArray))
+            npArray = EncodePool.map(encodeSequences, peptideList)
+            npArray = np.array([np.array(i) for i in npArray])
 
-                for cmd in sqlCommands:
-                    c.execute(cmd[0], cmd[1])
-                    conn.commit()
+            deleteList = []
+            for i, ele in enumerate(npArray):
+                if ele[0] == -1:
+                    deleteList.append(i)
 
-                peptideList = []
-                itemArray = []
-                print("Peptides Processed: ", lineCounter)
-                print("Elapsed Time:", time.time() - start)
-                    #print("Done, Elapsed Time:", time.time() - start)
-                    #sys.exit()
+            if len(deleteList) > 0:
+                npArray = np.delete(npArray, deleteList)
+                peptideList = np.delete(peptideList, deleteList)
 
+            npArray = np.array([np.array(i) for i in npArray])
+            npArray = np.reshape(npArray, (npArray.shape[0], 1, npArray.shape[1]))
+
+            encodeTime = time.time()
+            print("Encoding Finished: ", encodeTime - bufferTime)
+
+            predictions = model.predict(npArray)
+
+            predictionTime = time.time()
+            print("Prediction Finished: ", predictionTime - encodeTime)
+
+            sqlCommands = CommandPool.map(parsePredictions, zip(peptideList, predictions, npArray, itemArray))
+
+            sqlTime = time.time()
+            print("Creating Sql Commands Finished: ", sqlTime - predictionTime)
+
+            c.executemany("INSERT INTO predictions(Sequence, Protein_ID, Offset, Length,\
+                                                   PrecursorMZ, Charge, Retention_Time,\
+                                                   b1,b2,bn1,bn2,bo1,bo2,y1,y2,yn1,yn2,yo1,yo2)\
+                                                   VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",\
+                                                   sqlCommands)
+            conn.commit()
+
+            peptideList = []
+            itemArray = []
+            print("Time to execute Commands: ", time.time() - sqlTime)
+            print("Finished Appending to DB: ", time.time() - predictionTime)
+            print("\tTotal Time for buffer: ", time.time() - loopTime)
+            print("\tPeptides Processed: ", lineCounter)
+            print("\tElapsed Time:", time.time() - start)
+            print("\n")
+            if lineCounter > 25000:
+                print("Exiting")
+                sys.exit()
 
 conn.close()
 print("Done, Elapsed Time:", time.time() - start)
