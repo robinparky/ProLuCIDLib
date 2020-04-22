@@ -852,12 +852,13 @@ public class LibrarySearchEngine {
         }
     }
 
-
+    public static String version = "0.0.5";
 
     private String getHeader() {
         StringBuffer HEADER = new StringBuffer(1200);
         HEADER.append("H\tSQTGenerator\tProLuCID\n");
-        HEADER.append("H\tSQTGeneratorVersion\t1.4\n");
+        HEADER.append("H\tSQTGeneratorVersion\t"+version+"\n");
+        HEADER.append("H\tSQTGeneratorVersion\tLibrarySearch\n");
         HEADER.append("H\tComment ProLuCID is developed in the Yates laboratory at The Scripps Research Institute, La Jolla, CA\n");
         HEADER.append("H\tComment ProLuCID ref. Xu T, Venable JD, Park SK, Cociorva D, Lu B, Liao L, Wohlschlegel J, Hewel J, Yates JR 3rd\n");
         HEADER.append("H\tComment ProLuCID ref. ProLuCID, a fast and sensitive tandem mass spectra-based protein identification program.\n");
