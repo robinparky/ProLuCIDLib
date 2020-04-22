@@ -1,1 +1,1 @@
-Pulling Data from Database
+nohup: ignoring input
