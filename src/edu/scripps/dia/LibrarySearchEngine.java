@@ -852,7 +852,7 @@ public class LibrarySearchEngine {
         }
     }
 
-    public static String version = "0.0.5";
+    public static String version = "0.1.0";
 
     private String getHeader() {
         StringBuffer HEADER = new StringBuffer(1200);
