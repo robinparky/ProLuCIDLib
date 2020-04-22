@@ -1733,11 +1733,11 @@ public class LibraryIndexer {
                 IndexedFile ifile = indexedMap.get(fpath);
                 List<Float> mzList = new ArrayList<>();
                 List<Float> intList = new ArrayList<>();
-                float retTime = (float)readSpectraFromMS2(ifile,scan,mzList,intList);
 
                 String spectraKey = path+ fileName + scan;
                 if(!fileNameScanNumSet.contains(spectraKey))
                 {
+                    float retTime = (float)readSpectraFromMS2(ifile,scan,mzList,intList);
                     insertSpectra(peptideID,mass,mzList,intList,retTime, fileName, scan);
                 }
             }
