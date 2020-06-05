@@ -81,6 +81,7 @@ public class SearchParams extends edu.scripps.pms.mspid.SearchParams {
     private ArrayList<Modifications> allModifications = new ArrayList<Modifications>(1000);
     private HashSet<Modifications> mods = new HashSet<Modifications>();
     private double maxMassShift = -10000;
+    private double retentionTimeTolerance = 5;
 
     public enum ScoringAlgorithm
     {
@@ -521,7 +522,9 @@ public class SearchParams extends edu.scripps.pms.mspid.SearchParams {
 //        fragmentTolerance = Double.parseDouble(te.getChildTextTrim("fragment"));
         precursorTolerance = Double.parseDouble(te.getChildTextTrim("precursor"));
         this.precursorToleranceFloat = (float)precursorTolerance/1000;
-
+        String retentionTimeStr = te.getChildTextTrim("retention_time_tolerance");
+        if(retentionTimeStr !=null)
+            retentionTimeTolerance = Double.parseDouble(te.getChildTextTrim("retention_time_tolerance"));
 
 
 
@@ -869,6 +872,15 @@ public class SearchParams extends edu.scripps.pms.mspid.SearchParams {
 
     public ScoringAlgorithm getScoringAlgorithm() {
         return scoringAlgorithm;
+    }
+
+
+    public double getRetentionTimeTolerance() {
+        return retentionTimeTolerance;
+    }
+
+    public void setRetentionTimeTolerance(double retentionTimeTolerance) {
+        this.retentionTimeTolerance = retentionTimeTolerance;
     }
 }
 

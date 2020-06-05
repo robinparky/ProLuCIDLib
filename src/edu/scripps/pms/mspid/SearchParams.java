@@ -75,6 +75,7 @@ public class SearchParams {
     private ArrayList<Modifications> allModifications = new ArrayList<Modifications>(1000);
     private HashSet<Modifications> mods = new HashSet<Modifications>();
     private double maxMassShift = -10000;
+    private double retentionTimeTolerance = 5;
 
     public SearchParams(String path, String paramFile) throws IOException, JDOMException {
         paramFilePath = path;
@@ -466,6 +467,10 @@ public class SearchParams {
         lowPrecursorTolerance = Double.parseDouble(te.getChildTextTrim("precursor_low"));
 //        fragmentTolerance = Double.parseDouble(te.getChildTextTrim("fragment"));
         precursorTolerance = Double.parseDouble(te.getChildTextTrim("precursor"));
+        String retentionTimeStr = te.getChildTextTrim("retention_time_tolerance");
+        if(retentionTimeStr !=null)
+            retentionTimeTolerance = Double.parseDouble(te.getChildTextTrim("retention_time_tolerance"));
+
         this.precursorToleranceFloat = (float)precursorTolerance/1000;
 
 
@@ -811,6 +816,14 @@ public class SearchParams {
 
     public void setPrecursorToleranceFloat(float precursorToleranceFloat) {
         this.precursorToleranceFloat = precursorToleranceFloat;
+    }
+
+    public double getRetentionTimeTolerance() {
+        return retentionTimeTolerance;
+    }
+
+    public void setRetentionTimeTolerance(double retentionTimeTolerance) {
+        this.retentionTimeTolerance = retentionTimeTolerance;
     }
 }
 

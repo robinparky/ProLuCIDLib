@@ -35,19 +35,39 @@ public class LibrarySpectra {
     private  PeakList peakList = null;
     private boolean isDecoy = false;
 
+
     public static String ReveseSequence(String sequence)
     {
         StringBuilder sb = new StringBuilder();
+        sb.append(sequence.charAt(0)).append(".");
+        int lastCutLoc = sequence.lastIndexOf(".")-1;
+        while(!Character.isAlphabetic(sequence.charAt(lastCutLoc)))
+        {
+            lastCutLoc--;
+        }
+        String end = sequence.substring(lastCutLoc);
+        String mid = sequence.substring(sequence.indexOf(".")+1, lastCutLoc );
+        StringBuilder midSb = new StringBuilder();
+        int loc = mid.indexOf("(");
+        String modStr="";
+        if(loc>-1)
+            modStr = mid.substring(mid.indexOf("("), mid.lastIndexOf(")")+1);
 
-        String cleanSeq = sequence.replaceAll("\\([0-9.\\-]*\\)", "");
+        String cleanSeq = mid.replaceAll("\\([0-9.\\-]*\\)", "");
         if(cleanSeq.contains("("))
         {
             System.out.println();
         }
         for(int i=cleanSeq.length()-1; i>=0; i--)
         {
-            sb.append(cleanSeq.charAt(i));
+            midSb.append(cleanSeq.charAt(i));
         }
+        if(loc>0)
+        midSb.insert(loc,modStr);
+
+        sb.append(midSb);
+       // sb.append(".");
+        sb.append(end);
         return  sb.toString();
     }
 

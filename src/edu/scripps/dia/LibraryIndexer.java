@@ -1191,6 +1191,7 @@ public class LibraryIndexer {
         while ((entry =navimap.pollFirstEntry())!=null)
         {
             int massKey = entry.getKey();
+
             /*if(massKey== 2620496)
             {
                 System.out.println();
@@ -1198,6 +1199,7 @@ public class LibraryIndexer {
             Collection<MetaSpectraEntry> specList = entry.getValue();
             for(MetaSpectraEntry currentEntry: specList)
             {
+
                 int cs = currentEntry.chargeState;
                 int diff = cs*DECOY_MASS_SHIFT;
                 MetaSpectraEntry swapEntry = findSwapSpectra(massKey, diff,navimap,forwardMap,swapMap);

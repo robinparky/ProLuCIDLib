@@ -31,6 +31,7 @@ public class LibrarySearchEngine {
     private List<ProcessedPeakList>[] libraryPeakListTable = new List[tempMaxCS];
     private Map<Integer,List<LibrarySpectra>> [] spectraCSMap = new Map[tempMaxCS];
     private List<LibrarySpectra>[] indexedSpectraListTable = new List[tempMaxCS];
+    private List<LibrarySpectra> decoyList = new LinkedList<>();
 
 
     private int [][] massIndex = new int[tempMaxCS][];
@@ -55,7 +56,7 @@ public class LibrarySearchEngine {
     private String outputPath;
     private String hOutputPath;
     private double retTimeTolerance = 5;
-    private boolean queryUnIdentifiedSpectra = true;
+    private boolean queryUnIdentifiedSpectra = false;
     public static void main(String[] args) throws Exception {
         String ms2Path = args[0];
         String paramsPath = args[1];
@@ -101,9 +102,14 @@ public class LibrarySearchEngine {
     }
 
 
+
     public LibrarySearchEngine(String ms2Path, SearchParams params) {
         this.params = params;
         ms2FilePath = ms2Path;
+        mc = new MassCalculator(params);
+        if(dc == null) {
+            dc = new DistributionCalculator();
+        }
     }
 
     private void init() throws Exception {
@@ -164,24 +170,16 @@ public class LibrarySearchEngine {
                         }
                         origSearchCount++;
                         set.add(j);
-                        if(j==spectraCSMap[zline.getChargeState()].size())
-                        {
-                       //    System.out.println(">>> "+peakList.getHiscan());
-                     //       System.out.println(">><<>>");
-                        }
+
                         List<LibrarySpectra> spectraList = spectraCSMap[zline.getChargeState()].get(j);
                         if(spectraList!=null)
                         {
                             for(LibrarySpectra spectra: spectraList)
                             {
-                                //   ProcessedPeakList ppl2 =indexedSpectraListTable[zline.getChargeState()].get(j);
-                                //ProcessedPeakList ppl2 = new ProcessedPeakList(pl,pl.getZlines().next(),params,mc,true);
-                                // PeakList pl = ppl2.getPeakList();
-                                //System.out.println(">>>>> "+spectra.massKey);
 
 
-                                if(spectra.isDecoy() || (peakList.getRetentionTime()< spectra.getEndTime()+retTimeTolerance &&
-                                        peakList.getRetentionTime() > spectra.getStartTime()-retTimeTolerance))
+                                if(spectra.isDecoy() || (peakList.getRetentionTime()< spectra.getEndTime()+params.getRetentionTimeTolerance() &&
+                                        peakList.getRetentionTime() > spectra.getStartTime()- params.getRetentionTimeTolerance()))
                                 {
                                     switch (params.getScoringAlgorithm())
                                     {
@@ -225,6 +223,15 @@ public class LibrarySearchEngine {
                     }
 
                 }
+              /*  if(sphQueue.size()==0)
+                {
+                    Collections.shuffle(decoyList);
+                    int size = decoyList.size() < 5 ? decoyList.size(): 5;
+                    List<LibrarySpectra> subList = decoyList.subList(0, size);
+
+                    searchHelper(subList,peakList, ppl, sphQueue, false );
+
+                }*/
                 //ppl.dumpBoolMass();
                 List<ScoredPeptideHit> sphList = new ArrayList<>(sphQueue);
                 int size = sphList.size()<NUMFINALRESULT?sphList.size():NUMFINALRESULT;
@@ -239,6 +246,59 @@ public class LibrarySearchEngine {
         return searchResult;
     }
 
+    public void searchHelper(List<LibrarySpectra> spectraList, PeakList peakList, ProcessedPeakList ppl, PriorityQueue<ScoredPeptideHit> sphQueue, boolean searchForwards)
+    {
+            ScoredPeptideHit sph = null;
+            double worseScore = 0;
+            for(LibrarySpectra spectra: spectraList)
+            {
+                boolean toSearch = spectra.isDecoy();
+                boolean forwardsLogic = (searchForwards) && (peakList.getRetentionTime()< spectra.getEndTime()+params.getRetentionTimeTolerance() &&
+                        peakList.getRetentionTime() > spectra.getStartTime()- params.getRetentionTimeTolerance());
+                toSearch = toSearch || forwardsLogic;
+
+
+                if(toSearch)
+                {
+                    switch (params.getScoringAlgorithm())
+                    {
+                        case PEARSON_CORRELATION:
+                            sph= ppl.pearsonsCorrelation(spectra);
+                            break;
+                        case SPEARMAN_RHO:
+                            sph= ppl.spearmansCorrelation(spectra);
+                            break;
+                        case DOT_PRODUCT:
+                            sph = ppl.dotProduct(spectra);
+                            break;
+                        case NORMALIZED_DOT_PRODUCT_SOKOLOW:
+                            sph = ppl.normalizedDotProduct(spectra,0.5f, 1);
+                            break;
+                        default:
+                            sph= ppl.normalizedDotProduct(spectra,1,0);
+                            break;
+                    }
+                    //c                        //cache.add(ppl2);
+                    //pplCache.put(ppl.getID(),ppl);
+
+                    //   sph.setMs2CompareValues(pl.getHiscan(),pl.getLoscan(), pl.getFilename());
+                    if(!Double.isInfinite(sph.getPScore()) && !Double.isNaN(sph.getPScore()))
+                    {
+                        if(sph.getPScore()>worseScore || sphQueue.size()<params.getCandidatePeptideThreshold())
+                        {
+                            sphQueue.add(sph);
+                            if(sphQueue.size()>params.getCandidatePeptideThreshold())
+                            {
+                                sphQueue.poll();
+                            }
+                            worseScore = sphQueue.peek().getPrimaryScore();
+                        }
+                    }
+                }
+
+            }
+
+    }
 
     public SearchResult search(PeakList peakList, Zline zline) throws SQLException {
         int numPeaks = peakList.numPeaks();
@@ -363,12 +423,6 @@ public class LibrarySearchEngine {
         return sph;
     }
 
-
-    public SearchResult inverseSearch(PeakList peakList, Zline zline, String ms2FilePath) throws IOException, SQLException {
-        clear();
-        readMS2TargetFile(ms2FilePath);
-        return search(peakList,zline);
-    }
 
 
     private float simpleScore(float[] consensusSpectra, float[] massCorr, float[] massSum, int[] peaksInfo) {
@@ -709,6 +763,10 @@ public class LibrarySearchEngine {
             List<LibrarySpectra> spectraListTemp = spectraCSMap[cs].getOrDefault(massloc, new ArrayList<>());
             spectraListTemp.add(spectra);
             spectraCSMap[cs].put(massloc,spectraListTemp);
+            if(spectra.isDecoy())
+            {
+                this.decoyList.add(spectra);
+            }
 
 
           //  indexedSpectraListTable[cs].add(spectra);
