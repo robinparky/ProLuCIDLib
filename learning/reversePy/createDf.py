@@ -83,6 +83,14 @@ conn = sqlite3.connect(DATABASE_PATH)
 
 c2Arr = []
 c3Arr = []
+c4Arr = []
+c5Arr = []
+
+c2Cnt = 0
+c3Cnt = 0
+c4Cnt = 0
+c5Cnt = 0
+
 
 #peptideTemp = {"peptide":"", "modification": 'null', "ions":{}}
 peptideTemp = {"peptide":"", "ions":{}}
@@ -181,8 +189,16 @@ for ind in pepTable:
 
         if charge == 2:
             c2Arr.append(copy.copy(tmp))
+            c2Cnt += 1
         elif charge == 3:
             c3Arr.append(copy.copy(tmp))
+            c3Cnt += 1
+        elif charge == 4:
+            c4Arr.append(copy.copy(tmp))
+            c4Cnt += 1
+        elif charge == 5:
+            c5Arr.append(copy.copy(tmp))
+            c5Cnt += 1
         else:
             cnt += 1
             #print("Charge:", charge, "invalid")
@@ -191,8 +207,6 @@ for ind in pepTable:
         print(int(pepCnt /1000), "---", time.time() - startTime, "---", psutil.virtual_memory())
 print("Done Pulling from Database, Saving Dataframes")
 
-c2DF = pd.DataFrame(c2Arr)
-c2DF = c2DF.sample(frac=1)
 """
 for i in range(1000):
     obj = c2DF.iloc[i]
@@ -214,18 +228,27 @@ for i in range(1000):
     print("\n")
 
 """
-c3DF = pd.DataFrame(c3Arr)
-c3DF = c2DF.sample(frac=1)
 
-"""
-for i in c2DF['peptide']:
-    print(i)
-"""
-"""
-for i in df["ions"]:
-    for key, value in i.items():
-        print(value)
-"""
+if c2Cnt > 1000:
+    c2DF = pd.DataFrame(c2Arr)
+    c2DF = c2DF.sample(frac=1)
+    os.mkdir(OUTPUT_PATH + "charge2")
+    c2DF.to_pickle(OUTPUT_PATH + "charge2/c2DF.pkl")
 
-c2DF.to_pickle(OUTPUT_PATH + "c2DF.pkl")
-c3DF.to_pickle(OUTPUT_PATH + "c3DF.pkl")
+if c3Cnt > 1000:
+    c3DF = pd.DataFrame(c3Arr)
+    c3DF = c2DF.sample(frac=1)
+    os.mkdir(OUTPUT_PATH + "charge3")
+    c2DF.to_pickle(OUTPUT_PATH + "charge3/c3DF.pkl")
+
+if c4Cnt > 1000:
+    c4DF = pd.DataFrame(c3Arr)
+    c4DF = c2DF.sample(frac=1)
+    os.mkdir(OUTPUT_PATH + "charge4")
+    c2DF.to_pickle(OUTPUT_PATH + "charge4/c4DF.pkl")
+
+if c5Cnt > 1000:
+    c5DF = pd.DataFrame(c3Arr)
+    c5DF = c2DF.sample(frac=1)
+    os.mkdir(OUTPUT_PATH + "charge5")
+    c2DF.to_pickle(OUTPUT_PATH + "charge5/c5DF.pkl")

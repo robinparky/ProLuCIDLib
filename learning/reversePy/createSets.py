@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 import time
 
+from sklearn.preprocessing import minmax_scale
+
 
 if len(sys.argv) != 4:
     print("Error with command line inputs")
@@ -112,6 +114,8 @@ for i, ionDict in enumerate(ionsProcessed):
             ionList.append(j)
         while len(ionList) < MAX_LEN:
             ionList.append(0)
+        #Normalize List here
+        ionList = minmax_scale(ionList)
         container.append(np.array(ionList))
     ionsProcessed.iloc[i] = np.array(container)
     #print(np.array(container).shape)

@@ -16,7 +16,7 @@ from keras.models import load_model as keras_load_model
 from keras.models import Sequential
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-BUFFERSIZE = 10000
+BUFFERSIZE = 1000000
 MAX_LEN = 50
 
 def nlf_encode(seq):
@@ -37,20 +37,23 @@ def cosine_similarity(y_true, y_pred):
 
 if len(sys.argv) != 6:
     print("Error with command line inputs")
+    print("Usage: PEPTIDELIST, c2Ms2, c2RT, c3Ms2, c3Rt, OutputDB, lowerBound, UpperBound")
     sys.exit(0)
 else:
     FILE_NAME = sys.argv[1]
-    MODEL_PATH = sys.argv[2]
+    TRAIN_DIR = sys.argv[2]
     OUTPUT_PATH = sys.argv[3]
     LOWER_BOUND = int(sys.argv[4])
     UPPER_BOUND = int(sys.argv[5])
 
-model = keras_load_model(MODEL_PATH)
+chargeList = [2,3]
+
+
 nlf = pd.read_csv('NLF.csv',index_col=0)
 
 conn = sqlite3.connect(OUTPUT_PATH)
 c = conn.cursor()
-c.execute("CREATE TABLE IF NOT EXISTS predictions(Sequence TEXT,\
+c.execute("CREATE TABLE IF NOT EXISTS ms2Pred(Sequence TEXT,\
                                                   Protein_ID TEXT,\
                                                   Offset TEXT,\
                                                   Length TEXT,\
@@ -101,9 +104,8 @@ with open(FILE_NAME) as f:
         lineCounter += 1
 
         if lineCounter % BUFFERSIZE == 0:
-
             bufferTime = time.time()
-            print(lineCounter, "Buffersize Reached: ", bufferTime - loopTime)
+            #print(lineCounter, "Buffersize Reached: ", bufferTime - loopTime)
 
             npArray = []
             for i, pep in enumerate(peptideList):
@@ -122,56 +124,63 @@ with open(FILE_NAME) as f:
             npArray = np.reshape(npArray, (npArray.shape[0], 1, npArray.shape[1]))
 
             encodeTime = time.time()
-            print("Encoding Finished: ", encodeTime - bufferTime)
-
-            predictions = model.predict(npArray)
-
-            predictionTime = time.time()
-            print("Prediction Finished: ", predictionTime - encodeTime)
-
-            ionList = ["b1", "b2", "bn1","bn2", "bo1", "bo2", "y1", "y2", "yn1", "yn2", "yo1", "yo2" ]
+            #print("Encoding Finished: ", encodeTime - bufferTime)
 
             sqlCommands = []
+            for charge in chargeList:
+                ms2Model = keras_load_model(TRAIN_DIR + "charge" + str(charge) + "/modelMs2.h5")
+                rtModel = keras_load_model(TRAIN_DIR + "charge" + str(charge) + "/modelRt.h5")
 
-            for i in range(len(npArray)):
-                peptide = peptideList[i]
+                #ms2Pred
+                ms2Pred = ms2Model.predict(npArray)
+                rtPred = rtModel.predict(npArray)
 
-                #Size of predictionArray split into the 12 sections
-                split = len(predictions[0]) / 12
+                predictionTime = time.time()
+                #print("Prediction Finished: ", predictionTime - encodeTime)
 
-                #The size of the partition without padding.
-                splitEnd = len(peptideList[0]) - 1
+                ionList = ["b1", "b2", "bn1","bn2", "bo1", "bo2", "y1", "y2", "yn1", "yn2", "yo1", "yo2" ]
 
-                ionObj = {}
 
-                splitCnt = 0
-                cnt = 0
-                while splitCnt <12:
-                    done = False
-                    ionArray = []
-                    while True:
-                        if done == False:
-                            ionArray.append(str(predictions[i][cnt]))
-                        cnt += 1
-                        if cnt % split == 0:
-                            break
-                        elif cnt % split > splitEnd:
-                            done = True
-                    ionObj[ionList[splitCnt]] = ','.join(copy.copy(ionArray))
-                    splitCnt += 1
-                sqlCommands.append((peptide, itemArray[0][0], itemArray[0][1],\
-                                    itemArray[0][2], 0, 2, 0, \
-                                    ionObj["b1"], ionObj["b2"],\
-                                    ionObj["bn1"], ionObj["bn2"],\
-                                    ionObj["bo1"], ionObj["bo2"],\
-                                    ionObj["y1"], ionObj["y2"],\
-                                    ionObj["yn1"], ionObj["yn2"],\
-                                    ionObj["yo1"], ionObj["yo2"]))
+                for i in range(len(npArray)):
+                    peptide = peptideList[i]
 
+                    #Size of predictionArray split into the 12 sections
+                    split = len(ms2Pred[0]) / 12
+
+                    #The size of the partition without padding.
+                    splitEnd = len(peptideList[0]) - 1
+
+                    ionObj = {}
+
+                    splitCnt = 0
+                    cnt = 0
+                    while splitCnt <12:
+                        done = False
+                        ionArray = []
+                        while True:
+                            if done == False:
+                                ionArray.append(str(ms2Pred[i][cnt]))
+                            cnt += 1
+                            if cnt % split == 0:
+                                break
+                            elif cnt % split > splitEnd:
+                                done = True
+                        ionObj[ionList[splitCnt]] = ','.join(copy.copy(ionArray))
+                        splitCnt += 1
+                    #print(charge, float(rtPred[i][0]))
+                    sqlCommands.append((peptide, itemArray[0][0], itemArray[0][1],\
+                                        itemArray[0][2], 0, charge, float(rtPred[i][0]), \
+                                        ionObj["b1"], ionObj["b2"],\
+                                        ionObj["bn1"], ionObj["bn2"],\
+                                        ionObj["bo1"], ionObj["bo2"],\
+                                        ionObj["y1"], ionObj["y2"],\
+                                        ionObj["yn1"], ionObj["yn2"],\
+                                        ionObj["yo1"], ionObj["yo2"]))
+            #print(len(sqlCommands))
             sqlTime = time.time()
-            print("Creating Sql Commands: ", sqlTime - predictionTime)
+            #print("Creating Sql Commands: ", sqlTime - predictionTime)
 
-            c.executemany("INSERT INTO predictions(Sequence, Protein_ID, Offset, Length,\
+            c.executemany("INSERT INTO ms2Pred(Sequence, Protein_ID, Offset, Length,\
                                                    PrecursorMZ, Charge, Retention_Time,\
                                                    b1,b2,bn1,bn2,bo1,bo2,y1,y2,yn1,yn2,yo1,yo2)\
                                                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",\
@@ -182,19 +191,21 @@ with open(FILE_NAME) as f:
             itemArray = []
 
 
-            print("Finished Appending to DB: ", time.time() - predictionTime)
-            print("\tTotal Time for buffer: ", time.time() - loopTime)
-            print("\tPeptides Processed: ", lineCounter)
-            print("\tTotal Elapsed Time:", time.time() - start)
-            print("\n")
+            #print("Finished Appending to DB: ", time.time() - predictionTime)
+            #print("\tTotal Time for buffer: ", time.time() - loopTime)
+            #print("\tPeptides Processed: ", lineCounter)
+            #print("\tTotal Elapsed Time:", time.time() - start)
+            #print("\n")
 
             loopTime = time.time()
-            if lineCounter > 250000:
-                print("Exiting")
+            """
+            if lineCounter > 2500:
+                #print("Exiting")
                 sys.exit()
+            """
 
             if lineCounter % 10 * BUFFERSIZE == 0:
                 print(lineCounter, "peptides processed in", time.time() - start, "seconds.")
 
 conn.close()
-print("Done, Elapsed Time:", time.time() - start)
+#print("Done, Elapsed Time:", time.time() - start)
