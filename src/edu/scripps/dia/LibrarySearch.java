@@ -2,7 +2,7 @@ package edu.scripps.dia;
 
 import edu.scripps.dia.util.SpectrumReader;
 import edu.scripps.pms.mspid.*;
-import edu.scripps.pms.mspid.SearchParams;
+
 import edu.scripps.pms.util.spectrum.PeakList;
 import edu.scripps.pms.util.spectrum.Zline;
 import org.jdom.JDOMException;
@@ -20,150 +20,7 @@ import java.util.*;
 public class LibrarySearch {
     public static final float DECOY_DIFF = 8;
 
-    public static void simpleSearch(String [] args) throws Exception {
-        String ms2Path = args[0];
-        String paramsPath = args[1];
 
-        LibrarySearchEngine clse = new LibrarySearchEngine(ms2Path, paramsPath);
-        clse.calcRange();
-        SearchParams params = clse.getSearchParams();
-        String libraryPath = params.getDatabaseName();
-        String path = ms2Path.substring(0,ms2Path.lastIndexOf("."));
-        String output = path+"_"+libraryPath.substring(0,libraryPath.lastIndexOf("."))+".sqt";
-        //clse.readMS2TargetFile(libraryPath);
-        clse.readMs2TargetDirectory(libraryPath);
-      //  List<SearchResult> results = new ArrayList<>();
-        List<PeakList> peakLists = clse.getPeakLists();
-        BufferedWriter bw = new BufferedWriter(new FileWriter(output));
-
-        for(PeakList peakList: peakLists)
-        {
-            for (Iterator<Zline> it = peakList.getZlines(); it.hasNext(); ) {
-                Zline zline = it.next();
-                SearchResult r = clse.search(peakList,zline);
-                bw.write(r.outputResults());
-                bw.newLine();
-            }
-        }
-        bw.close();
-    }
-
-    public static void rangedSearched(String [] args) throws Exception {
-        String ms2Path = args[0];
-        String paramsPath = args[1];
-        SearchParams sp = new SearchParams(paramsPath);
-        String libraryPath = sp.getDatabaseName();
-       // String output = args[3];
-        File libDirectory= new File(libraryPath);
-        File ms2Directory = new File(ms2Path);
-        String[] ms2Array = ms2Directory.list();
-        String ms2DirectoryStr = ms2Path;
-
-        if(ms2Directory.isFile())
-        {
-            ms2DirectoryStr = ms2Directory.getAbsoluteFile().getParent();
-            ms2Array = new String[]{ms2Directory.getName()};
-        }
-        List<SearchResult> srList = new ArrayList<>();
-
-        String[] libArray = libDirectory.list();
-        for(String ms2Files: ms2Array)
-        {
-            if(ms2Files.endsWith("ms2"))
-            {
-                String msPath = ms2DirectoryStr+File.separator+ms2Files;
-                String msName = ms2Files.substring(0,ms2Files.lastIndexOf('.'));
-                LibrarySearchEngine clse = new LibrarySearchEngine(msPath, paramsPath);
-                clse.calcRange();
-                clse.getLibraryRanges(libArray,libraryPath);
-
-                List<String> targetFiles = clse.getFilesInRange();
-
-
-                String output = ms2DirectoryStr+File.separator+msName+".sqt";
-
-                BufferedWriter bw = new BufferedWriter(new FileWriter(output));
-                //bw.write(SearchResult.SLINEHEADER);
-               // bw.newLine();
-              //  bw.write(SearchResult.MLINEHEADER);
-                //bw.newLine();
-                for(String libFiles: targetFiles)
-                {
-
-
-                    if(libFiles.endsWith("ms2"))
-                    {
-                        //int index = libFiles.lastIndexOf(".");
-
-                       // System.out.println(output);
-                        String libPath = libraryPath+File.separator+libFiles;
-                        clse.readMS2TargetFile(libPath);
-                        System.out.println("searching: "+libFiles);
-                        List<PeakList> peakLists = clse.getPeakLists();
-
-                        for(PeakList peakList: peakLists) {
-                            for (Iterator<Zline> it = peakList.getZlines(); it.hasNext(); ) {
-                                Zline zline = it.next();
-                                SearchResult r = clse.search(peakList, zline);
-                                r.setMs2Name(msName);
-                                srList.add(r);
-                                if (srList.size() % 100 == 0) {
-                                    for (SearchResult sr : srList) {
-                                        bw.write(sr.outputResults());
-                                    }
-                                    srList = new ArrayList<>();
-                                }
-                                //bw.newLine();
-                            }
-                        }
-                        for (SearchResult sr : srList) {
-                            bw.write(sr.outputResults());
-                        }
-                        srList = new ArrayList<>();
-
-                    }
-                    clse.clear();
-
-                }
-
-                bw.close();
-                System.out.println("written to: "+output);
-            }
-
-        }
-    }
-
-    public static void rangedIndexSearch(String ms2path, String paramPath) throws Exception {
-        SearchParams sp = new SearchParams(paramPath);
-        String libPath = sp.getDatabaseName();
-        LibraryIndexer libraryIndexer = new LibraryIndexer(libPath);
-
-        File ms2File = new File(ms2path);
-        String ms2DirectoryStr = ms2File.getAbsoluteFile().getParent();
-
-        String msPath = ms2DirectoryStr+File.separator+ms2File.getName();
-        String msName = ms2path.substring(0,ms2path.lastIndexOf('.'));
-        LibrarySearchEngine clse = new LibrarySearchEngine(ms2path, paramPath);
-        clse.calcRange();
-        clse.setLibraryIndexer(libraryIndexer);
-        clse.queryRangeFromIndex();
-        List<PeakList> peakLists = clse.getPeakLists();
-        BufferedWriter bw = new BufferedWriter(new FileWriter(msName+".sqt"));
-        for(PeakList peakList: peakLists)
-        {
-            for (Iterator<Zline> it = peakList.getZlines(); it.hasNext(); ) {
-                Zline zline = it.next();
-                SearchResult r = clse.searchIndexedDB(peakList,zline);
-                r.setMs2Name(msName);
-                bw.write(r.outputResults());
-                bw.newLine();
-            }
-        }
-        bw.close();
-
-
-
-    }
 
     public static void rangedIndexSearchMultiThreaded(String ms2path, String paramPath, int numThreads) throws Exception {
         SearchParams sp = new SearchParams(paramPath);
@@ -175,7 +32,7 @@ public class LibrarySearch {
 
         String msPath = ms2DirectoryStr+File.separator+ms2File.getName();
         String msName = ms2path.substring(0,ms2path.lastIndexOf('.'));
-        LibrarySearchEngine clse = new LibrarySearchEngine(ms2path, paramPath);
+        LibrarySearchEngine clse = new LibrarySearchEngine(ms2path, sp);
         clse.calcRange();
         clse.setLibraryIndexer(libraryIndexer);
         clse.queryRangeFromIndex();

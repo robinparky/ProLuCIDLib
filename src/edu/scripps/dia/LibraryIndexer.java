@@ -1108,22 +1108,26 @@ public class LibraryIndexer {
         List<Integer> peptideIDList = queryPeptideIDS();
         for(int id : peptideIDList)
         {
-            List<Double> retTimeList = getAllRetentionTimesForPeptide(id);
-            List<Double> filteredList = removeOutlier(retTimeList,0.1);
-            double min = Double.MAX_VALUE;
-            double max = Double.MIN_VALUE;
-            for(double d: filteredList)
+            boolean isDecoy = isDecoyQuery(id);
+            if(!isDecoy)
             {
-                if(d<min)
+                List<Double> retTimeList = getAllRetentionTimesForPeptide(id);
+                List<Double> filteredList = removeOutlier(retTimeList,0.1);
+                double min = Double.MAX_VALUE;
+                double max = Double.MIN_VALUE;
+                for(double d: filteredList)
                 {
-                    min = d;
+                    if(d<min)
+                    {
+                        min = d;
+                    }
+                    if(d>max)
+                    {
+                        max = d;
+                    }
                 }
-                if(d>max)
-                {
-                    max = d;
-                }
+                setRetTimeRangeForPeptide(id,min,max);
             }
-            setRetTimeRangeForPeptide(id,min,max);
         }
     }
 
@@ -1187,6 +1191,7 @@ public class LibraryIndexer {
         while ((entry =navimap.pollFirstEntry())!=null)
         {
             int massKey = entry.getKey();
+
             /*if(massKey== 2620496)
             {
                 System.out.println();
@@ -1194,6 +1199,7 @@ public class LibraryIndexer {
             Collection<MetaSpectraEntry> specList = entry.getValue();
             for(MetaSpectraEntry currentEntry: specList)
             {
+
                 int cs = currentEntry.chargeState;
                 int diff = cs*DECOY_MASS_SHIFT;
                 MetaSpectraEntry swapEntry = findSwapSpectra(massKey, diff,navimap,forwardMap,swapMap);
@@ -1729,11 +1735,11 @@ public class LibraryIndexer {
                 IndexedFile ifile = indexedMap.get(fpath);
                 List<Float> mzList = new ArrayList<>();
                 List<Float> intList = new ArrayList<>();
-                float retTime = (float)readSpectraFromMS2(ifile,scan,mzList,intList);
 
                 String spectraKey = path+ fileName + scan;
-                //if(!fileNameScanNumSet.contains(spectraKey))
+                if(!fileNameScanNumSet.contains(spectraKey))
                 {
+                    float retTime = (float)readSpectraFromMS2(ifile,scan,mzList,intList);
                     insertSpectra(peptideID,mass,mzList,intList,retTime, fileName, scan);
                 }
             }
@@ -1887,12 +1893,16 @@ public class LibraryIndexer {
         boolean keepOldDatabase  = false;
         boolean uploadAllSpectra = false;
         boolean appendAllSpectra = false;
+        boolean skipDecoys = false;
+        boolean skipDTA =false;
         for(String s: args  )
         {
             String slower = s.toLowerCase();
             if( slower.equals("--decoys"))
             {
+                skipDTA = true;
                 justGenerateDecoys = true;
+                keepOldDatabase = true;
             }
             else if(slower.equals("--redundant-spectra"))
             {
@@ -1912,14 +1922,24 @@ public class LibraryIndexer {
                 uploadAllSpectra = true;
                 keepOldDatabase = true;
             }
+            else if(slower.equals("--skip-decoys"))
+            {
+                skipDecoys = true;
+            }
+            else if(slower.equals("--skip-dta"))
+            {
+                skipDTA = true;
+                keepOldDatabase = true;
+            }
         }
-        if(!justGenerateDecoys && !keepOldDatabase && f.exists()) f.delete();
+        if (!keepOldDatabase && f.exists())
+            f.delete();
 
         LibraryIndexer libraryIndexer = new LibraryIndexer(libAddress);
         libraryIndexer.setUploadAllSpectra(uploadAllSpectra);
         libraryIndexer.setUploadBestScoringXcorr(uniqueSpectra);
         libraryIndexer.setAppendAllSpectra(appendAllSpectra);
-        if(!justGenerateDecoys)
+        if(!skipDTA)
         {
             for(int i=1; i<args.length; i++)
             {
@@ -1940,7 +1960,11 @@ public class LibraryIndexer {
         {
             libraryIndexer.generateRetentionTimeRangesForRedundantSpectraLibrary();
         }
-       libraryIndexer.generateDecoysInMemory();
+
+        if(!skipDecoys)
+        {
+            libraryIndexer.generateDecoysInMemory();
+        }
 
       /*  System.out.println("Working Directory = " +
                 System.getProperty("user.dir"));*/
@@ -2303,16 +2327,35 @@ public class LibraryIndexer {
     public void uploadSpectraWithoutPeptide(int scanNumber, int cs, float prcMass, float retTime, String fileName,
                                             List<Float> mzList, List<Float> intList) throws IOException, SQLException {
         String code = Integer.toString((int)peptideID);
+
         String sequence = "N.OTAPEPTID.E"+(code);
         String seqKey = sequence+cs;
-         insertEntry("",prcMass,cs,mzList.size(),(float) retTime,0,0,fileName,
+        long oldId = insertEntry("",prcMass,cs,mzList.size(),(float) retTime,0,0,fileName,
                 0,0,0,scanNumber,seqKey, true);
-        insertSpectra(peptideID, prcMass, mzList, intList, retTime, fileName, scanNumber, true);
+        insertSpectra(oldId, prcMass, mzList, intList, retTime, fileName, scanNumber, true);
         int massKey = (int)(prcMass*MZ_KEY_SHIFT);
        // addDecoyMetaSpectra((int)spectraID, massKey, cs, 0  );
 
         //peptideID++;
 
     }
+
+    private PreparedStatement isDecoyStatement = null;
+    public boolean isDecoyQuery(int id) throws SQLException {
+        if(isDecoyStatement==null)
+        {
+            isDecoyStatement = con.prepareStatement("select isDecoy from peptidetable where peptideid = ?");
+        }
+        isDecoyStatement.setInt(1,id);
+        ResultSet rs = isDecoyStatement.executeQuery();
+        boolean result =false;
+        while(rs.next())
+        {
+            result = rs.getInt(1)==1 ;
+        }
+        return result;
+    }
+
+
 
 }
