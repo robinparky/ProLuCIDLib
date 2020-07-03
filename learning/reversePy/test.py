@@ -35,35 +35,43 @@ if len(sys.argv) != 2:
     sys.exit(0)
 else:
     INPUT_PATH = sys.argv[1]
-    #PRED_TYPE = 0 #Ms2
-    PRED_TYPE = 1 #Retention Time
+    PRED_TYPE = 0 #Ms2
+    #PRED_TYPE = 1 #Retention Time
 
 df = pd.read_pickle(INPUT_PATH + "dfTest.pkl").reindex()
 
 xTest = np.load(INPUT_PATH + "XTest.npy")
-if PRED_TYPE = 0:
+
+pepOut = open(INPUT_PATH + "prositInput.csv", "w")
+prositCompare = open(INPUT_PATH +"prositCompare.csv", "w")
+if PRED_TYPE == 0:
     yTest = np.load(INPUT_PATH + "YTestMs2.npy")
     #model = keras_load_model(INPUT_PATH + "model.h5", custom_objects={'cosine_similarity': cosine_similarity})
-
+    model = keras_load_model(INPUT_PATH + "modelMs2.h5")
     predictions = model.predict(xTest)
 
     ionList = ["b1", "b2", "bn1","bn2", "bo1", "bo2", "y1", "y2", "yn1", "yn2", "yo1", "yo2" ]
 
-    jsonArray = []
+    jsonArray = {}
     tmpPred = {}
 
-    jsonArrayExp = []
+    jsonArrayExp = {}
     tmpPredExp = {}
 
     for i in range(len(yTest)):
+    #for i in range(1000):
         target = df.iloc[i]
-        print(target["peptideFull"], target["scan"], target["fileName"])
-        print(target["ions"])
+        peptide = target["peptideFull"].split('.')[1]
+
+        #print(target["peptideFull"], target["scan"], target["fileName"])
+        #print(target["ions"])
         split = len(yTest[0]) / 12
         splitEnd = len(target["ions"]["b1"]) - 1
         #print(split)
 
         tmpPred['peptide'] = target["peptideFull"].split('.')[1]
+
+        print(tmpPred['peptide'] + ",25,2", file=pepOut)
 
         ionObj = {}
         ionObjExp = {}
@@ -71,13 +79,13 @@ if PRED_TYPE = 0:
         splitCnt = 0
         cnt = 0
         while splitCnt <12:
-            print(ionList[splitCnt], "----------------")
+            #print(ionList[splitCnt], "----------------")
             done = False
             ionArray = []
             ionArrayExp = []
             while True:
                 if done == False:
-                    print(yTest[i][cnt], "\t" ,predictions[i][cnt])
+                    #print(yTest[i][cnt], "\t" ,predictions[i][cnt])
 
                     ionArray.append(float(predictions[i][cnt]))
                     ionArrayExp.append(float(yTest[i][cnt]))
@@ -90,21 +98,33 @@ if PRED_TYPE = 0:
             ionObjExp[ionList[splitCnt]] = copy.copy(ionArrayExp)
 
             splitCnt += 1
-        tmpPred['ions'] = copy.copy(ionObj)
-        tmpPredExp['ions'] = copy.copy(ionObjExp)
-        jsonArray.append(copy.copy(tmpPred))
-        jsonArrayExp.append(copy.copy(tmpPredExp))
 
-    print("Done")
+        print(tmpPred['peptide'], file=prositCompare)
+        print("y1", file=prositCompare)
+        print(ionObj['y1'], file=prositCompare)
+        print("b1", file=prositCompare)
+        print(ionObj['b1'], file=prositCompare)
+        print("y2", file=prositCompare)
+        print(ionObj['y2'], file=prositCompare)
+        print("b2", file=prositCompare)
+        print(ionObj['b2'], file=prositCompare)
 
-    print(jsonArray[0], jsonArray[1])
-    print(jsonArrayExp[0], jsonArrayExp[1])
+        #tmpPred[peptide] = copy.copy(ionObj)
+        #tmpPredExp[peptide] = copy.copy(ionObjExp)
 
-    with open('predictions.json', 'w', encoding='utf-8') as f:
+        jsonArray[peptide] = copy.copy(ionObj)
+        jsonArrayExp[peptide] = copy.copy(ionObjExp)
+
+    #print("Done")
+
+    #print(jsonArray[0], jsonArray[1])
+    #print(jsonArrayExp[0], jsonArrayExp[1])
+
+    with open(INPUT_PATH + 'predictions.json', 'w', encoding='utf-8') as f:
         json.dump(jsonArray, f, ensure_ascii=False, indent=4)
 
-    with open('experimental.json', 'w', encoding='utf-8') as g:
-        json.dump(jsonArrayExp, g, ensure_ascii=False, indent=4)   model = keras_load_model(INPUT_PATH + "modelMs2.h5")
+    with open(INPUT_PATH + 'experimental.json', 'w', encoding='utf-8') as g:
+        json.dump(jsonArrayExp, g, ensure_ascii=False, indent=4)
 
 
 #RETENTION TIME PREDICTION #########################################################################
@@ -171,3 +191,5 @@ else:
 
     with open('experimental.json', 'w', encoding='utf-8') as g:
         json.dump(jsonArrayExp, g, ensure_ascii=False, indent=4)
+pepOut.close()
+prositCompare.close()

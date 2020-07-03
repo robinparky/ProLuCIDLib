@@ -7,7 +7,7 @@ import pandas as pd
 import time
 import psutil
 import copy
-
+import os
 
 if len(sys.argv) != 3:
     print("Error with command line inputs")
