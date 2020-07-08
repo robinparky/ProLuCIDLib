@@ -63,57 +63,59 @@ if PRED_TYPE == 0:
         target = df.iloc[i]
         peptide = target["peptideFull"].split('.')[1]
 
-        #print(target["peptideFull"], target["scan"], target["fileName"])
-        #print(target["ions"])
-        split = len(yTest[0]) / 12
-        splitEnd = len(target["ions"]["b1"]) - 1
-        #print(split)
 
-        tmpPred['peptide'] = target["peptideFull"].split('.')[1]
+        if len(peptide) >= 7 and len(peptide) <= 30:
 
-        print(tmpPred['peptide'] + ",25,2", file=pepOut)
+            #print(target["peptideFull"], target["scan"], target["fileName"])
+            #print(target["ions"])
+            split = len(yTest[0]) / 12
+            splitEnd = len(target["ions"]["b1"]) - 1
+            #print(split)
 
-        ionObj = {}
-        ionObjExp = {}
+            tmpPred['peptide'] = target["peptideFull"].split('.')[1]
 
-        splitCnt = 0
-        cnt = 0
-        while splitCnt <12:
-            #print(ionList[splitCnt], "----------------")
-            done = False
-            ionArray = []
-            ionArrayExp = []
-            while True:
-                if done == False:
-                    #print(yTest[i][cnt], "\t" ,predictions[i][cnt])
+            print(tmpPred['peptide'] + ",25,2", file=pepOut)
 
-                    ionArray.append(float(predictions[i][cnt]))
-                    ionArrayExp.append(float(yTest[i][cnt]))
-                cnt += 1
-                if cnt % split == 0:
-                    break
-                elif cnt % split > splitEnd:
-                    done = True
-            ionObj[ionList[splitCnt]] = copy.copy(ionArray)
-            ionObjExp[ionList[splitCnt]] = copy.copy(ionArrayExp)
+            ionObj = {}
+            ionObjExp = {}
 
-            splitCnt += 1
+            splitCnt = 0
+            cnt = 0
+            while splitCnt <12:
+                #print(ionList[splitCnt], "----------------")
+                done = False
+                ionArray = []
+                ionArrayExp = []
+                while True:
+                    if done == False:
+                        #print(yTest[i][cnt], "\t" ,predictions[i][cnt])
 
-        print(tmpPred['peptide'], file=prositCompare)
-        print("y1", file=prositCompare)
-        print(ionObj['y1'], file=prositCompare)
-        print("b1", file=prositCompare)
-        print(ionObj['b1'], file=prositCompare)
-        print("y2", file=prositCompare)
-        print(ionObj['y2'], file=prositCompare)
-        print("b2", file=prositCompare)
-        print(ionObj['b2'], file=prositCompare)
+                        ionArray.append(float(predictions[i][cnt]))
+                        ionArrayExp.append(float(yTest[i][cnt]))
+                    cnt += 1
+                    if cnt % split == 0:
+                        break
+                    elif cnt % split > splitEnd:
+                        done = True
+                ionObj[ionList[splitCnt]] = copy.copy(ionArray)
+                ionObjExp[ionList[splitCnt]] = copy.copy(ionArrayExp)
 
-        #tmpPred[peptide] = copy.copy(ionObj)
-        #tmpPredExp[peptide] = copy.copy(ionObjExp)
+                splitCnt += 1
 
-        jsonArray[peptide] = copy.copy(ionObj)
-        jsonArrayExp[peptide] = copy.copy(ionObjExp)
+            print(tmpPred['peptide'], file=prositCompare)
+            print("y1", file=prositCompare)
+            print(ionObj['y1'], file=prositCompare)
+            print("b1", file=prositCompare)
+            print(ionObj['b1'], file=prositCompare)
+            print("y2", file=prositCompare)
+            print(ionObj['y2'], file=prositCompare)
+            print("b2", file=prositCompare)
+            print(ionObj['b2'], file=prositCompare)
+
+            #tmpPred[peptide] = copy.copy(ionObj)
+            #tmpPredExp[peptide] = copy.copy(ionObjExp)
+            jsonArray[peptide] = copy.copy(ionObj)
+            jsonArrayExp[peptide] = copy.copy(ionObjExp)
 
     #print("Done")
 
