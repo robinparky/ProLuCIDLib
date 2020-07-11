@@ -10,9 +10,9 @@ import keras.backend as K
 from keras.layers.core import Dense, Dropout, Masking
 from keras.layers.recurrent import LSTM
 from keras.layers.wrappers import Bidirectional, TimeDistributed
+
 from keras.models import load_model as keras_load_model
 from keras.models import Sequential
-from keras.callbacks import EarlyStopping
 from keras.utils import multi_gpu_model
 start = time.time()
 

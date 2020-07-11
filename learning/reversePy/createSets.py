@@ -8,7 +8,7 @@ import time
 
 from sklearn.preprocessing import minmax_scale
 
-
+#Get command line inputs
 if len(sys.argv) != 4:
     print("Error with command line inputs")
     sys.exit(0)
@@ -39,18 +39,6 @@ def nlf_encode(seq):
 
 modPeptides = df['peptide'].copy()
 #print(modPeptides.head())
-
-
-"""
-max_len = 0
-for i, pep in enumerate(modPeptides):
-    if len(pep) > max_len:
-        max_len = len(pep)
-print("Max Length Peptide: ", max_len)
-
-if max_len % 2 == 1:
-    max_len += 1
-"""
 
 MAX_LEN = 50
 
@@ -197,4 +185,3 @@ np.save(OUTPUT_PATH + "YTrainRt.npy", yTrainRt)
 np.save(OUTPUT_PATH + "XTest.npy", xTest)
 np.save(OUTPUT_PATH + "YTestMs2.npy", yTestMs2)
 np.save(OUTPUT_PATH + "YTestRt.npy", yTestRt)
-

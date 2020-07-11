@@ -7,12 +7,12 @@ import pandas as pd
 import time
 
 import keras.backend as K
-from keras.layers.core import Dense, Dropout, Masking
+from keras.layers.core import Dense, Masking
 from keras.layers.recurrent import LSTM
 from keras.layers.wrappers import Bidirectional, TimeDistributed
+
 from keras.models import load_model as keras_load_model
 from keras.models import Sequential
-from keras.callbacks import EarlyStopping
 from keras.utils import multi_gpu_model
 start = time.time()
 
@@ -23,16 +23,6 @@ else:
     INPUT_PATH = sys.argv[1]
     BATCH_SIZE = int(sys.argv[2])
     EPOCHS = int(sys.argv[3])
-
-def cosine_similarity(y_true, y_pred):
-    length = K.int_shape(y_pred)[1]
-    y_true = K.batch_flatten(y_true)
-    y_pred = K.batch_flatten(y_pred)
-    y_true = K.l2_normalize(y_true, axis=-1)
-    y_pred = K.l2_normalize(y_pred, axis=-1)
-    cos = K.sum(y_true * y_pred, axis=-1, keepdims=True)
-    result = -K.repeat_elements(cos, rep=length, axis=1)
-    return result
 
 xTrain = np.load(INPUT_PATH + "XTrain.npy")
 yTrain = np.load(INPUT_PATH + "YTrainMs2.npy")
@@ -45,14 +35,12 @@ model.add(Dense(300))
 model.add(Dense(300))
 model.add(Dropout(0.5))
 model.add(Dense(300))
-#model.add(TimeDistributed(Dense(fragmentShape, activation='relu')))
 model.add(Dense(fragmentShape, activation='relu'))
 
 #model = multi_gpu_model(model, gpus=4)
 
 model.compile(
     loss="mean_squared_error",
-    #optimizer="adam", metrics=[cosine_similarity])
     optimizer="adam")
 
 model.fit(xTrain, yTrain,

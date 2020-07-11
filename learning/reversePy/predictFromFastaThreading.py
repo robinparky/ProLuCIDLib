@@ -9,12 +9,13 @@ import os
 from multiprocessing.dummy import Pool as ThreadPool
 
 import keras.backend as K
-from keras.layers.convolutional import Conv1D
 from keras.layers.core import Dense, Dropout, Masking
 from keras.layers.recurrent import LSTM
 from keras.layers.wrappers import Bidirectional, TimeDistributed
+
 from keras.models import load_model as keras_load_model
 from keras.models import Sequential
+from keras.utils import multi_gpu_model
 
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -27,16 +28,6 @@ def nlf_encode(seq):
     #show_matrix(x)
     e = x.values.flatten()
     return e
-
-def cosine_similarity(y_true, y_pred):
-    length = K.int_shape(y_pred)[1]
-    y_true = K.batch_flatten(y_true)
-    y_pred = K.batch_flatten(y_pred)
-    y_true = K.l2_normalize(y_true, axis=-1)
-    y_pred = K.l2_normalize(y_pred, axis=-1)
-    cos = K.sum(y_true * y_pred, axis=-1, keepdims=True)
-    result = -K.repeat_elements(cos, rep=length, axis=1)
-    return result
 
 def encodeSequences(pep):
     if len(pep) >= MAX_LEN:

@@ -81,15 +81,9 @@ def getIonMasses(peptide, types=('b', 'y'), maxcharge=2):
 #conn = sqlite3.connect('testLibDuplicateSpectra.db')
 conn = sqlite3.connect(DATABASE_PATH)
 
-c2Arr = []
-c3Arr = []
-c4Arr = []
-c5Arr = []
+c2Arr = c3Arr = c4Arr = c5Arr = []
 
-c2Cnt = 0
-c3Cnt = 0
-c4Cnt = 0
-c5Cnt = 0
+c2Cnt = c3Cnt = c4Cnt = c5Cnt = 0
 
 
 #peptideTemp = {"peptide":"", "modification": 'null', "ions":{}}
@@ -141,12 +135,6 @@ for ind in pepTable:
     #Search returned list of matched spectrums for each peptide
     for element in spectrums:
         ionList = getIonMasses(peptide)
-
-        """
-        if peptide == "SLDGDLAGR":
-            print(ionList)
-            sys.exit()
-        """
 
         ions = {}
 
