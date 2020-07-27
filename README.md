@@ -51,3 +51,16 @@ Test data can be download from
 
 http://massive.ucsd.edu
 Massive data id: MSV000081719
+
+## schema
+CREATE TABLE PeptideTable  (peptideID INTEGER,peptideSeq TEXT,massKey INTEGER,precursorMZ REAL,chargeState INTEGER,copies INTEGER,numPeaks INTEGER,retentionTime REAL,startTime REAL,endTime REAL,fileName TEXT,searchScore REAL,searchScoreType INTEGER,deltaCN REAL,sequenceCS TEXT,scan INTEGER,isDecoy INTEGER,hasDecoy INTEGER,retentionTimeList TEXT);
+CREATE TABLE ProteinTable (proteinID INTEGER,Accession TEXT,Description TEXT);
+CREATE TABLE SpectraTable  (peptideID INTEGER,peakMZ BLOB,peakIntensity BLOB,massKey Integer,retTime FLOAT,fileName TEXT,scanNumber Integer);
+CREATE TABLE PeptideProteinIndexTable (peptideID  INTEGER, proteinID INTEGER);
+CREATE TABLE SpectraMetaTable (spectraID INTEGER, massKey INTEGER,chargeState INTEGER, isDecoy INTEGER DEFAULT 0, hasDecoy INTEGER DEFAULT 0, diff FLOAT DEFAULT 0);
+CREATE INDEX massKey_index_dsc ON PeptideTable (massKey DESC);
+CREATE UNIQUE INDEX sequenceCSKey_index_dsc ON PeptideTable (sequenceCS DESC);
+CREATE INDEX id_index_dsc ON SpectraTable (peptideID DESC);
+CREATE INDEX peptideID_index_dsc ON PeptideProteinIndexTable (peptideID DESC);
+CREATE UNIQUE INDEX proteinID_index_dsc ON ProteinTable (proteinID DESC);
+CREATE UNIQUE INDEX Accession_index_dsc ON ProteinTable (Accession DESC);
