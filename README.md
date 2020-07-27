@@ -54,7 +54,9 @@ Massive data id: MSV000081719
 
 ## schema
 CREATE TABLE PeptideTable  (peptideID INTEGER,peptideSeq TEXT,massKey INTEGER,precursorMZ REAL,chargeState INTEGER,copies INTEGER,numPeaks INTEGER,retentionTime REAL,startTime REAL,endTime REAL,fileName TEXT,searchScore REAL,searchScoreType INTEGER,deltaCN REAL,sequenceCS TEXT,scan INTEGER,isDecoy INTEGER,hasDecoy INTEGER,retentionTimeList TEXT);
+
 CREATE TABLE ProteinTable (proteinID INTEGER,Accession TEXT,Description TEXT);
+
 CREATE TABLE SpectraTable  (peptideID INTEGER,peakMZ BLOB,peakIntensity BLOB,massKey Integer,retTime FLOAT,fileName TEXT,scanNumber Integer);
 CREATE TABLE PeptideProteinIndexTable (peptideID  INTEGER, proteinID INTEGER);
 CREATE TABLE SpectraMetaTable (spectraID INTEGER, massKey INTEGER,chargeState INTEGER, isDecoy INTEGER DEFAULT 0, hasDecoy INTEGER DEFAULT 0, diff FLOAT DEFAULT 0);
