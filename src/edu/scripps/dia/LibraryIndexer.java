@@ -38,7 +38,7 @@ public class LibraryIndexer {
     private PreparedStatement getNextHighestMassIndex;
     private PreparedStatement getEntryByMassIndex;
     protected PreparedStatement updateSpectraStatement;
-    protected Connection con;
+    protected Connection con = null;
     private long peptideID =0;
     private long proteinID = 0;
     private long spectraID = 0;
@@ -2356,6 +2356,9 @@ public class LibraryIndexer {
         return result;
     }
 
-
+    public void close() throws SQLException {
+        if(null != con)
+            con.close();
+    }
 
 }
