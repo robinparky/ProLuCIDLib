@@ -58,11 +58,19 @@ CREATE TABLE PeptideTable  (peptideID INTEGER,peptideSeq TEXT,massKey INTEGER,pr
 CREATE TABLE ProteinTable (proteinID INTEGER,Accession TEXT,Description TEXT);
 
 CREATE TABLE SpectraTable  (peptideID INTEGER,peakMZ BLOB,peakIntensity BLOB,massKey Integer,retTime FLOAT,fileName TEXT,scanNumber Integer);
+
 CREATE TABLE PeptideProteinIndexTable (peptideID  INTEGER, proteinID INTEGER);
+
 CREATE TABLE SpectraMetaTable (spectraID INTEGER, massKey INTEGER,chargeState INTEGER, isDecoy INTEGER DEFAULT 0, hasDecoy INTEGER DEFAULT 0, diff FLOAT DEFAULT 0);
+
 CREATE INDEX massKey_index_dsc ON PeptideTable (massKey DESC);
+
 CREATE UNIQUE INDEX sequenceCSKey_index_dsc ON PeptideTable (sequenceCS DESC);
+
 CREATE INDEX id_index_dsc ON SpectraTable (peptideID DESC);
+
 CREATE INDEX peptideID_index_dsc ON PeptideProteinIndexTable (peptideID DESC);
+
 CREATE UNIQUE INDEX proteinID_index_dsc ON ProteinTable (proteinID DESC);
+
 CREATE UNIQUE INDEX Accession_index_dsc ON ProteinTable (Accession DESC);
